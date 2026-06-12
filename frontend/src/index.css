@@ -1,0 +1,540 @@
+/* ─────────────────────────────────────────────────────────────────────────────
+   DATRIX DESIGN SYSTEM  v1.0
+   Dark (default) + Light themes · Single blue accent · data-theme on <html>
+   ───────────────────────────────────────────────────────────────────────────── */
+
+@import "tailwindcss";
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   1. MODE-INDEPENDENT PRIMITIVES  — never themed, live on :root forever
+   ══════════════════════════════════════════════════════════════════════════════ */
+:root {
+  /* Blue ramp (semantic alias: --accent per theme) */
+  --blue-50:  #eff8ff;
+  --blue-100: #dbeefe;
+  --blue-200: #b9dffe;
+  --blue-300: #7cc7fd;
+  --blue-400: #63b3ff;
+  --blue-500: #3b96f8;
+  --blue-600: #2f6fe4;
+  --blue-700: #2560cc;
+  --blue-800: #2257bf;
+  --blue-900: #0c2340;
+
+  /* Font stacks */
+  --font-display: 'Inter', system-ui, sans-serif;
+  --font-sans:    'Inter', system-ui, sans-serif;
+  --font-mono:    'IBM Plex Mono', ui-monospace, monospace;
+
+  /* Font weights */
+  --fw-light:   300;
+  --fw-regular: 400;
+  --fw-medium:  500;
+  --fw-bold:    600;
+
+  /* Radii */
+  --radius-xs:   4px;
+  --radius-btn:  6px;
+  --radius-md:   8px;
+  --radius-card: 12px;
+  --radius-lg:   16px;
+  --radius-pill: 9999px;
+
+  /* Layout */
+  --container:      1100px;
+  --container-wide: 1280px;
+  --measure-title:  640px;
+  --measure-body:   540px;
+  --nav-h:          64px;
+  --hairline:       1px;
+  --grid-size:      32px;
+
+  /* Z-index — always use the scale, never invent magic numbers */
+  --z-base:    0;
+  --z-raised:  1;
+  --z-sticky:  50;
+  --z-nav:     100;
+  --z-overlay: 800;
+  --z-modal:   900;
+  --z-toast:   1000;
+  --z-cursor:  10000;
+
+  /* Motion — house easing: .2,.7,.2,1  ("quick and eased, never bouncy") */
+  --ease-standard: cubic-bezier(.2, .7, .2, 1);
+  --ease-out:      cubic-bezier(0, .5, .2, 1);
+  --ease-in:       cubic-bezier(.4, 0, 1, 1);
+  --dur-fast:  0.15s;
+  --dur-base:  0.2s;
+  --dur-slow:  0.35s;
+  --dur-bar:   1.1s;
+  --dur-count: 1.3s;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   2. DARK THEME — default; also explicit data-theme="dark"
+   ══════════════════════════════════════════════════════════════════════════════ */
+html,
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  /* Accent */
+  --accent:        #63b3ff;
+  --accent-hover:  #7cc0ff;
+  --accent-active: #4f9fef;
+
+  /* Surfaces  (bg → bg-2 → bg-3 → bg-card → bg-inset, lightest to darkest context) */
+  --bg:       #050810;
+  --bg-2:     #090d1a;
+  --bg-3:     #11172a;
+  --bg-card:  #0d1220;
+  --bg-inset: #070b15;
+
+  /* Borders */
+  --border:        rgba(255, 255, 255, .07);
+  --border-strong: rgba(255, 255, 255, .15);
+  --border-accent: rgba(99, 179, 255, .28);
+
+  /* Text */
+  --text-primary:   #f0f4ff;
+  --text-secondary: #7a8aaa;
+  --text-tertiary:  #3d4d6a;
+  --text-on-accent: #050810;
+
+  /* Semantic */
+  --green:     #34d399;
+  --green-dim: rgba(52, 211, 153, .12);
+  --warn:      #fbbf24;
+  --warn-dim:  rgba(251, 191, 36, .12);
+  --bad:       #f87171;
+  --bad-dim:   rgba(248, 113, 113, .12);
+
+  /* Tints & glows */
+  --blue-tint: rgba(99, 179, 255, .08);
+  --blue-glow: rgba(99, 179, 255, .22);
+  --focus-ring: 0 0 0 3px rgba(99, 179, 255, .30);
+
+  /* Elevation */
+  --shadow-soft: 0 12px 40px -24px rgba(0, 0, 0, .7);
+  --shadow-card: 0 24px 80px -32px rgba(99, 179, 255, .18);
+  --shadow-pop:  0 16px 48px -16px rgba(0, 0, 0, .8);
+
+  /* Glow multiplier (used in calc() for glow intensity) */
+  --glow:         1;
+  --grid-opacity: 0.03;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   3. LIGHT THEME
+   ══════════════════════════════════════════════════════════════════════════════ */
+[data-theme="light"] {
+  color-scheme: light;
+
+  --accent:        #2f6fe4;
+  --accent-hover:  #2560cc;
+  --accent-active: #2257bf;
+
+  --bg:       #ffffff;
+  --bg-2:     #f4f7fc;
+  --bg-3:     #eaeff8;
+  --bg-card:  #ffffff;
+  --bg-inset: #f8fafd;
+
+  --border:        rgba(13, 27, 51, .10);
+  --border-strong: rgba(13, 27, 51, .22);
+  --border-accent: rgba(47, 111, 228, .32);
+
+  --text-primary:   #0d1b33;
+  --text-secondary: #4a5878;
+  --text-tertiary:  #8a96ad;
+  --text-on-accent: #ffffff;
+
+  --green:     #059669;
+  --green-dim: rgba(5, 150, 105, .10);
+  --warn:      #d97706;
+  --warn-dim:  rgba(217, 119, 6, .10);
+  --bad:       #dc2626;
+  --bad-dim:   rgba(220, 38, 38, .10);
+
+  --blue-tint: rgba(47, 111, 228, .06);
+  --blue-glow: rgba(47, 111, 228, .14);
+  --focus-ring: 0 0 0 3px rgba(47, 111, 228, .20);
+
+  --shadow-soft: 0 12px 40px -24px rgba(13, 27, 51, .12);
+  --shadow-card: 0 24px 80px -32px rgba(47, 111, 228, .15);
+  --shadow-pop:  0 8px 32px -8px rgba(13, 27, 51, .18);
+
+  --glow:         0.4;
+  --grid-opacity: 0.05;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   4. TAILWIND DESIGN TOKENS
+   Map all existing utility classes (text-text-primary, bg-surface-*, etc.)
+   to runtime CSS vars so they automatically flip with [data-theme].
+   Dark values are the defaults here; [data-theme="light"] overrides them above.
+   ══════════════════════════════════════════════════════════════════════════════ */
+@theme {
+  /* Fonts */
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+
+  /* ── Brand / accent ── */
+  --color-brand:     #63b3ff;   /* dark default; overridden to #2f6fe4 in light */
+  --color-brand-50:  rgba(99, 179, 255, .08);
+  --color-brand-100: rgba(99, 179, 255, .14);
+  --color-brand-600: #63b3ff;
+  --color-brand-700: #7cc0ff;
+
+  /* ── Surfaces ── */
+  --color-surface-primary:   #050810;
+  --color-surface-secondary: #090d1a;
+  --color-surface-tertiary:  #11172a;
+  --color-surface-card:      #0d1220;
+  --color-surface-inset:     #070b15;
+
+  /* ── Borders ── */
+  --color-border:        rgba(255, 255, 255, .07);
+  --color-border-strong: rgba(255, 255, 255, .15);
+  --color-border-accent: rgba(99, 179, 255, .28);
+
+  /* ── Text ── */
+  --color-text-primary:   #f0f4ff;
+  --color-text-secondary: #7a8aaa;
+  --color-text-tertiary:  #3d4d6a;
+
+  /* ── Semantic ── */
+  --color-success:    #34d399;
+  --color-success-50: rgba(52, 211, 153, .12);
+  --color-warning:    #fbbf24;
+  --color-warning-50: rgba(251, 191, 36, .12);
+  --color-danger:     #f87171;
+  --color-danger-50:  rgba(248, 113, 113, .12);
+
+  /* ── Code block surface ── */
+  --color-code-bg: #070b15;
+}
+
+/* Override @theme color tokens for light theme.
+   Tailwind's @layer theme is lower priority than unlayered rules,
+   so these attribute-selector overrides always win. */
+[data-theme="light"] {
+  --color-brand:     #2f6fe4;
+  --color-brand-50:  rgba(47, 111, 228, .06);
+  --color-brand-100: rgba(47, 111, 228, .12);
+  --color-brand-600: #2f6fe4;
+  --color-brand-700: #2560cc;
+
+  --color-surface-primary:   #ffffff;
+  --color-surface-secondary: #f4f7fc;
+  --color-surface-tertiary:  #eaeff8;
+  --color-surface-card:      #ffffff;
+  --color-surface-inset:     #f8fafd;
+
+  --color-border:        rgba(13, 27, 51, .10);
+  --color-border-strong: rgba(13, 27, 51, .22);
+  --color-border-accent: rgba(47, 111, 228, .32);
+
+  --color-text-primary:   #0d1b33;
+  --color-text-secondary: #4a5878;
+  --color-text-tertiary:  #8a96ad;
+
+  --color-success:    #059669;
+  --color-success-50: rgba(5, 150, 105, .10);
+  --color-warning:    #d97706;
+  --color-warning-50: rgba(217, 119, 6, .10);
+  --color-danger:     #dc2626;
+  --color-danger-50:  rgba(220, 38, 38, .10);
+
+  --color-code-bg: #f4f7fc;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   5. BASE RESET & CANVAS
+   ══════════════════════════════════════════════════════════════════════════════ */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html {
+  /* Page canvas on <html> so the theme background fills the entire viewport */
+  background-color: var(--bg);
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  font-family: var(--font-sans);
+  font-weight: var(--fw-regular);
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  /* tabular figures everywhere numeric */
+  font-variant-numeric: tabular-nums;
+}
+
+#root {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+/* ── Backdrop line-grid ─────────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: no-preference) {
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: var(--z-base);
+    pointer-events: none;
+    background-image:
+      linear-gradient(
+        rgba(99, 179, 255, calc(var(--grid-opacity))) 1px,
+        transparent 1px
+      ),
+      linear-gradient(
+        90deg,
+        rgba(99, 179, 255, calc(var(--grid-opacity))) 1px,
+        transparent 1px
+      );
+    background-size: var(--grid-size) var(--grid-size);
+  }
+
+  [data-theme="light"] body::before {
+    background-image:
+      linear-gradient(
+        rgba(47, 111, 228, calc(var(--grid-opacity))) 1px,
+        transparent 1px
+      ),
+      linear-gradient(
+        90deg,
+        rgba(47, 111, 228, calc(var(--grid-opacity))) 1px,
+        transparent 1px
+      );
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   6. FOCUS RINGS
+   ══════════════════════════════════════════════════════════════════════════════ */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: var(--radius-xs);
+}
+
+/* Suppress the ring on click (keyboard only) */
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   7. SCROLLBARS
+   ══════════════════════════════════════════════════════════════════════════════ */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
+}
+
+*::-webkit-scrollbar { width: 5px; height: 5px; }
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-thumb {
+  background-color: var(--border-strong);
+  border-radius: var(--radius-pill);
+}
+*::-webkit-scrollbar-thumb:hover {
+  background-color: var(--text-tertiary);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   8. COMPONENT LAYER — button glows, badge, mono-label, etc.
+   ══════════════════════════════════════════════════════════════════════════════ */
+@layer components {
+
+  /* ── Button lift + glow ── */
+  .btn-lift {
+    transition:
+      transform var(--dur-base) var(--ease-standard),
+      box-shadow var(--dur-base) var(--ease-standard),
+      background-color var(--dur-fast),
+      border-color var(--dur-fast),
+      color var(--dur-fast);
+  }
+
+  .btn-lift:hover:not(:disabled) {
+    transform: translateY(-1px);
+  }
+
+  .btn-lift:active:not(:disabled) {
+    transform: translateY(0);
+  }
+
+  .btn-primary-glow:hover:not(:disabled) {
+    box-shadow: 0 8px calc(30px * var(--glow)) var(--blue-glow);
+  }
+
+  /* ── Mono micro-label ── */
+  .mono-label {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: var(--fw-regular);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-tertiary);
+  }
+
+  .mono-micro {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: var(--fw-regular);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--text-tertiary);
+  }
+
+  /* ── Icon tile (40×40, accent bg) ── */
+  .icon-tile {
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-md);
+    background: var(--blue-tint);
+    border: 1px solid var(--border-accent);
+    display: grid;
+    place-items: center;
+    color: var(--accent);
+    flex-shrink: 0;
+  }
+
+  /* ── Status dot (live, pulsing) ── */
+  .dot-live {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 calc(8px * var(--glow)) var(--accent);
+  }
+
+  /* ── Hairline grid container ── */
+  .hairline-grid {
+    display: grid;
+    gap: var(--hairline);
+    background: var(--border);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-card);
+    overflow: hidden;
+  }
+
+  .hairline-grid > * {
+    background: var(--bg-card);
+  }
+
+  /* ── Headline gradient clip (for <strong> inside headings) ── */
+  .headline-accent strong {
+    font-weight: var(--fw-bold);
+    background: linear-gradient(135deg, var(--text-primary) 0%, var(--accent) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  /* ── Card hover ── */
+  .card-interactive {
+    transition:
+      border-color var(--dur-base) var(--ease-standard),
+      transform var(--dur-base) var(--ease-standard),
+      box-shadow var(--dur-base) var(--ease-standard);
+  }
+
+  .card-interactive:hover {
+    border-color: var(--border-accent);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-card);
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   9. ANIMATIONS
+   ══════════════════════════════════════════════════════════════════════════════ */
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: .5; transform: scale(.8); }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slide-in-right {
+  from { opacity: 0; transform: translateX(12px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes bar-fill {
+  from { width: 0%; }
+}
+
+@keyframes count-up {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* Only run animations when the user hasn't asked for reduced motion */
+@media (prefers-reduced-motion: no-preference) {
+  .dot-live {
+    animation: pulse-dot 2.5s ease-in-out infinite;
+  }
+
+  .animate-fade-in {
+    animation: fade-in var(--dur-slow) var(--ease-out) both;
+  }
+
+  .animate-slide-right {
+    animation: slide-in-right var(--dur-slow) var(--ease-out) both;
+  }
+
+  .animate-bar {
+    animation: bar-fill var(--dur-bar) var(--ease-standard) both;
+  }
+
+  /* Stagger helper: nth-child delays */
+  .stagger > *:nth-child(1)  { animation-delay: 0.00s; }
+  .stagger > *:nth-child(2)  { animation-delay: 0.09s; }
+  .stagger > *:nth-child(3)  { animation-delay: 0.18s; }
+  .stagger > *:nth-child(4)  { animation-delay: 0.27s; }
+  .stagger > *:nth-child(5)  { animation-delay: 0.36s; }
+  .stagger > *:nth-child(6)  { animation-delay: 0.45s; }
+}
+
+/* Ensure content is always visible for reduced-motion & no-JS */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   10. TYPOGRAPHY UTILITIES
+   ══════════════════════════════════════════════════════════════════════════════ */
+/* Body text measure caps */
+.measure-title { max-width: var(--measure-title); }
+.measure-body  { max-width: var(--measure-body); }
+
+/* Display weight (Inter 300) — for large headings */
+.display { font-weight: var(--fw-light); letter-spacing: -0.03em; line-height: 1.05; }
+
+/* Tabular numerals explicit utility */
+.tabular-nums { font-variant-numeric: tabular-nums; }
+
+/* Lede text */
+.lede {
+  font-weight: var(--fw-light);
+  font-size: clamp(16px, 2.5vw, 20px);
+  line-height: 1.6;
+  color: var(--text-secondary);
+}

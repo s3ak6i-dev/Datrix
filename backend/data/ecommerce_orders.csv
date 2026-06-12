@@ -1,0 +1,201 @@
+order_id,customer_id,customer_age,country,product_category,product_price,quantity,discount_pct,payment_method,delivery_days,returned,review_score,label
+1001,C001,34,USA,Electronics,299.99,1,10,credit_card,3,no,5,high_value
+1002,C002,28,UK,Clothing,45.50,3,0,paypal,7,no,4,medium_value
+1003,C003,52,Germany,Electronics,899.00,1,15,credit_card,5,no,5,high_value
+1004,C004,23,USA,Books,12.99,2,0,debit_card,4,no,3,low_value
+1005,C005,41,France,Home & Garden,150.00,2,5,credit_card,6,no,4,medium_value
+1006,C006,19,USA,Clothing,35.00,1,20,paypal,8,yes,2,low_value
+1007,C007,67,Canada,Electronics,1200.00,1,0,credit_card,3,no,5,high_value
+1008,C008,31,UK,Beauty,25.99,4,10,paypal,5,no,4,medium_value
+1009,C009,45,Germany,Books,18.50,1,0,debit_card,4,no,3,low_value
+1010,C010,38,USA,Electronics,450.00,1,5,credit_card,3,no,5,high_value
+1011,C011,29,France,Clothing,65.00,2,0,paypal,7,no,4,medium_value
+1012,C012,55,Canada,Home & Garden,320.00,1,10,credit_card,6,no,5,high_value
+1013,C013,22,USA,Beauty,18.00,3,0,debit_card,5,no,3,low_value
+1014,C014,47,UK,Electronics,750.00,1,0,credit_card,4,no,4,high_value
+1015,C015,33,Germany,Books,22.99,2,5,paypal,3,no,4,low_value
+1016,C016,61,USA,Clothing,85.00,1,15,credit_card,7,no,5,medium_value
+1017,C017,27,France,Electronics,199.99,1,10,debit_card,4,no,3,medium_value
+1018,C018,43,Canada,Beauty,42.00,2,0,paypal,5,no,4,medium_value
+1019,C019,36,UK,Home & Garden,275.00,1,5,credit_card,6,no,5,high_value
+1020,C020,25,USA,Books,9.99,3,0,debit_card,4,no,2,low_value
+1021,C021,50,Germany,Electronics,650.00,1,20,credit_card,3,no,5,high_value
+1022,C022,32,USA,Clothing,55.00,2,0,paypal,7,yes,2,low_value
+1023,C023,44,France,Beauty,30.00,3,10,debit_card,5,no,4,medium_value
+1024,C024,58,Canada,Electronics,980.00,1,0,credit_card,3,no,5,high_value
+1025,C025,21,UK,Books,14.50,1,0,paypal,4,no,3,low_value
+1026,C026,39,USA,Home & Garden,190.00,2,5,credit_card,6,no,4,medium_value
+1027,C027,30,Germany,Clothing,70.00,1,0,debit_card,7,no,4,medium_value
+1028,C028,48,France,Electronics,380.00,1,10,credit_card,4,no,5,high_value
+1029,C029,26,Canada,Beauty,22.00,4,0,paypal,5,no,3,low_value
+1030,C030,53,USA,Books,28.00,2,5,debit_card,3,no,4,low_value
+1031,C031,37,UK,Electronics,525.00,1,0,credit_card,3,no,5,high_value
+1032,C032,42,Germany,Home & Garden,240.00,1,15,paypal,6,no,4,medium_value
+1033,C033,24,France,Clothing,40.00,2,0,debit_card,7,yes,1,low_value
+1034,C034,56,Canada,Electronics,1100.00,1,5,credit_card,3,no,5,high_value
+1035,C035,35,USA,Beauty,35.00,3,10,paypal,5,no,4,medium_value
+1036,C036,49,UK,Books,19.99,1,0,debit_card,4,no,3,low_value
+1037,C037,28,Germany,Electronics,299.00,1,0,credit_card,4,no,4,medium_value
+1038,C038,63,France,Home & Garden,410.00,1,0,paypal,6,no,5,high_value
+1039,C039,31,Canada,Clothing,60.00,2,5,debit_card,7,no,4,medium_value
+1040,C040,46,USA,Electronics,820.00,1,20,credit_card,3,no,5,high_value
+1041,C001,34,USA,Electronics,299.99,1,10,credit_card,3,no,5,high_value
+1042,C041,29,UK,Beauty,28.00,3,0,paypal,5,no,3,low_value
+1043,C042,54,Germany,Books,16.00,2,0,debit_card,4,no,4,low_value
+1044,C043,38,France,Clothing,75.00,1,10,paypal,7,no,5,medium_value
+1045,C044,22,Canada,Electronics,175.00,1,0,credit_card,4,no,3,medium_value
+1046,C045,47,USA,Home & Garden,360.00,1,5,debit_card,6,no,5,high_value
+1047,C046,33,UK,Beauty,20.00,4,0,paypal,5,no,4,medium_value
+1048,C047,60,Germany,Electronics,750.00,1,0,credit_card,3,no,5,high_value
+1049,C048,27,France,Books,11.99,3,0,debit_card,4,no,2,low_value
+1050,C049,41,Canada,Clothing,90.00,1,15,paypal,7,no,5,medium_value
+1051,C050,36,USA,Electronics,430.00,1,10,credit_card,3,no,4,high_value
+1052,C051,25,UK,Home & Garden,155.00,2,0,debit_card,6,no,4,medium_value
+1053,C052,52,Germany,Beauty,45.00,2,5,paypal,5,no,4,medium_value
+1054,C053,30,France,Electronics,590.00,1,0,credit_card,4,no,5,high_value
+1055,C054,44,Canada,Books,24.99,1,0,debit_card,3,no,3,low_value
+1056,C055,57,USA,Clothing,110.00,1,20,credit_card,7,no,5,medium_value
+1057,C056,23,UK,Electronics,220.00,1,0,paypal,4,no,3,medium_value
+1058,C057,48,Germany,Home & Garden,285.00,1,10,debit_card,6,no,4,medium_value
+1059,C058,35,France,Beauty,32.00,3,0,paypal,5,no,4,medium_value
+1060,C059,62,Canada,Electronics,1350.00,1,0,credit_card,3,no,5,high_value
+1061,C060,40,USA,Books,21.00,2,5,debit_card,4,no,4,low_value
+1062,C061,26,UK,Clothing,50.00,2,0,paypal,7,yes,2,low_value
+1063,C062,55,Germany,Electronics,670.00,1,15,credit_card,3,no,5,high_value
+1064,C063,32,France,Home & Garden,195.00,2,0,debit_card,6,no,4,medium_value
+1065,C064,46,Canada,Beauty,38.00,3,10,paypal,5,no,4,medium_value
+1066,C065,29,USA,Electronics,345.00,1,5,credit_card,4,no,4,high_value
+1067,C066,51,UK,Books,17.50,2,0,debit_card,3,no,3,low_value
+1068,C067,37,Germany,Clothing,80.00,1,0,paypal,7,no,5,medium_value
+1069,C068,43,France,Electronics,925.00,1,10,credit_card,3,no,5,high_value
+1070,C069,24,Canada,Home & Garden,130.00,3,0,debit_card,6,no,3,medium_value
+1071,C070,59,USA,Electronics,1050.00,1,0,credit_card,3,no,5,high_value
+1072,C071,34,UK,Beauty,27.00,4,5,paypal,5,no,4,medium_value
+1073,C072,28,Germany,Books,13.99,2,0,debit_card,4,no,3,low_value
+1074,C073,45,France,Clothing,68.00,1,10,paypal,7,no,4,medium_value
+1075,C074,39,Canada,Electronics,480.00,1,0,credit_card,4,no,5,high_value
+1076,C075,21,USA,Home & Garden,175.00,1,0,debit_card,6,no,3,medium_value
+1077,C076,53,UK,Beauty,42.00,2,15,paypal,5,no,4,medium_value
+1078,C077,30,Germany,Electronics,560.00,1,5,credit_card,3,no,5,high_value
+1079,C078,47,France,Books,20.00,3,0,debit_card,4,no,4,low_value
+1080,C079,36,Canada,Clothing,95.00,1,20,paypal,7,no,5,medium_value
+1081,,28,USA,Electronics,399.00,1,10,credit_card,3,no,4,high_value
+1082,C081,31,UK,Beauty,,3,0,paypal,5,no,3,medium_value
+1083,C082,44,Germany,Books,15.99,2,0,,4,no,4,low_value
+1084,C083,38,France,Clothing,72.00,1,5,credit_card,,no,4,medium_value
+1085,C084,25,,Electronics,265.00,1,0,debit_card,4,no,3,medium_value
+1086,C085,50,Canada,Home & Garden,310.00,1,10,credit_card,6,,5,high_value
+1087,C086,33,USA,Beauty,29.00,4,0,paypal,5,no,,medium_value
+1088,C087,57,UK,Electronics,880.00,1,0,credit_card,3,no,5,
+1089,C088,42,Germany,Clothing,85.00,2,15,debit_card,7,no,5,medium_value
+1090,C089,27,France,Books,10.99,3,0,paypal,4,no,2,low_value
+1091,C090,61,Canada,Electronics,1250.00,1,5,credit_card,3,no,5,high_value
+1092,C091,35,USA,Home & Garden,220.00,2,0,debit_card,6,no,4,medium_value
+1093,C092,23,UK,Beauty,24.00,3,10,paypal,5,no,3,low_value
+1094,C093,48,Germany,Electronics,710.00,1,0,credit_card,3,no,5,high_value
+1095,C094,40,France,Clothing,55.00,2,5,debit_card,7,no,4,medium_value
+1096,C095,29,Canada,Books,18.00,1,0,paypal,4,no,3,low_value
+1097,C096,54,USA,Electronics,620.00,1,20,credit_card,4,no,5,high_value
+1098,C097,37,UK,Home & Garden,265.00,1,5,debit_card,6,no,4,medium_value
+1099,C098,26,Germany,Beauty,33.00,3,0,paypal,5,no,4,medium_value
+1100,C099,43,France,Electronics,790.00,1,10,credit_card,3,no,5,high_value
+1101,C100,31,Canada,Clothing,62.00,2,0,debit_card,7,no,4,medium_value
+1102,C050,36,USA,Electronics,430.00,1,10,credit_card,3,no,4,high_value
+1103,C101,58,UK,Books,26.00,1,0,paypal,3,no,4,low_value
+1104,C102,22,Germany,Electronics,185.00,1,0,credit_card,4,no,3,medium_value
+1105,C103,46,France,Home & Garden,340.00,1,15,debit_card,6,no,5,high_value
+1106,C104,32,Canada,Beauty,37.00,4,0,paypal,5,no,4,medium_value
+1107,C105,55,USA,Electronics,960.00,1,0,credit_card,3,no,5,high_value
+1108,C106,39,UK,Clothing,78.00,1,10,debit_card,7,no,5,medium_value
+1109,C107,28,Germany,Books,14.00,2,0,paypal,4,no,3,low_value
+1110,C108,64,France,Electronics,1400.00,1,0,credit_card,3,no,5,high_value
+1111,C109,34,Canada,Home & Garden,195.00,2,5,debit_card,6,no,4,medium_value
+1112,C110,47,USA,Beauty,40.00,3,15,paypal,5,no,4,medium_value
+1113,C111,25,UK,Electronics,310.00,1,0,credit_card,4,no,4,high_value
+1114,C112,52,Germany,Clothing,92.00,1,20,debit_card,7,no,5,medium_value
+1115,C113,36,France,Books,22.00,3,0,paypal,3,no,4,low_value
+1116,C114,41,Canada,Electronics,550.00,1,10,credit_card,3,no,5,high_value
+1117,C115,30,USA,Home & Garden,165.00,2,0,debit_card,6,no,3,medium_value
+1118,C116,56,UK,Beauty,48.00,2,5,paypal,5,no,5,medium_value
+1119,C117,43,Germany,Electronics,850.00,1,0,credit_card,4,no,5,high_value
+1120,C118,27,France,Clothing,58.00,2,10,debit_card,7,no,4,medium_value
+1121,C119,50,Canada,Books,20.99,1,0,paypal,3,no,3,low_value
+1122,C120,38,USA,Electronics,690.00,1,5,credit_card,3,no,5,high_value
+1123,C121,24,UK,Home & Garden,145.00,3,0,debit_card,6,no,3,medium_value
+1124,C122,59,Germany,Beauty,52.00,2,10,paypal,5,no,5,medium_value
+1125,C123,33,France,Electronics,420.00,1,0,credit_card,4,no,4,high_value
+1126,C124,45,Canada,Clothing,88.00,1,15,debit_card,7,no,5,medium_value
+1127,C125,26,USA,Books,11.50,3,0,paypal,4,no,2,low_value
+1128,C126,62,UK,Electronics,1180.00,1,5,credit_card,3,no,5,high_value
+1129,C127,40,Germany,Home & Garden,255.00,1,0,debit_card,6,no,4,medium_value
+1130,C128,29,France,Beauty,26.00,4,0,paypal,5,no,4,medium_value
+1131,C129,53,Canada,Electronics,740.00,1,20,credit_card,3,no,5,high_value
+1132,C130,35,USA,Clothing,70.00,2,5,debit_card,7,no,4,medium_value
+1133,C131,48,UK,Books,17.00,2,0,paypal,4,no,3,low_value
+1134,C132,31,Germany,Electronics,495.00,1,10,credit_card,4,no,5,high_value
+1135,C133,57,France,Home & Garden,380.00,1,0,debit_card,6,no,5,high_value
+1136,C134,23,Canada,Beauty,21.00,3,0,paypal,5,no,3,low_value
+1137,C135,44,USA,Electronics,830.00,1,0,credit_card,3,no,5,high_value
+1138,C136,37,UK,Clothing,65.00,2,10,debit_card,7,no,4,medium_value
+1139,C137,28,Germany,Books,19.00,1,0,paypal,3,no,4,low_value
+1140,C138,51,France,Electronics,1020.00,1,15,credit_card,3,no,5,high_value
+1141,C139,36,Canada,Home & Garden,210.00,2,5,debit_card,6,no,4,medium_value
+1142,C140,42,USA,Beauty,36.00,3,10,paypal,5,no,4,medium_value
+1143,C141,25,UK,Electronics,275.00,1,0,credit_card,4,no,3,medium_value
+1144,C142,60,Germany,Clothing,100.00,1,20,debit_card,7,no,5,medium_value
+1145,C143,33,France,Books,23.50,2,0,paypal,4,no,4,low_value
+1146,C144,47,Canada,Electronics,615.00,1,5,credit_card,3,no,5,high_value
+1147,C145,30,USA,Home & Garden,185.00,1,0,debit_card,6,no,3,medium_value
+1148,C146,54,UK,Beauty,44.00,2,15,paypal,5,no,5,medium_value
+1149,C147,39,Germany,Electronics,760.00,1,0,credit_card,4,no,5,high_value
+1150,C148,26,France,Clothing,52.00,2,5,debit_card,7,no,3,medium_value
+1151,C149,63,Canada,Books,29.00,1,0,paypal,3,no,4,low_value
+1152,C150,41,USA,Electronics,920.00,1,10,credit_card,3,no,5,high_value
+1153,C088,42,Germany,Clothing,85.00,2,15,debit_card,7,no,5,medium_value
+1154,C151,28,UK,Home & Garden,160.00,3,0,debit_card,6,no,4,medium_value
+1155,C152,50,France,Beauty,39.00,3,0,paypal,5,no,4,medium_value
+1156,C153,34,Canada,Electronics,460.00,1,0,credit_card,4,no,4,high_value
+1157,C154,45,USA,Clothing,82.00,1,10,debit_card,7,no,5,medium_value
+1158,C155,29,UK,Books,13.50,3,0,paypal,4,no,2,low_value
+1159,C156,58,Germany,Electronics,1080.00,1,5,credit_card,3,no,5,high_value
+1160,C157,32,France,Home & Garden,230.00,2,0,debit_card,6,no,4,medium_value
+1161,C158,46,Canada,Beauty,43.00,2,10,paypal,5,no,4,medium_value
+1162,C159,23,USA,Electronics,240.00,1,0,credit_card,4,no,3,medium_value
+1163,C160,55,UK,Clothing,96.00,1,20,debit_card,7,no,5,medium_value
+1164,C161,38,Germany,Books,16.50,2,0,paypal,3,no,3,low_value
+1165,C162,27,France,Electronics,575.00,1,15,credit_card,4,no,5,high_value
+1166,C163,49,Canada,Home & Garden,295.00,1,5,debit_card,6,no,4,medium_value
+1167,C164,35,USA,Beauty,31.00,4,0,paypal,5,no,4,medium_value
+1168,C165,61,UK,Electronics,1150.00,1,0,credit_card,3,no,5,high_value
+1169,C166,40,Germany,Clothing,74.00,2,5,debit_card,7,no,4,medium_value
+1170,C167,24,France,Books,12.00,3,0,paypal,4,no,3,low_value
+1171,C168,53,Canada,Electronics,860.00,1,10,credit_card,3,no,5,high_value
+1172,C169,31,USA,Home & Garden,200.00,2,0,debit_card,6,no,4,medium_value
+1173,C170,44,UK,Beauty,34.00,3,5,paypal,5,no,4,medium_value
+1174,C171,57,Germany,Electronics,700.00,1,0,credit_card,4,no,5,high_value
+1175,C172,28,France,Clothing,61.00,2,10,debit_card,7,no,4,medium_value
+1176,C173,42,Canada,Books,25.00,1,0,paypal,3,no,4,low_value
+1177,C174,36,USA,Electronics,530.00,1,5,credit_card,3,no,5,high_value
+1178,C175,25,UK,Home & Garden,175.00,1,0,debit_card,6,no,3,medium_value
+1179,C176,65,Germany,Beauty,55.00,2,15,paypal,5,no,5,medium_value
+1180,C177,33,France,Electronics,990.00,1,20,credit_card,3,no,5,high_value
+1181,C178,47,Canada,Clothing,87.00,1,5,debit_card,7,no,5,medium_value
+1182,C179,30,USA,Books,18.50,2,0,paypal,4,no,3,low_value
+1183,C180,56,UK,Electronics,1220.00,1,0,credit_card,3,no,5,high_value
+1184,C181,39,Germany,Home & Garden,270.00,1,10,debit_card,6,no,4,medium_value
+1185,C182,26,France,Beauty,28.00,4,0,paypal,5,no,3,low_value
+1186,C183,52,Canada,Electronics,640.00,1,0,credit_card,4,no,5,high_value
+1187,C184,37,USA,Clothing,77.00,2,5,debit_card,7,no,4,medium_value
+1188,C185,22,UK,Books,10.50,3,0,paypal,3,no,2,low_value
+1189,C186,48,Germany,Electronics,805.00,1,15,credit_card,3,no,5,high_value
+1190,C187,34,France,Home & Garden,245.00,2,0,debit_card,6,no,4,medium_value
+1191,C188,60,Canada,Beauty,50.00,2,10,paypal,5,no,5,medium_value
+1192,C189,43,USA,Electronics,720.00,1,5,credit_card,4,no,5,high_value
+1193,C190,27,UK,Clothing,67.00,2,0,debit_card,7,no,4,medium_value
+1194,C191,51,Germany,Books,21.50,1,0,paypal,4,no,4,low_value
+1195,C192,35,France,Electronics,870.00,1,10,credit_card,3,no,5,high_value
+1196,C193,29,Canada,Home & Garden,155.00,3,5,debit_card,6,no,3,medium_value
+1197,C194,46,USA,Beauty,41.00,3,0,paypal,5,no,4,medium_value
+1198,C195,32,UK,Electronics,490.00,1,0,credit_card,4,no,4,high_value
+1199,C196,64,Germany,Clothing,108.00,1,20,debit_card,7,no,5,medium_value
+1200,C197,40,France,Books,24.00,2,0,paypal,3,no,4,low_value
