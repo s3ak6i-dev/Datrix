@@ -14,8 +14,9 @@ import threading
 import uuid
 from typing import Any, Optional
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Request, HTTPException
 from fastapi.responses import StreamingResponse
+from app.core.limiter import limiter
 from pydantic import BaseModel
 
 from app.models.store import store, BenchmarkJob
@@ -126,7 +127,8 @@ class JobOut(BaseModel):
 # ── Routes ────────────────────────────────────────────────────────────
 
 @router.post("/jobs", response_model=JobOut, status_code=201)
-def create_job(body: CreateJobRequest):
+@limiter.limit("5/minute")
+def create_job(request: Request, body: CreateJobRequest):
     if not store.get_dataset(body.dataset_id):
         raise HTTPException(404, "Dataset not found")
     if body.task_type not in VALID_TASKS:

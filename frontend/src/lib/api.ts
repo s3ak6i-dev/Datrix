@@ -1,12 +1,48 @@
 import type { Dataset, QualityScan, ColumnProfile, CleaningFix, Pipeline, PipelineRun, SyntheticJob, TrainedModel, ColOverride, SyntheticMethod, ALSession, ALBatch, ALPredictOut, ALTaskType, ALModelType, ALSamplingStrategy, BenchmarkJob, BenchmarkModelType, BenchmarkPreset, BenchmarkEvalProtocol, MarketplaceAsset, MarketplaceReview, MarketplaceInstall, MarketplaceInstallResult, MarketplaceStats, MarketplaceAssetType, MarketplaceCategory, MarketplaceLicense, MarketplaceSort, AppSettings, SettingsResponse, ComplianceDashboard, ComplianceScan, ScanSummary, LineageGraph, CompliancePolicy, PolicyViolation, AnonymizationJob, AuditLogResponse, ComplianceReport, ComplianceFramework, ColumnConfig } from '@/types'
 
-const BASE = '/api'
+const BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
+
+function getAccessToken() { return localStorage.getItem('datrix_access') }
+function getRefreshToken() { return localStorage.getItem('datrix_refresh') }
+
+async function _refreshTokens(): Promise<string | null> {
+  const rt = getRefreshToken()
+  if (!rt) return null
+  try {
+    const res = await fetch(`${BASE}/auth/refresh`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refresh_token: rt }),
+    })
+    if (!res.ok) { localStorage.removeItem('datrix_access'); localStorage.removeItem('datrix_refresh'); return null }
+    const data = await res.json()
+    localStorage.setItem('datrix_access', data.access_token)
+    localStorage.setItem('datrix_refresh', data.refresh_token)
+    return data.access_token
+  } catch {
+    return null
+  }
+}
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`${BASE}${path}`, {
-    headers: { 'Content-Type': 'application/json', ...init?.headers },
-    ...init,
-  })
+  const token = getAccessToken()
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...(init?.headers as Record<string, string>),
+  }
+  if (token) headers['Authorization'] = `Bearer ${token}`
+
+  let res = await fetch(`${BASE}${path}`, { ...init, headers })
+
+  // Auto-refresh on 401
+  if (res.status === 401) {
+    const newToken = await _refreshTokens()
+    if (newToken) {
+      headers['Authorization'] = `Bearer ${newToken}`
+      res = await fetch(`${BASE}${path}`, { ...init, headers })
+    }
+  }
+
   if (!res.ok) {
     const err = await res.json().catch(() => ({ detail: res.statusText }))
     throw new Error(err.detail ?? 'Request failed')
@@ -38,6 +74,8 @@ export const api = {
         }
         xhr.onerror = () => reject(new Error('Network error'))
         xhr.open('POST', `${BASE}/datasets/upload`)
+        const token = getAccessToken()
+        if (token) xhr.setRequestHeader('Authorization', `Bearer ${token}`)
         xhr.send(form)
       })
     },

@@ -8,7 +8,8 @@ from __future__ import annotations
 import threading
 from typing import Optional
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Request, HTTPException
+from app.core.limiter import limiter
 from pydantic import BaseModel
 
 from pathlib import Path
@@ -73,7 +74,8 @@ class CreateJobRequest(BaseModel):
 # ── Routes ────────────────────────────────────────────────────────────
 
 @router.post("/jobs", response_model=JobOut, status_code=201)
-def create_job(body: CreateJobRequest):
+@limiter.limit("5/minute")
+def create_job(request: Request, body: CreateJobRequest):
     if not store.get_dataset(body.source_dataset_id):
         raise HTTPException(404, "Source dataset not found")
     if body.method not in ("statistical", "ctgan", "tvae"):

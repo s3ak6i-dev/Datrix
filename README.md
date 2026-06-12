@@ -104,11 +104,13 @@ Global defaults for every module, live storage stats, and a danger zone for rese
 |---|---|
 | **Frontend** | React 18, TypeScript, Vite, Tailwind CSS v4 |
 | **State / data fetching** | TanStack Query v5 (with polling for async jobs) |
-| **Backend** | FastAPI, Python 3.10+ |
+| **Backend** | FastAPI, Python 3.12+ |
+| **Auth** | JWT (python-jose + passlib bcrypt); access 30 min + refresh 7 days with rotation |
 | **Data processing** | Polars (fast CSV parsing, pipeline execution) |
 | **ML** | scikit-learn, XGBoost, CTGAN, SDV |
-| **Data store** | JSON flat file (`db.json`) with threading lock *(see roadmap)* |
+| **Database** | PostgreSQL (Neon Postgres) via SQLAlchemy 2.0 ORM; 22 tables |
 | **File storage** | Local filesystem (`backend/data/`) |
+| **Infrastructure** | Docker + Docker Compose + Nginx |
 | **Design system** | Custom token system — dark/light themes, Inter + IBM Plex Mono |
 
 ---
@@ -202,6 +204,12 @@ Datrix/
 | RAM | 4 GB | 8 GB (CTGAN/TVAE needs headroom) |
 | Disk | 2 GB free | 5 GB+ |
 
+### Prerequisites
+
+- Python 3.12+
+- Node 20+
+- A [Neon](https://neon.tech) Postgres database (or any PostgreSQL instance)
+
 ### Installation
 
 **1. Clone the repo**
@@ -225,6 +233,15 @@ python -m venv .venv
 source .venv/bin/activate
 
 pip install -r requirements.txt
+
+# Copy env template and fill in your values
+cp .env.example .env
+# Edit .env: set DATABASE_URL (Postgres connection string) and SECRET_KEY
+```
+
+Generate a secure `SECRET_KEY`:
+```bash
+python -c "import secrets; print(secrets.token_hex(32))"
 ```
 
 **3. Frontend**
@@ -232,9 +249,10 @@ pip install -r requirements.txt
 ```bash
 cd frontend
 npm install
+echo "VITE_API_URL=http://localhost:8000" > .env
 ```
 
-### Running
+### Running (local dev)
 
 Open two terminals:
 
@@ -250,13 +268,23 @@ cd frontend
 npm run dev
 ```
 
-Open **http://localhost:5173** in your browser.
+Open **http://localhost:5173** in your browser, then register an account.
 
 On first startup the backend automatically:
-- Creates `backend/data/` directory structure
-- Seeds `db.json` with empty collections
+- Creates all 22 PostgreSQL tables (idempotent `CREATE TABLE IF NOT EXISTS`)
 - Seeds the Marketplace with ~15 sample datasets, pipelines, and models
 - Seeds 8 default compliance policies
+
+### Docker (full stack)
+
+```bash
+# Ensure backend/.env exists with DATABASE_URL and SECRET_KEY
+docker compose up --build
+```
+
+- Frontend: `http://localhost:80`
+- Backend API: `http://localhost:8000`
+- Docs: `http://localhost:8000/docs`
 
 ### API Documentation
 
@@ -286,19 +314,22 @@ See [`PRODUCTION_CHECKLIST.md`](PRODUCTION_CHECKLIST.md) for the full phased bre
 
 | Phase | Key work | Status |
 |---|---|---|
-| **1 — Critical** | Authentication (JWT), real database (SQLite/Postgres), env config, file storage abstraction, HTTPS | ⬜ In progress |
-| **2 — Stability** | Error boundaries, rate limiting, thread error handling, structured logging, input validation | ⬜ Pending |
-| **3 — Infrastructure** | Docker + docker-compose, Gunicorn, backups, health monitoring | ⬜ Pending |
-| **4 — Pre-launch** | Production build, security headers, CI/CD pipeline | ⬜ Pending |
-
-**The current build is a fully-featured local development version.** It is not suitable for public deployment without completing at minimum Phase 1 (auth + database + env config).
+| **1.1 Auth** | JWT backend + frontend (register, login, refresh, logout, ProtectedRoute) | ✅ Complete |
+| **1.2 Database** | SQLAlchemy 2.0 ORM, 22 tables on Neon Postgres, store.py rewrite | ✅ ~90% |
+| **1.3 Env Config** | pydantic-settings, `.env`, `VITE_API_URL` | ✅ Complete |
+| **2.1–2.5 Stability** | Error boundaries, rate limiting, thread error handling, upload validation, JSON logging | ✅ Complete |
+| **3.1 Docker** | Backend + frontend Dockerfiles, docker-compose, Nginx config | ✅ Complete |
+| **4.4 CI/CD** | GitHub Actions (lint + type-check + build on PR; Docker publish on tag) | ✅ Complete |
+| **1.4 File Storage** | S3/local abstraction | ⬜ Pending |
+| **1.5 HTTPS** | Nginx TLS + Let's Encrypt | ⬜ Deployment-dependent |
+| **3.2–3.4 Infra** | Gunicorn worker config, backups, Prometheus metrics | ⬜ Pending |
 
 ---
 
 ## Architecture Notes
 
-### Why a JSON flat file?
-`db.json` was chosen deliberately for the prototype phase — zero setup, zero dependencies, immediately inspectable. It's backed by a `threading.Lock` for safety under concurrent background jobs. The replacement with SQLAlchemy + Alembic is the first item on the production checklist.
+### Database
+All data is stored in PostgreSQL via SQLAlchemy 2.0. The original `db.json` flat-file store has been fully replaced with 22 ORM-mapped tables. Every API route uses its own scoped `db_session()` context manager (autocommit on success, rollback on error). Tables are created idempotently on startup; Alembic is the planned migration tool for future schema changes.
 
 ### Long-running jobs
 All ML jobs (synthetic generation, AL training, benchmark runs, PII scans, anonymization) run in Python daemon threads and return a job ID immediately. The frontend polls status endpoints at 1–3 second intervals using TanStack Query's `refetchInterval`.

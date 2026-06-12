@@ -1,27 +1,27 @@
 """
-Persistent store for Phase 1.
-All state serialised to data/db.json on every write.
-Replace with PostgreSQL in Phase 2.
+Persistent store — backed by Neon Postgres via SQLAlchemy.
+Keeps the same dataclass types and method signatures as the original
+flat-file store so the API layer requires no changes.
 """
 import uuid
-import json
-import threading
+import dataclasses
+from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from dataclasses import dataclass, field, asdict
 from typing import Optional
-from pathlib import Path
 
-from app.core.config import DATA_DIR
-
-DB_PATH = DATA_DIR / "db.json"
+from app.db.session import db_session
+import app.db.models as M
 
 
 def _now() -> str:
     return datetime.now(timezone.utc).isoformat()
 
+
 def _id() -> str:
     return str(uuid.uuid4())
 
+
+# ── Dataclasses (unchanged public API) ────────────────────────────────────────
 
 @dataclass
 class Dataset:
@@ -105,22 +105,21 @@ class ALSession:
     name: str = ""
     dataset_id: str = ""
     target_column: str = ""
-    task_type: str = "classification"       # classification | regression
-    model_type: str = "random_forest"       # logistic_regression | random_forest | xgboost | svm | mlp
-    sampling_strategy: str = "entropy"      # least_confidence | margin | entropy | coreset | committee
+    task_type: str = "classification"
+    model_type: str = "random_forest"
+    sampling_strategy: str = "entropy"
     batch_size: int = 20
-    label_classes: list = field(default_factory=list)   # classification only
-    exclude_columns: list = field(default_factory=list) # columns to drop from features
+    label_classes: list = field(default_factory=list)
+    exclude_columns: list = field(default_factory=list)
     target_accuracy: Optional[float] = None
     max_rounds: int = 10
-    model_name: str = ""   # user-defined export name
-    # Runtime state
-    status: str = "annotating"   # annotating | training | complete
+    model_name: str = ""
+    status: str = "annotating"
     current_round: int = 1
-    labels: dict = field(default_factory=dict)          # {str(row_idx): label_value}
-    next_batch: list = field(default_factory=list)      # row indices to label
+    labels: dict = field(default_factory=dict)
+    next_batch: list = field(default_factory=list)
     model_path: Optional[str] = None
-    rounds: list = field(default_factory=list)          # list of round result dicts
+    rounds: list = field(default_factory=list)
     created_at: str = field(default_factory=_now)
     updated_at: str = field(default_factory=_now)
 
@@ -129,9 +128,9 @@ class ALSession:
 class TrainedModel:
     id: str = field(default_factory=_id)
     dataset_id: str = ""
-    method: str = ""          # statistical | ctgan | tvae
+    method: str = ""
     model_path: str = ""
-    status: str = "training"  # training | ready | failed
+    status: str = "training"
     error_message: Optional[str] = None
     created_at: str = field(default_factory=_now)
 
@@ -142,10 +141,10 @@ class SyntheticJob:
     source_dataset_id: str = ""
     output_dataset_id: Optional[str] = None
     output_name: str = ""
-    method: str = "statistical"  # statistical | ctgan | tvae
+    method: str = "statistical"
     row_count: int = 1000
     column_overrides: Optional[dict] = None
-    status: str = "pending"  # pending | running | complete | failed
+    status: str = "pending"
     error_message: Optional[str] = None
     created_at: str = field(default_factory=_now)
     completed_at: Optional[str] = None
@@ -157,13 +156,13 @@ class MarketplaceAsset:
     title: str = ""
     description: str = ""
     long_description: str = ""
-    asset_type: str = "dataset"     # dataset | pipeline | model | benchmark_config
-    category: str = "general"       # ecommerce | finance | healthcare | marketing | logistics | hr | nlp | timeseries | general
+    asset_type: str = "dataset"
+    category: str = "general"
     tags: list = field(default_factory=list)
     author_name: str = "Community"
-    license: str = "mit"            # mit | cc_by | cc_by_nc | apache2 | proprietary
+    license: str = "mit"
     version: str = "1.0.0"
-    status: str = "published"       # draft | published | archived
+    status: str = "published"
     is_seeded: bool = False
     seed_key: str = ""
     download_count: int = 0
@@ -204,11 +203,11 @@ class BenchmarkJob:
     name: str = ""
     dataset_id: str = ""
     target_column: str = ""
-    task_type: str = "classification"   # classification | regression
-    eval_protocol: str = "kfold_5"     # kfold_5 | kfold_10 | holdout_80 | holdout_90
-    candidates: list = field(default_factory=list)   # list of candidate config dicts
-    status: str = "pending"             # pending | running | complete | failed
-    results: list = field(default_factory=list)      # list of candidate result dicts
+    task_type: str = "classification"
+    eval_protocol: str = "kfold_5"
+    candidates: list = field(default_factory=list)
+    status: str = "pending"
+    results: list = field(default_factory=list)
     winner_candidate_id: Optional[str] = None
     error_message: Optional[str] = None
     created_at: str = field(default_factory=_now)
@@ -219,11 +218,11 @@ class BenchmarkJob:
 class ComplianceScan:
     id: str = field(default_factory=_id)
     dataset_id: str = ""
-    status: str = "pending"          # pending | running | complete | failed
+    status: str = "pending"
     scanned_at: Optional[str] = None
     duration_ms: Optional[int] = None
-    findings: list = field(default_factory=list)   # list of column finding dicts
-    overall_risk: str = "unscanned"  # unscanned | clean | low | medium | high | critical
+    findings: list = field(default_factory=list)
+    overall_risk: str = "unscanned"
     pii_column_count: int = 0
     critical_count: int = 0
     high_count: int = 0
@@ -238,9 +237,9 @@ class ComplianceScan:
 class CompliancePolicy:
     id: str = field(default_factory=_id)
     name: str = ""
-    policy_type: str = ""            # no_pii_in_training | pii_scan_required | min_quality_score | max_retention_days | min_row_count_for_training | no_unscanned_in_pipeline | model_accuracy_floor | benchmark_winner_required
+    policy_type: str = ""
     parameters: dict = field(default_factory=dict)
-    severity: str = "warning"        # info | warning | critical
+    severity: str = "warning"
     enabled: bool = True
     created_at: str = field(default_factory=_now)
     updated_at: str = field(default_factory=_now)
@@ -252,7 +251,7 @@ class PolicyViolation:
     policy_id: str = ""
     policy_name: str = ""
     policy_type: str = ""
-    entity_type: str = ""            # dataset | pipeline | al_session | benchmark_job
+    entity_type: str = ""
     entity_id: str = ""
     entity_name: str = ""
     message: str = ""
@@ -265,8 +264,8 @@ class PolicyViolation:
 @dataclass
 class AuditEvent:
     id: str = field(default_factory=_id)
-    event_type: str = ""             # e.g. dataset.upload, al.train, compliance.pii_scan
-    category: str = ""               # data | pipeline | ml | compliance | marketplace | settings
+    event_type: str = ""
+    category: str = ""
     entity_type: str = ""
     entity_id: str = ""
     entity_name: str = ""
@@ -281,8 +280,8 @@ class AnonymizationJob:
     source_dataset_id: str = ""
     output_dataset_id: Optional[str] = None
     output_name: str = ""
-    column_configs: list = field(default_factory=list)  # [{column, method, params}]
-    status: str = "pending"          # pending | running | complete | failed
+    column_configs: list = field(default_factory=list)
+    status: str = "pending"
     rows_processed: int = 0
     row_count: int = 0
     columns_transformed: int = 0
@@ -294,9 +293,9 @@ class AnonymizationJob:
 @dataclass
 class ComplianceReport:
     id: str = field(default_factory=_id)
-    framework: str = ""              # gdpr | ccpa | hipaa | general | custom
+    framework: str = ""
     sections: list = field(default_factory=list)
-    status: str = "pending"          # pending | complete | failed
+    status: str = "pending"
     entity_count: int = 0
     findings_count: int = 0
     violation_count: int = 0
@@ -318,620 +317,614 @@ class CleaningRecord:
 
 
 DEFAULT_SETTINGS: dict = {
-    # General
     "app_name": "Datrix",
     "date_format": "YYYY-MM-DD",
     "table_page_size": 50,
-    # Storage
     "max_upload_mb": 10240,
     "allowed_extensions": [".csv", ".json", ".jsonl", ".parquet", ".xlsx", ".xls"],
-    # Active Learning defaults
     "al_default_batch_size": 20,
     "al_default_model_type": "random_forest",
     "al_default_sampling_strategy": "entropy",
     "al_default_max_rounds": 10,
     "al_default_target_accuracy": None,
-    # Benchmark defaults
     "benchmark_default_eval_protocol": "kfold_5",
     "benchmark_default_preset": "default",
     "benchmark_default_task_type": "classification",
-    # Synthetic defaults
     "synthetic_default_method": "statistical",
     "synthetic_default_row_count": 1000,
-    # Pipeline defaults
     "pipeline_default_output_format": "csv",
-    # Export defaults
     "export_default_format": "csv",
 }
 
 
-def _load_db() -> dict:
-    if DB_PATH.exists():
-        try:
-            return json.loads(DB_PATH.read_text(encoding="utf-8"))
-        except Exception:
-            pass
-    return {
-        "datasets": {}, "scans": {}, "column_profiles": {},
-        "cleaning_records": {}, "pipelines": {}, "pipeline_runs": {},
-        "synthetic_jobs": {}, "trained_models": {}, "al_sessions": {},
-        "benchmark_jobs": {}, "marketplace_assets": {},
-        "marketplace_reviews": {}, "marketplace_installs": {},
-        "compliance_scans": {}, "compliance_policies": {},
-        "policy_violations": {}, "audit_events": [],
-        "anonymization_jobs": {}, "compliance_reports": {},
-        "settings": {},
-    }
+# ── ORM ↔ dataclass conversion helpers ───────────────────────────────────────
+
+def _dc(cls, obj):
+    """Convert an ORM row to a dataclass instance, respecting default_factory."""
+    cols = {c.key: getattr(obj, c.key) for c in obj.__table__.columns}
+    # AuditEventORM stores metadata as event_metadata attribute
+    if hasattr(obj, "event_metadata") and "event_metadata" in cols:
+        cols["metadata"] = cols.pop("event_metadata")
+    result = {}
+    for f in dataclasses.fields(cls):
+        val = cols.get(f.name)
+        if val is None and f.default_factory is not dataclasses.MISSING:  # type: ignore[misc]
+            val = f.default_factory()
+        result[f.name] = val
+    return cls(**result)
 
 
-def _save_db(data: dict) -> None:
-    tmp = DB_PATH.with_suffix(".tmp")
-    tmp.write_text(json.dumps(data, default=str), encoding="utf-8")
-    tmp.replace(DB_PATH)
+def _set(orm_obj, dc_obj) -> None:
+    """Copy dataclass fields onto an ORM object in place."""
+    d = dataclasses.asdict(dc_obj)
+    for col in orm_obj.__table__.columns:
+        attr = col.key  # respects rename (event_metadata → "metadata" column)
+        # reverse the metadata rename
+        dc_key = "metadata" if attr == "event_metadata" else attr
+        if dc_key in d:
+            setattr(orm_obj, attr, d[dc_key])
 
+
+def _new_orm(orm_cls, dc_obj):
+    """Create a new ORM instance from a dataclass."""
+    orm = orm_cls.__new__(orm_cls)
+    orm_cls.__init__(orm)
+    _set(orm, dc_obj)
+    return orm
+
+
+# ── Store ─────────────────────────────────────────────────────────────────────
 
 class Store:
-    def __init__(self):
-        self._lock = threading.Lock()
-        raw = _load_db()
-
-        self.datasets: dict[str, Dataset] = {
-            k: Dataset(**v) for k, v in raw.get("datasets", {}).items()
-        }
-        self.scans: dict[str, QualityScan] = {
-            k: QualityScan(**v) for k, v in raw.get("scans", {}).items()
-        }
-        self.column_profiles: dict[str, list[ColumnProfile]] = {
-            k: [ColumnProfile(**p) for p in v]
-            for k, v in raw.get("column_profiles", {}).items()
-        }
-        self.cleaning_records: dict[str, CleaningRecord] = {
-            k: CleaningRecord(**v) for k, v in raw.get("cleaning_records", {}).items()
-        }
-        self.pipelines: dict[str, Pipeline] = {
-            k: Pipeline(**v) for k, v in raw.get("pipelines", {}).items()
-        }
-        self.pipeline_runs: dict[str, PipelineRun] = {
-            k: PipelineRun(**v) for k, v in raw.get("pipeline_runs", {}).items()
-        }
-        self.synthetic_jobs: dict[str, SyntheticJob] = {
-            k: SyntheticJob(**v) for k, v in raw.get("synthetic_jobs", {}).items()
-        }
-        self.trained_models: dict[str, TrainedModel] = {
-            k: TrainedModel(**v) for k, v in raw.get("trained_models", {}).items()
-        }
-        self.al_sessions: dict[str, ALSession] = {
-            k: ALSession(**v) for k, v in raw.get("al_sessions", {}).items()
-        }
-        self.benchmark_jobs: dict[str, BenchmarkJob] = {
-            k: BenchmarkJob(**v) for k, v in raw.get("benchmark_jobs", {}).items()
-        }
-        self.marketplace_assets: dict[str, MarketplaceAsset] = {
-            k: MarketplaceAsset(**v) for k, v in raw.get("marketplace_assets", {}).items()
-        }
-        self.marketplace_reviews: dict[str, MarketplaceReview] = {
-            k: MarketplaceReview(**v) for k, v in raw.get("marketplace_reviews", {}).items()
-        }
-        self.marketplace_installs: dict[str, MarketplaceInstall] = {
-            k: MarketplaceInstall(**v) for k, v in raw.get("marketplace_installs", {}).items()
-        }
-        self.compliance_scans: dict[str, ComplianceScan] = {
-            k: ComplianceScan(**v) for k, v in raw.get("compliance_scans", {}).items()
-        }
-        self.compliance_policies: dict[str, CompliancePolicy] = {
-            k: CompliancePolicy(**v) for k, v in raw.get("compliance_policies", {}).items()
-        }
-        self.policy_violations: dict[str, PolicyViolation] = {
-            k: PolicyViolation(**v) for k, v in raw.get("policy_violations", {}).items()
-        }
-        self.audit_events: list[AuditEvent] = [
-            AuditEvent(**e) for e in raw.get("audit_events", [])
-        ]
-        self.anonymization_jobs: dict[str, AnonymizationJob] = {
-            k: AnonymizationJob(**v) for k, v in raw.get("anonymization_jobs", {}).items()
-        }
-        self.compliance_reports: dict[str, ComplianceReport] = {
-            k: ComplianceReport(**v) for k, v in raw.get("compliance_reports", {}).items()
-        }
-        saved = raw.get("settings", {})
-        self.settings: dict = {**DEFAULT_SETTINGS, **saved}
-
-    def _persist(self) -> None:
-        data = {
-            "datasets": {k: asdict(v) for k, v in self.datasets.items()},
-            "scans": {k: asdict(v) for k, v in self.scans.items()},
-            "column_profiles": {
-                k: [asdict(p) for p in v]
-                for k, v in self.column_profiles.items()
-            },
-            "cleaning_records": {k: asdict(v) for k, v in self.cleaning_records.items()},
-            "pipelines": {k: asdict(v) for k, v in self.pipelines.items()},
-            "pipeline_runs": {k: asdict(v) for k, v in self.pipeline_runs.items()},
-            "synthetic_jobs": {k: asdict(v) for k, v in self.synthetic_jobs.items()},
-            "trained_models": {k: asdict(v) for k, v in self.trained_models.items()},
-            "al_sessions": {k: asdict(v) for k, v in self.al_sessions.items()},
-            "benchmark_jobs": {k: asdict(v) for k, v in self.benchmark_jobs.items()},
-            "marketplace_assets": {k: asdict(v) for k, v in self.marketplace_assets.items()},
-            "marketplace_reviews": {k: asdict(v) for k, v in self.marketplace_reviews.items()},
-            "marketplace_installs": {k: asdict(v) for k, v in self.marketplace_installs.items()},
-            "compliance_scans": {k: asdict(v) for k, v in self.compliance_scans.items()},
-            "compliance_policies": {k: asdict(v) for k, v in self.compliance_policies.items()},
-            "policy_violations": {k: asdict(v) for k, v in self.policy_violations.items()},
-            "audit_events": [asdict(e) for e in self.audit_events[-10000:]],
-            "anonymization_jobs": {k: asdict(v) for k, v in self.anonymization_jobs.items()},
-            "compliance_reports": {k: asdict(v) for k, v in self.compliance_reports.items()},
-            "settings": self.settings,
-        }
-        _save_db(data)
+    """SQLAlchemy-backed store. Same public API as the original flat-file store."""
 
     # ── Datasets ──────────────────────────────────────────────────────
 
     def add_dataset(self, ds: Dataset) -> Dataset:
-        with self._lock:
-            self.datasets[ds.id] = ds
-            self._persist()
+        with db_session() as db:
+            db.add(_new_orm(M.DatasetORM, ds))
         return ds
 
     def update_dataset(self, ds: Dataset) -> Dataset:
-        with self._lock:
-            ds.updated_at = _now()
-            self.datasets[ds.id] = ds
-            self._persist()
+        ds.updated_at = _now()
+        with db_session() as db:
+            obj = db.query(M.DatasetORM).filter_by(id=ds.id).first()
+            if obj:
+                _set(obj, ds)
         return ds
 
     def get_dataset(self, id: str) -> Optional[Dataset]:
-        return self.datasets.get(id)
+        with db_session() as db:
+            obj = db.query(M.DatasetORM).filter_by(id=id).first()
+            return _dc(Dataset, obj) if obj else None
 
     def list_datasets(self) -> list[Dataset]:
-        return sorted(self.datasets.values(), key=lambda d: d.created_at, reverse=True)
+        with db_session() as db:
+            rows = db.query(M.DatasetORM).order_by(M.DatasetORM.created_at.desc()).all()
+            return [_dc(Dataset, r) for r in rows]
 
     def delete_dataset(self, id: str) -> None:
-        with self._lock:
-            self.datasets.pop(id, None)
-            self.column_profiles.pop(id, None)
-            # Remove associated scans
-            to_del = [sid for sid, s in self.scans.items() if s.dataset_id == id]
-            for sid in to_del:
-                self.scans.pop(sid, None)
-            self._persist()
+        with db_session() as db:
+            db.query(M.DatasetORM).filter_by(id=id).delete()
+            db.query(M.ColumnProfileSetORM).filter_by(dataset_id=id).delete()
+            db.query(M.QualityScanORM).filter_by(dataset_id=id).delete()
 
     # ── Scans ─────────────────────────────────────────────────────────
 
     def add_scan(self, scan: QualityScan) -> QualityScan:
-        with self._lock:
-            self.scans[scan.id] = scan
-            self._persist()
+        with db_session() as db:
+            db.add(_new_orm(M.QualityScanORM, scan))
         return scan
 
     def update_scan(self, scan: QualityScan) -> QualityScan:
-        with self._lock:
-            self.scans[scan.id] = scan
-            self._persist()
+        with db_session() as db:
+            obj = db.query(M.QualityScanORM).filter_by(id=scan.id).first()
+            if obj:
+                _set(obj, scan)
         return scan
 
     def get_scan(self, id: str) -> Optional[QualityScan]:
-        return self.scans.get(id)
+        with db_session() as db:
+            obj = db.query(M.QualityScanORM).filter_by(id=id).first()
+            return _dc(QualityScan, obj) if obj else None
 
     def get_latest_scan(self, dataset_id: str) -> Optional[QualityScan]:
-        scans = [s for s in self.scans.values() if s.dataset_id == dataset_id]
-        if not scans:
-            return None
-        return max(scans, key=lambda s: s.created_at)
+        with db_session() as db:
+            obj = (db.query(M.QualityScanORM)
+                   .filter_by(dataset_id=dataset_id)
+                   .order_by(M.QualityScanORM.created_at.desc())
+                   .first())
+            return _dc(QualityScan, obj) if obj else None
 
     def list_scans(self, dataset_id: str) -> list[QualityScan]:
-        scans = [s for s in self.scans.values() if s.dataset_id == dataset_id]
-        return sorted(scans, key=lambda s: s.created_at)
+        with db_session() as db:
+            rows = (db.query(M.QualityScanORM)
+                    .filter_by(dataset_id=dataset_id)
+                    .order_by(M.QualityScanORM.created_at)
+                    .all())
+            return [_dc(QualityScan, r) for r in rows]
 
     # ── Column profiles ───────────────────────────────────────────────
 
     def set_column_profiles(self, dataset_id: str, profiles: list[ColumnProfile]) -> None:
-        with self._lock:
-            self.column_profiles[dataset_id] = profiles
-            self._persist()
+        data = [dataclasses.asdict(p) for p in profiles]
+        with db_session() as db:
+            obj = db.query(M.ColumnProfileSetORM).filter_by(dataset_id=dataset_id).first()
+            if obj:
+                obj.profiles = data
+            else:
+                db.add(M.ColumnProfileSetORM(dataset_id=dataset_id, profiles=data))
 
     def get_column_profiles(self, dataset_id: str) -> list[ColumnProfile]:
-        return self.column_profiles.get(dataset_id, [])
+        with db_session() as db:
+            obj = db.query(M.ColumnProfileSetORM).filter_by(dataset_id=dataset_id).first()
+            if not obj:
+                return []
+            return [ColumnProfile(**p) for p in (obj.profiles or [])]
 
-    # ── Cleaning ──────────────────────────────────────────────────────
+    # ── Cleaning records ──────────────────────────────────────────────
 
     def add_cleaning_record(self, rec: CleaningRecord) -> CleaningRecord:
-        with self._lock:
-            self.cleaning_records[rec.id] = rec
-            self._persist()
+        with db_session() as db:
+            db.add(_new_orm(M.CleaningRecordORM, rec))
         return rec
 
     def get_cleaning_records(self, dataset_id: str) -> list[CleaningRecord]:
-        return [r for r in self.cleaning_records.values() if r.dataset_id == dataset_id]
+        with db_session() as db:
+            rows = db.query(M.CleaningRecordORM).filter_by(dataset_id=dataset_id).all()
+            return [_dc(CleaningRecord, r) for r in rows]
 
     # ── Pipelines ─────────────────────────────────────────────────────
 
     def add_pipeline(self, p: Pipeline) -> Pipeline:
-        with self._lock:
-            self.pipelines[p.id] = p
-            self._persist()
+        with db_session() as db:
+            db.add(_new_orm(M.PipelineORM, p))
         return p
 
     def update_pipeline(self, p: Pipeline) -> Pipeline:
-        with self._lock:
-            p.updated_at = _now()
-            self.pipelines[p.id] = p
-            self._persist()
+        p.updated_at = _now()
+        with db_session() as db:
+            obj = db.query(M.PipelineORM).filter_by(id=p.id).first()
+            if obj:
+                _set(obj, p)
         return p
 
     def get_pipeline(self, id: str) -> Optional[Pipeline]:
-        return self.pipelines.get(id)
+        with db_session() as db:
+            obj = db.query(M.PipelineORM).filter_by(id=id).first()
+            return _dc(Pipeline, obj) if obj else None
 
     def list_pipelines(self) -> list[Pipeline]:
-        return sorted(self.pipelines.values(), key=lambda p: p.created_at, reverse=True)
+        with db_session() as db:
+            rows = db.query(M.PipelineORM).order_by(M.PipelineORM.created_at.desc()).all()
+            return [_dc(Pipeline, r) for r in rows]
 
     def delete_pipeline(self, id: str) -> None:
-        with self._lock:
-            self.pipelines.pop(id, None)
-            to_del = [rid for rid, r in self.pipeline_runs.items() if r.pipeline_id == id]
-            for rid in to_del:
-                self.pipeline_runs.pop(rid, None)
-            self._persist()
+        with db_session() as db:
+            db.query(M.PipelineORM).filter_by(id=id).delete()
+            db.query(M.PipelineRunORM).filter_by(pipeline_id=id).delete()
 
     # ── Pipeline runs ─────────────────────────────────────────────────
 
     def add_pipeline_run(self, r: PipelineRun) -> PipelineRun:
-        with self._lock:
-            self.pipeline_runs[r.id] = r
-            self._persist()
+        with db_session() as db:
+            db.add(_new_orm(M.PipelineRunORM, r))
         return r
 
     def update_pipeline_run(self, r: PipelineRun) -> PipelineRun:
-        with self._lock:
-            self.pipeline_runs[r.id] = r
-            self._persist()
+        with db_session() as db:
+            obj = db.query(M.PipelineRunORM).filter_by(id=r.id).first()
+            if obj:
+                _set(obj, r)
         return r
 
     def get_pipeline_run(self, id: str) -> Optional[PipelineRun]:
-        return self.pipeline_runs.get(id)
+        with db_session() as db:
+            obj = db.query(M.PipelineRunORM).filter_by(id=id).first()
+            return _dc(PipelineRun, obj) if obj else None
 
     def list_pipeline_runs(self, pipeline_id: str) -> list[PipelineRun]:
-        runs = [r for r in self.pipeline_runs.values() if r.pipeline_id == pipeline_id]
-        return sorted(runs, key=lambda r: r.created_at, reverse=True)
+        with db_session() as db:
+            rows = (db.query(M.PipelineRunORM)
+                    .filter_by(pipeline_id=pipeline_id)
+                    .order_by(M.PipelineRunORM.created_at.desc())
+                    .all())
+            return [_dc(PipelineRun, r) for r in rows]
 
+    def list_all_pipeline_runs(self) -> list[PipelineRun]:
+        with db_session() as db:
+            rows = db.query(M.PipelineRunORM).order_by(M.PipelineRunORM.created_at.desc()).all()
+            return [_dc(PipelineRun, r) for r in rows]
 
     # ── Active learning sessions ──────────────────────────────────────
 
     def add_al_session(self, s: ALSession) -> ALSession:
-        with self._lock:
-            self.al_sessions[s.id] = s
-            self._persist()
+        with db_session() as db:
+            db.add(_new_orm(M.ALSessionORM, s))
         return s
 
     def update_al_session(self, s: ALSession) -> ALSession:
-        with self._lock:
-            s.updated_at = _now()
-            self.al_sessions[s.id] = s
-            self._persist()
+        s.updated_at = _now()
+        with db_session() as db:
+            obj = db.query(M.ALSessionORM).filter_by(id=s.id).first()
+            if obj:
+                _set(obj, s)
         return s
 
     def get_al_session(self, id: str) -> Optional[ALSession]:
-        return self.al_sessions.get(id)
+        with db_session() as db:
+            obj = db.query(M.ALSessionORM).filter_by(id=id).first()
+            return _dc(ALSession, obj) if obj else None
 
     def list_al_sessions(self) -> list[ALSession]:
-        return sorted(self.al_sessions.values(), key=lambda s: s.created_at, reverse=True)
+        with db_session() as db:
+            rows = db.query(M.ALSessionORM).order_by(M.ALSessionORM.created_at.desc()).all()
+            return [_dc(ALSession, r) for r in rows]
 
     def delete_al_session(self, id: str) -> None:
-        with self._lock:
-            self.al_sessions.pop(id, None)
-            self._persist()
+        with db_session() as db:
+            db.query(M.ALSessionORM).filter_by(id=id).delete()
 
     # ── Trained models ────────────────────────────────────────────────
 
     def add_trained_model(self, m: TrainedModel) -> TrainedModel:
-        with self._lock:
-            self.trained_models[m.id] = m
-            self._persist()
+        with db_session() as db:
+            db.add(_new_orm(M.TrainedModelORM, m))
         return m
 
     def update_trained_model(self, m: TrainedModel) -> TrainedModel:
-        with self._lock:
-            self.trained_models[m.id] = m
-            self._persist()
+        with db_session() as db:
+            obj = db.query(M.TrainedModelORM).filter_by(id=m.id).first()
+            if obj:
+                _set(obj, m)
         return m
 
     def get_trained_model(self, id: str) -> Optional[TrainedModel]:
-        return self.trained_models.get(id)
+        with db_session() as db:
+            obj = db.query(M.TrainedModelORM).filter_by(id=id).first()
+            return _dc(TrainedModel, obj) if obj else None
 
     def find_trained_model(self, dataset_id: str, method: str) -> Optional[TrainedModel]:
-        candidates = [
-            m for m in self.trained_models.values()
-            if m.dataset_id == dataset_id and m.method == method and m.status == "ready"
-        ]
-        return max(candidates, key=lambda m: m.created_at) if candidates else None
+        with db_session() as db:
+            obj = (db.query(M.TrainedModelORM)
+                   .filter_by(dataset_id=dataset_id, method=method, status="ready")
+                   .order_by(M.TrainedModelORM.created_at.desc())
+                   .first())
+            return _dc(TrainedModel, obj) if obj else None
 
     def list_trained_models(self) -> list[TrainedModel]:
-        return sorted(self.trained_models.values(), key=lambda m: m.created_at, reverse=True)
+        with db_session() as db:
+            rows = db.query(M.TrainedModelORM).order_by(M.TrainedModelORM.created_at.desc()).all()
+            return [_dc(TrainedModel, r) for r in rows]
 
     def delete_trained_model(self, id: str) -> None:
-        with self._lock:
-            self.trained_models.pop(id, None)
-            self._persist()
+        with db_session() as db:
+            db.query(M.TrainedModelORM).filter_by(id=id).delete()
 
     # ── Synthetic jobs ────────────────────────────────────────────────
 
     def add_synthetic_job(self, j: SyntheticJob) -> SyntheticJob:
-        with self._lock:
-            self.synthetic_jobs[j.id] = j
-            self._persist()
+        with db_session() as db:
+            db.add(_new_orm(M.SyntheticJobORM, j))
         return j
 
     def update_synthetic_job(self, j: SyntheticJob) -> SyntheticJob:
-        with self._lock:
-            self.synthetic_jobs[j.id] = j
-            self._persist()
+        with db_session() as db:
+            obj = db.query(M.SyntheticJobORM).filter_by(id=j.id).first()
+            if obj:
+                _set(obj, j)
         return j
 
     def get_synthetic_job(self, id: str) -> Optional[SyntheticJob]:
-        return self.synthetic_jobs.get(id)
+        with db_session() as db:
+            obj = db.query(M.SyntheticJobORM).filter_by(id=id).first()
+            return _dc(SyntheticJob, obj) if obj else None
 
     def list_synthetic_jobs(self) -> list[SyntheticJob]:
-        return sorted(self.synthetic_jobs.values(), key=lambda j: j.created_at, reverse=True)
-
+        with db_session() as db:
+            rows = db.query(M.SyntheticJobORM).order_by(M.SyntheticJobORM.created_at.desc()).all()
+            return [_dc(SyntheticJob, r) for r in rows]
 
     # ── Marketplace ───────────────────────────────────────────────────
 
-    def add_marketplace_asset(self, a) -> object:
-        with self._lock:
-            self.marketplace_assets[a.id] = a
-            self._persist()
+    def add_marketplace_asset(self, a: MarketplaceAsset) -> MarketplaceAsset:
+        with db_session() as db:
+            db.add(_new_orm(M.MarketplaceAssetORM, a))
         return a
 
-    def update_marketplace_asset(self, a) -> object:
-        with self._lock:
-            a.updated_at = _now()
-            self.marketplace_assets[a.id] = a
-            self._persist()
+    def update_marketplace_asset(self, a: MarketplaceAsset) -> MarketplaceAsset:
+        a.updated_at = _now()
+        with db_session() as db:
+            obj = db.query(M.MarketplaceAssetORM).filter_by(id=a.id).first()
+            if obj:
+                _set(obj, a)
         return a
 
-    def get_marketplace_asset(self, id: str) -> Optional[object]:
-        return self.marketplace_assets.get(id)
+    def get_marketplace_asset(self, id: str) -> Optional[MarketplaceAsset]:
+        with db_session() as db:
+            obj = db.query(M.MarketplaceAssetORM).filter_by(id=id).first()
+            return _dc(MarketplaceAsset, obj) if obj else None
 
-    def list_marketplace_assets(self) -> list:
-        return sorted(self.marketplace_assets.values(), key=lambda a: a.created_at, reverse=True)
+    def list_marketplace_assets(self) -> list[MarketplaceAsset]:
+        with db_session() as db:
+            rows = db.query(M.MarketplaceAssetORM).order_by(M.MarketplaceAssetORM.created_at.desc()).all()
+            return [_dc(MarketplaceAsset, r) for r in rows]
 
     def delete_marketplace_asset(self, id: str) -> None:
-        with self._lock:
-            self.marketplace_assets.pop(id, None)
-            self._persist()
+        with db_session() as db:
+            db.query(M.MarketplaceAssetORM).filter_by(id=id).delete()
 
-    def add_marketplace_review(self, r) -> object:
-        with self._lock:
-            self.marketplace_reviews[r.id] = r
-            self._persist()
+    def add_marketplace_review(self, r: MarketplaceReview) -> MarketplaceReview:
+        with db_session() as db:
+            db.add(_new_orm(M.MarketplaceReviewORM, r))
         return r
 
-    def list_marketplace_reviews(self, asset_id: str) -> list:
-        return sorted(
-            [r for r in self.marketplace_reviews.values() if r.asset_id == asset_id],
-            key=lambda r: r.created_at, reverse=True,
-        )
+    def list_marketplace_reviews(self, asset_id: str) -> list[MarketplaceReview]:
+        with db_session() as db:
+            rows = (db.query(M.MarketplaceReviewORM)
+                    .filter_by(asset_id=asset_id)
+                    .order_by(M.MarketplaceReviewORM.created_at.desc())
+                    .all())
+            return [_dc(MarketplaceReview, r) for r in rows]
 
-    def add_marketplace_install(self, i) -> object:
-        with self._lock:
-            self.marketplace_installs[i.id] = i
-            self._persist()
+    def add_marketplace_install(self, i: MarketplaceInstall) -> MarketplaceInstall:
+        with db_session() as db:
+            db.add(_new_orm(M.MarketplaceInstallORM, i))
         return i
 
-    def list_marketplace_installs(self) -> list:
-        return sorted(self.marketplace_installs.values(), key=lambda i: i.installed_at, reverse=True)
+    def list_marketplace_installs(self) -> list[MarketplaceInstall]:
+        with db_session() as db:
+            rows = db.query(M.MarketplaceInstallORM).order_by(M.MarketplaceInstallORM.installed_at.desc()).all()
+            return [_dc(MarketplaceInstall, r) for r in rows]
 
     # ── Benchmark jobs ────────────────────────────────────────────────
 
     def add_benchmark_job(self, j: BenchmarkJob) -> BenchmarkJob:
-        with self._lock:
-            self.benchmark_jobs[j.id] = j
-            self._persist()
+        with db_session() as db:
+            db.add(_new_orm(M.BenchmarkJobORM, j))
         return j
 
     def update_benchmark_job(self, j: BenchmarkJob) -> BenchmarkJob:
-        with self._lock:
-            self.benchmark_jobs[j.id] = j
-            self._persist()
+        with db_session() as db:
+            obj = db.query(M.BenchmarkJobORM).filter_by(id=j.id).first()
+            if obj:
+                _set(obj, j)
         return j
 
     def patch_benchmark_result(self, job_id: str, candidate_id: str, **kwargs) -> None:
-        with self._lock:
-            job = self.benchmark_jobs.get(job_id)
-            if not job:
+        with db_session() as db:
+            obj = db.query(M.BenchmarkJobORM).filter_by(id=job_id).first()
+            if not obj:
                 return
-            for i, r in enumerate(job.results):
-                if r.get('candidate_id') == candidate_id:
-                    job.results[i] = {**r, **kwargs}
+            results = list(obj.results or [])
+            for i, r in enumerate(results):
+                if r.get("candidate_id") == candidate_id:
+                    results[i] = {**r, **kwargs}
                     break
-            self._persist()
+            obj.results = results
 
     def get_benchmark_job(self, id: str) -> Optional[BenchmarkJob]:
-        return self.benchmark_jobs.get(id)
+        with db_session() as db:
+            obj = db.query(M.BenchmarkJobORM).filter_by(id=id).first()
+            return _dc(BenchmarkJob, obj) if obj else None
 
     def list_benchmark_jobs(self) -> list[BenchmarkJob]:
-        return sorted(self.benchmark_jobs.values(), key=lambda j: j.created_at, reverse=True)
+        with db_session() as db:
+            rows = db.query(M.BenchmarkJobORM).order_by(M.BenchmarkJobORM.created_at.desc()).all()
+            return [_dc(BenchmarkJob, r) for r in rows]
 
     def delete_benchmark_job(self, id: str) -> None:
-        with self._lock:
-            self.benchmark_jobs.pop(id, None)
-            self._persist()
+        with db_session() as db:
+            db.query(M.BenchmarkJobORM).filter_by(id=id).delete()
 
     # ── Compliance scans ──────────────────────────────────────────────
 
     def add_compliance_scan(self, s: ComplianceScan) -> ComplianceScan:
-        with self._lock:
-            self.compliance_scans[s.id] = s
-            self._persist()
+        with db_session() as db:
+            db.add(_new_orm(M.ComplianceScanORM, s))
         return s
 
     def update_compliance_scan(self, s: ComplianceScan) -> ComplianceScan:
-        with self._lock:
-            self.compliance_scans[s.id] = s
-            self._persist()
+        with db_session() as db:
+            obj = db.query(M.ComplianceScanORM).filter_by(id=s.id).first()
+            if obj:
+                _set(obj, s)
         return s
 
     def get_compliance_scan(self, id: str) -> Optional[ComplianceScan]:
-        return self.compliance_scans.get(id)
+        with db_session() as db:
+            obj = db.query(M.ComplianceScanORM).filter_by(id=id).first()
+            return _dc(ComplianceScan, obj) if obj else None
 
     def get_latest_compliance_scan(self, dataset_id: str) -> Optional[ComplianceScan]:
-        scans = [s for s in self.compliance_scans.values()
-                 if s.dataset_id == dataset_id and s.status == 'complete']
-        return max(scans, key=lambda s: s.scanned_at or '') if scans else None
+        with db_session() as db:
+            obj = (db.query(M.ComplianceScanORM)
+                   .filter(M.ComplianceScanORM.dataset_id == dataset_id,
+                           M.ComplianceScanORM.status == "complete")
+                   .order_by(M.ComplianceScanORM.scanned_at.desc())
+                   .first())
+            return _dc(ComplianceScan, obj) if obj else None
 
     def list_compliance_scans(self) -> list[ComplianceScan]:
-        return sorted(self.compliance_scans.values(), key=lambda s: s.created_at, reverse=True)
+        with db_session() as db:
+            rows = db.query(M.ComplianceScanORM).order_by(M.ComplianceScanORM.created_at.desc()).all()
+            return [_dc(ComplianceScan, r) for r in rows]
 
     # ── Compliance policies ───────────────────────────────────────────
 
     def add_compliance_policy(self, p: CompliancePolicy) -> CompliancePolicy:
-        with self._lock:
-            self.compliance_policies[p.id] = p
-            self._persist()
+        with db_session() as db:
+            db.add(_new_orm(M.CompliancePolicyORM, p))
         return p
 
     def update_compliance_policy(self, p: CompliancePolicy) -> CompliancePolicy:
-        with self._lock:
-            p.updated_at = _now()
-            self.compliance_policies[p.id] = p
-            self._persist()
+        p.updated_at = _now()
+        with db_session() as db:
+            obj = db.query(M.CompliancePolicyORM).filter_by(id=p.id).first()
+            if obj:
+                _set(obj, p)
         return p
 
     def get_compliance_policy(self, id: str) -> Optional[CompliancePolicy]:
-        return self.compliance_policies.get(id)
+        with db_session() as db:
+            obj = db.query(M.CompliancePolicyORM).filter_by(id=id).first()
+            return _dc(CompliancePolicy, obj) if obj else None
 
     def list_compliance_policies(self) -> list[CompliancePolicy]:
-        return sorted(self.compliance_policies.values(), key=lambda p: p.created_at)
+        with db_session() as db:
+            rows = db.query(M.CompliancePolicyORM).order_by(M.CompliancePolicyORM.created_at).all()
+            return [_dc(CompliancePolicy, r) for r in rows]
 
     def delete_compliance_policy(self, id: str) -> None:
-        with self._lock:
-            self.compliance_policies.pop(id, None)
-            to_del = [vid for vid, v in self.policy_violations.items() if v.policy_id == id]
-            for vid in to_del:
-                self.policy_violations.pop(vid, None)
-            self._persist()
+        with db_session() as db:
+            db.query(M.CompliancePolicyORM).filter_by(id=id).delete()
+            db.query(M.PolicyViolationORM).filter_by(policy_id=id).delete()
 
     # ── Policy violations ─────────────────────────────────────────────
 
     def upsert_violations(self, violations: list[PolicyViolation]) -> None:
-        with self._lock:
+        with db_session() as db:
             for v in violations:
-                self.policy_violations[v.id] = v
-            self._persist()
+                obj = db.query(M.PolicyViolationORM).filter_by(id=v.id).first()
+                if obj:
+                    _set(obj, v)
+                else:
+                    db.add(_new_orm(M.PolicyViolationORM, v))
 
     def clear_violations_for_policy(self, policy_id: str) -> None:
-        with self._lock:
-            to_del = [vid for vid, v in self.policy_violations.items() if v.policy_id == policy_id]
-            for vid in to_del:
-                self.policy_violations.pop(vid, None)
-            self._persist()
+        with db_session() as db:
+            db.query(M.PolicyViolationORM).filter_by(policy_id=policy_id).delete()
 
     def resolve_violation(self, id: str) -> Optional[PolicyViolation]:
-        with self._lock:
-            v = self.policy_violations.get(id)
-            if v:
-                v.resolved = True
-                v.resolved_at = _now()
-                self._persist()
-        return v
+        with db_session() as db:
+            obj = db.query(M.PolicyViolationORM).filter_by(id=id).first()
+            if not obj:
+                return None
+            obj.resolved = True
+            obj.resolved_at = _now()
+            return _dc(PolicyViolation, obj)
 
     def list_violations(self, resolved: bool = False) -> list[PolicyViolation]:
-        return sorted(
-            [v for v in self.policy_violations.values() if v.resolved == resolved],
-            key=lambda v: v.detected_at, reverse=True,
-        )
+        with db_session() as db:
+            rows = (db.query(M.PolicyViolationORM)
+                    .filter_by(resolved=resolved)
+                    .order_by(M.PolicyViolationORM.detected_at.desc())
+                    .all())
+            return [_dc(PolicyViolation, r) for r in rows]
 
     # ── Audit events ──────────────────────────────────────────────────
 
     def add_audit_event(self, e: AuditEvent) -> AuditEvent:
-        with self._lock:
-            self.audit_events.append(e)
-            if len(self.audit_events) > 10000:
-                self.audit_events = self.audit_events[-10000:]
-            self._persist()
+        with db_session() as db:
+            db.add(_new_orm(M.AuditEventORM, e))
         return e
 
     def list_audit_events(self, category: Optional[str] = None, event_type: Optional[str] = None,
                           entity_name: Optional[str] = None, limit: int = 100, offset: int = 0) -> list[AuditEvent]:
-        events = list(reversed(self.audit_events))
-        if category:
-            events = [e for e in events if e.category == category]
-        if event_type:
-            events = [e for e in events if e.event_type == event_type]
-        if entity_name:
-            nl = entity_name.lower()
-            events = [e for e in events if nl in e.entity_name.lower()]
-        return events[offset:offset + limit]
+        with db_session() as db:
+            q = db.query(M.AuditEventORM).order_by(M.AuditEventORM.created_at.desc())
+            if category:
+                q = q.filter(M.AuditEventORM.category == category)
+            if event_type:
+                q = q.filter(M.AuditEventORM.event_type == event_type)
+            if entity_name:
+                q = q.filter(M.AuditEventORM.entity_name.ilike(f"%{entity_name}%"))
+            rows = q.offset(offset).limit(limit).all()
+            return [_dc(AuditEvent, r) for r in rows]
 
     def count_audit_events(self, since_iso: Optional[str] = None) -> int:
-        if since_iso:
-            return sum(1 for e in self.audit_events if e.created_at >= since_iso)
-        return len(self.audit_events)
+        with db_session() as db:
+            q = db.query(M.AuditEventORM)
+            if since_iso:
+                q = q.filter(M.AuditEventORM.created_at >= since_iso)
+            return q.count()
 
     # ── Anonymization jobs ────────────────────────────────────────────
 
     def add_anonymization_job(self, j: AnonymizationJob) -> AnonymizationJob:
-        with self._lock:
-            self.anonymization_jobs[j.id] = j
-            self._persist()
+        with db_session() as db:
+            db.add(_new_orm(M.AnonymizationJobORM, j))
         return j
 
     def update_anonymization_job(self, j: AnonymizationJob) -> AnonymizationJob:
-        with self._lock:
-            self.anonymization_jobs[j.id] = j
-            self._persist()
+        with db_session() as db:
+            obj = db.query(M.AnonymizationJobORM).filter_by(id=j.id).first()
+            if obj:
+                _set(obj, j)
         return j
 
     def get_anonymization_job(self, id: str) -> Optional[AnonymizationJob]:
-        return self.anonymization_jobs.get(id)
+        with db_session() as db:
+            obj = db.query(M.AnonymizationJobORM).filter_by(id=id).first()
+            return _dc(AnonymizationJob, obj) if obj else None
 
     def list_anonymization_jobs(self) -> list[AnonymizationJob]:
-        return sorted(self.anonymization_jobs.values(), key=lambda j: j.created_at, reverse=True)
+        with db_session() as db:
+            rows = db.query(M.AnonymizationJobORM).order_by(M.AnonymizationJobORM.created_at.desc()).all()
+            return [_dc(AnonymizationJob, r) for r in rows]
 
     # ── Compliance reports ────────────────────────────────────────────
 
     def add_compliance_report(self, r: ComplianceReport) -> ComplianceReport:
-        with self._lock:
-            self.compliance_reports[r.id] = r
-            self._persist()
+        with db_session() as db:
+            db.add(_new_orm(M.ComplianceReportORM, r))
         return r
 
     def update_compliance_report(self, r: ComplianceReport) -> ComplianceReport:
-        with self._lock:
-            self.compliance_reports[r.id] = r
-            self._persist()
+        with db_session() as db:
+            obj = db.query(M.ComplianceReportORM).filter_by(id=r.id).first()
+            if obj:
+                _set(obj, r)
         return r
 
     def get_compliance_report(self, id: str) -> Optional[ComplianceReport]:
-        return self.compliance_reports.get(id)
+        with db_session() as db:
+            obj = db.query(M.ComplianceReportORM).filter_by(id=id).first()
+            return _dc(ComplianceReport, obj) if obj else None
 
     def list_compliance_reports(self) -> list[ComplianceReport]:
-        return sorted(self.compliance_reports.values(), key=lambda r: r.created_at, reverse=True)
+        with db_session() as db:
+            rows = db.query(M.ComplianceReportORM).order_by(M.ComplianceReportORM.created_at.desc()).all()
+            return [_dc(ComplianceReport, r) for r in rows]
 
     def delete_compliance_report(self, id: str) -> None:
-        with self._lock:
-            r = self.compliance_reports.pop(id, None)
-            self._persist()
-        if r and r.file_path:
+        with db_session() as db:
+            obj = db.query(M.ComplianceReportORM).filter_by(id=id).first()
+            if obj:
+                file_path = obj.file_path
+                db.delete(obj)
+        if file_path:
             from pathlib import Path
-            Path(r.file_path).unlink(missing_ok=True)
+            Path(file_path).unlink(missing_ok=True)
 
     # ── Settings ──────────────────────────────────────────────────────
 
     def get_settings(self) -> dict:
-        return {**DEFAULT_SETTINGS, **self.settings}
+        with db_session() as db:
+            obj = db.query(M.AppSettingsORM).filter_by(id=1).first()
+            saved = obj.data if obj else {}
+        return {**DEFAULT_SETTINGS, **(saved or {})}
 
     def update_settings(self, patch: dict) -> dict:
-        with self._lock:
+        with db_session() as db:
+            obj = db.query(M.AppSettingsORM).filter_by(id=1).first()
+            current = dict(obj.data) if obj and obj.data else {}
             for k, v in patch.items():
                 if k in DEFAULT_SETTINGS:
-                    self.settings[k] = v
-            self._persist()
+                    current[k] = v
+            if obj:
+                obj.data = current
+            else:
+                db.add(M.AppSettingsORM(id=1, data=current))
         return self.get_settings()
 
     def reset_settings(self) -> dict:
-        with self._lock:
-            self.settings = dict(DEFAULT_SETTINGS)
-            self._persist()
+        with db_session() as db:
+            obj = db.query(M.AppSettingsORM).filter_by(id=1).first()
+            if obj:
+                obj.data = {}
+            else:
+                db.add(M.AppSettingsORM(id=1, data={}))
         return self.get_settings()
 
 

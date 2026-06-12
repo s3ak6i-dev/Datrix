@@ -8,10 +8,13 @@ from pathlib import Path
 from datetime import datetime, timezone
 from typing import Optional
 
-from fastapi import APIRouter, UploadFile, File, HTTPException
+from fastapi import APIRouter, Request, UploadFile, File, HTTPException
 from pydantic import BaseModel, Field
 
-from app.core.config import UPLOADS_DIR, ALLOWED_EXTENSIONS
+import re
+
+from app.core.config import UPLOADS_DIR, ALLOWED_EXTENSIONS, MAX_UPLOAD_BYTES
+from app.core.limiter import limiter
 from app.models.store import store, Dataset, QualityScan, ColumnProfile
 from app.services.ingestion import read_file, infer_schema
 from app.services.quality import run_quality_scan
@@ -179,25 +182,45 @@ def list_datasets():
     return [DatasetOut.from_ds(d) for d in store.list_datasets()]
 
 
+def _safe_filename(raw: str) -> str:
+    """Strip path components and replace unsafe characters."""
+    name = Path(raw).name
+    name = re.sub(r"[^\w\-. ]", "_", name)
+    return name[:200] or "upload"
+
+
 @router.post("/upload", response_model=DatasetOut, status_code=201)
-async def upload_dataset(file: UploadFile = File(...)):
-    suffix = Path(file.filename or "").suffix.lower()
+@limiter.limit("10/minute")
+async def upload_dataset(request: Request, file: UploadFile = File(...)):
+    original_name = file.filename or "upload"
+    safe_name = _safe_filename(original_name)
+    suffix = Path(safe_name).suffix.lower()
     if suffix not in ALLOWED_EXTENSIONS:
         raise HTTPException(400, f"Unsupported file type '{suffix}'. Allowed: {', '.join(ALLOWED_EXTENSIONS)}")
 
-    save_path = UPLOADS_DIR / f"{file.filename}"
-    # Handle name collisions
+    content = await file.read()
+
+    if len(content) > MAX_UPLOAD_BYTES:
+        mb = MAX_UPLOAD_BYTES // (1024 * 1024)
+        raise HTTPException(413, f"File exceeds maximum upload size of {mb} MB")
+
+    if suffix == ".csv":
+        try:
+            content.decode("utf-8")
+        except UnicodeDecodeError:
+            raise HTTPException(400, "CSV file must be UTF-8 encoded")
+
+    save_path = UPLOADS_DIR / safe_name
     counter = 1
+    stem = Path(safe_name).stem
     while save_path.exists():
-        stem = Path(file.filename).stem
         save_path = UPLOADS_DIR / f"{stem}_{counter}{suffix}"
         counter += 1
 
-    content = await file.read()
     save_path.write_bytes(content)
 
     ds = Dataset(
-        name=file.filename or save_path.name,
+        name=save_path.name,
         size_bytes=len(content),
         file_path=str(save_path),
         status="pending",

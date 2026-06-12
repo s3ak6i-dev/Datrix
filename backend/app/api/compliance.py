@@ -7,9 +7,14 @@ import threading
 from pathlib import Path
 from typing import Optional
 
-from fastapi import APIRouter, HTTPException, Query
+import logging
+
+from fastapi import APIRouter, HTTPException, Query, Request
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
+from app.core.limiter import limiter
+
+_log = logging.getLogger(__name__)
 
 from app.models.store import store, CompliancePolicy, AnonymizationJob
 from app.services.audit_logger import log as audit_log
@@ -111,17 +116,19 @@ def get_dashboard():
 # ── PII Scans ─────────────────────────────────────────────────────────
 
 @router.post("/scans/{dataset_id}", status_code=202)
-def trigger_scan(dataset_id: str):
+@limiter.limit("20/minute")
+def trigger_scan(request: Request, dataset_id: str):
     ds = store.get_dataset(dataset_id)
     if not ds:
         raise HTTPException(404, "Dataset not found")
 
     def _run():
-        scan_dataset(dataset_id)
+        try:
+            scan_dataset(dataset_id)
+        except Exception:
+            _log.exception("PII scan failed for dataset %s", dataset_id)
 
-    t = threading.Thread(target=_run, daemon=True)
-    t.start()
-
+    threading.Thread(target=_run, daemon=True).start()
     return {"dataset_id": dataset_id, "status": "scanning", "message": "PII scan started"}
 
 
@@ -157,10 +164,12 @@ def scan_all_datasets():
 
     def _run_all():
         for ds in datasets:
-            scan_dataset(ds.id)
+            try:
+                scan_dataset(ds.id)
+            except Exception:
+                _log.exception("PII scan failed for dataset %s", ds.id)
 
-    t = threading.Thread(target=_run_all, daemon=True)
-    t.start()
+    threading.Thread(target=_run_all, daemon=True).start()
     return {"message": f"Started scanning {len(datasets)} datasets", "count": len(datasets)}
 
 # ── Lineage ───────────────────────────────────────────────────────────
@@ -301,10 +310,13 @@ def create_anonymize_job(body: AnonymizeRequest):
     )
     store.add_anonymization_job(job)
 
-    def _run():
-        run_anonymization_job(job.id)
+    def _run(job_id: str):
+        try:
+            run_anonymization_job(job_id)
+        except Exception:
+            _log.exception("Anonymization job %s failed", job_id)
 
-    threading.Thread(target=_run, daemon=True).start()
+    threading.Thread(target=_run, args=(job.id,), daemon=True).start()
     return {"job_id": job.id, "status": "pending"}
 
 
@@ -383,25 +395,13 @@ def create_report(body: ReportRequest):
     if body.framework not in VALID_FRAMEWORKS:
         raise HTTPException(400, f"framework must be one of {VALID_FRAMEWORKS}")
 
-    def _run():
-        generate_report(body.framework, body.sections)
+    def _run(framework: str, sections: list):
+        try:
+            generate_report(framework, sections)
+        except Exception:
+            _log.exception("Report generation failed for framework %s", framework)
 
-    report_stub = generate_report.__module__  # warm import
-    threading.Thread(
-        target=generate_report,
-        args=(body.framework, body.sections),
-        daemon=True,
-    ).start()
-
-    # Return immediately with a pending record
-    from app.models.store import ComplianceReport
-    pending = ComplianceReport(framework=body.framework, sections=body.sections, status="pending")
-    store.add_compliance_report(pending)
-    threading.Thread(target=lambda: (
-        store.delete_compliance_report(pending.id) or None,
-        generate_report(body.framework, body.sections)
-    ), daemon=True).start()
-
+    threading.Thread(target=_run, args=(body.framework, body.sections), daemon=True).start()
     return {"message": f"Generating {body.framework.upper()} report", "framework": body.framework}
 
 

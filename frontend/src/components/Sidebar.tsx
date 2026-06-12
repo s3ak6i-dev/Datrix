@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react'
-import { NavLink } from 'react-router-dom'
+import { NavLink, useNavigate } from 'react-router-dom'
 import {
   Database, GitBranch, Sparkles, Brain, BarChart3,
   ShieldCheck, ShoppingBag, Settings, HelpCircle,
-  Sun, Moon,
+  Sun, Moon, LogOut,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useAuth } from '@/contexts/AuthContext'
 
 // ── Theme toggle ───────────────────────────────────────────────────────────────
 
@@ -51,6 +52,13 @@ const bottomItems = [
 
 export function Sidebar() {
   const { theme, setTheme } = useTheme()
+  const { user, logout } = useAuth()
+  const navigate = useNavigate()
+
+  const handleLogout = async () => {
+    await logout()
+    navigate('/login', { replace: true })
+  }
 
   return (
     <aside className="w-52 flex-shrink-0 bg-surface-primary border-r border-border flex flex-col h-full">
@@ -81,8 +89,15 @@ export function Sidebar() {
           ))}
         </div>
 
-        {/* Theme toggle — bottom of sidebar */}
-        <div className="px-3 pb-3 pt-1 border-t border-border mt-3">
+        {/* Bottom controls */}
+        <div className="px-3 pb-3 pt-1 border-t border-border mt-3 space-y-1">
+          {/* User email */}
+          {user && (
+            <p className="mono-micro text-[10px] text-text-tertiary px-3 py-1 truncate">
+              {user.email}
+            </p>
+          )}
+          {/* Theme toggle */}
           <button
             onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
             aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
@@ -96,6 +111,17 @@ export function Sidebar() {
               : <Moon className="w-4 h-4 flex-shrink-0" />
             }
             <span>{theme === 'dark' ? 'Light mode' : 'Dark mode'}</span>
+          </button>
+          {/* Logout */}
+          <button
+            onClick={handleLogout}
+            className={cn(
+              'w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors btn-lift',
+              'text-text-tertiary hover:text-bad hover:bg-surface-secondary',
+            )}
+          >
+            <LogOut className="w-4 h-4 flex-shrink-0" />
+            <span>Sign out</span>
           </button>
         </div>
       </nav>

@@ -20,8 +20,9 @@ import threading
 from pathlib import Path
 from typing import Optional, Any
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Request, HTTPException
 from fastapi.responses import FileResponse, StreamingResponse
+from app.core.limiter import limiter
 from pydantic import BaseModel
 
 from app.models.store import store, ALSession, Dataset
@@ -137,7 +138,8 @@ def _clean_row(row_data: dict) -> dict:
 # ── Routes ────────────────────────────────────────────────────────────
 
 @router.post("/sessions", response_model=SessionOut, status_code=201)
-def create_session(body: CreateSessionRequest):
+@limiter.limit("5/minute")
+def create_session(request: Request, body: CreateSessionRequest):
     ds = store.get_dataset(body.dataset_id)
     if not ds:
         raise HTTPException(404, "Dataset not found")
