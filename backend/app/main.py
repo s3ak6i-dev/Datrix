@@ -18,6 +18,8 @@ from app.db.engine import create_tables
 
 configure_logging()
 
+_startup_log = logging.getLogger("datrix.startup")
+
 from app.api.auth import router as auth_router
 from app.api.datasets import router as datasets_router
 from app.api.pipelines import router as pipelines_router
@@ -62,9 +64,21 @@ def _reset_stale_jobs() -> None:
             store.update_pipeline_run(run)
 
 
+def _run_migrations() -> None:
+    try:
+        from alembic.config import Config
+        from alembic import command
+        cfg = Config("alembic.ini")
+        command.upgrade(cfg, "head")
+        _startup_log.info("Alembic migrations applied")
+    except Exception:
+        _startup_log.exception("Alembic migration failed — falling back to create_all")
+        create_tables()
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    create_tables()
+    _run_migrations()
     initialize_seeds()
     ensure_default_policies()
     _reset_stale_jobs()

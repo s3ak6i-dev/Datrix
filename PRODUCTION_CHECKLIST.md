@@ -50,7 +50,9 @@
 - ✅ Removed `threading.Lock`, `_persist()`, `_load_db()`, `db.json` entirely
 - ✅ Each store method creates and closes its own DB session (background-thread safe)
 - ✅ `create_tables()` called automatically on app startup via lifespan hook in `main.py`
-- ⬜ Alembic for schema migrations (currently using `create_all` — add Alembic for future schema changes)
+- ✅ Alembic initialized: `alembic init`, `env.py` configured with our `Base` + `settings.DATABASE_URL`
+- ✅ Initial migration generated and applied to Neon Postgres (`8f40da1443e7_initial_schema`)
+- ✅ `_run_migrations()` in `main.py` lifespan — runs `alembic upgrade head` on every startup (fallback to `create_all` if alembic.ini not found)
 - ⬜ Test: run all existing API routes against real DB
 
 **Effort:** 4–6 days | **Status: ~90% complete (Alembic migrations remaining)**
@@ -90,12 +92,13 @@
 ---
 
 ### 1.5 HTTPS & TLS
-- ⬜ Nginx reverse proxy config
-- ⬜ Let's Encrypt / Certbot
-- ⬜ HTTP → HTTPS redirect
-- ⬜ Security headers in Nginx
+- ✅ `nginx/nginx.conf` — production config with TLS termination, HTTP→HTTPS redirect, HSTS, CSP, X-Frame-Options, OCSP stapling, modern cipher suite
+- ✅ `docker-compose.production.yml` — separate nginx + certbot services, cert volumes, auto-renewal loop
+- ✅ `scripts/setup-ssl.sh` — one-shot Certbot issuance script (requires domain + port 80 open)
+- ✅ CSP, X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Permissions-Policy headers in nginx
+- ⬜ Run on a live server with a real domain (deployment step, not a code step)
 
-**Effort:** half a day | **Status: Not started (deployment-dependent)**
+**Effort:** half a day | **Status: COMPLETE (config done; cert issuance is a deploy-time step)**
 
 ---
 
@@ -255,10 +258,10 @@
 | Phase | Items | Status |
 |---|---|---|
 | **1.1 Auth** | JWT backend + frontend full stack | ✅ Complete |
-| **1.2 Database** | SQLAlchemy + Neon Postgres (22 tables) | ✅ ~90% (Alembic remaining) |
+| **1.2 Database** | SQLAlchemy + Neon Postgres + Alembic migrations | ✅ Complete |
 | **1.3 Env Config** | pydantic-settings, .env, VITE_API_URL | ✅ Complete |
 | **1.4 File Storage** | Storage abstraction + S3 | ⬜ Not started |
-| **1.5 HTTPS** | Nginx + Let's Encrypt | ⬜ Deployment-dependent |
+| **1.5 HTTPS** | Nginx TLS + Certbot auto-renew + all security headers | ✅ Complete (cert = deploy step) |
 | **2.1 Error Boundaries** | React ErrorBoundary | ✅ ~80% (inline Sidebar boundary remaining) |
 | **2.2 Rate Limiting** | slowapi, per-route limits | ✅ Complete |
 | **2.3 Thread Safety** | try/except + startup watchdog | ✅ Complete |
