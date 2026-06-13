@@ -98,7 +98,8 @@ def _ingest_and_scan(dataset_id: str):
         # Ingest
         ds.status = "ingesting"
         store.update_dataset(ds)
-        df = read_file(Path(ds.file_path))
+        local = get_storage().local_path(ds.file_path)
+        df = read_file(local)
         ds.row_count = len(df)
         ds.column_count = len(df.columns)
         ds.schema = infer_schema(df)
@@ -111,7 +112,7 @@ def _ingest_and_scan(dataset_id: str):
         scan.started_at = datetime.now(timezone.utc).isoformat()
         store.add_scan(scan)
 
-        result = run_quality_scan(ds.file_path)
+        result = run_quality_scan(str(local))
 
         scan.status = "complete"
         scan.score = result["score"]
@@ -149,7 +150,7 @@ def _run_scan(dataset_id: str, scan_id: str):
         store.update_dataset(ds)
         store.update_scan(scan)
 
-        result = run_quality_scan(ds.file_path)
+        result = run_quality_scan(str(get_storage().local_path(ds.file_path)))
 
         scan.status = "complete"
         scan.score = result["score"]
@@ -337,7 +338,7 @@ def preview_fixes(dataset_id: str, body: FixRequest):
         issue = next((i for i in scan.issues if i["id"] == issue_id), None)
         if not issue:
             continue
-        preview = preview_fix(ds.file_path, issue)
+        preview = preview_fix(str(get_storage().local_path(ds.file_path)), issue)
         results.append({"issue_id": issue_id, **preview})
     return results
 
@@ -357,8 +358,11 @@ def apply_fixes(dataset_id: str, body: FixRequest):
         if not issue:
             continue
         try:
-            updated_df, rows_changed = apply_fix(ds.file_path, issue, body.options)
-            save_df(updated_df, ds.file_path)
+            _storage = get_storage()
+            _local = _storage.local_path(ds.file_path)
+            updated_df, rows_changed = apply_fix(str(_local), issue, body.options)
+            save_df(updated_df, str(_local))
+            _storage.write_back(ds.file_path, _local)
             total_changed += rows_changed
             # Mark issue as resolved
             for i in scan.issues:

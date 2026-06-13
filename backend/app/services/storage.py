@@ -84,6 +84,14 @@ class StorageBackend(ABC):
     def list_keys(self) -> list[str]:
         """Return all storage keys (one per stored file)."""
 
+    @abstractmethod
+    def write_back(self, key: str, local_path: Path) -> None:
+        """
+        Sync a locally-modified file back to storage after an in-place edit.
+        - Local backend: no-op (the file was edited at key == local_path).
+        - S3 backend: re-uploads local_path contents to the original key.
+        """
+
 
 # ── Local ─────────────────────────────────────────────────────────────────────
 
@@ -134,6 +142,9 @@ class LocalStorageBackend(StorageBackend):
         if not self._dir.exists():
             return []
         return [str(f) for f in self._dir.iterdir() if f.is_file()]
+
+    def write_back(self, key: str, local_path: Path) -> None:
+        pass  # local_path IS the canonical file; nothing to sync
 
 
 # ── S3 ────────────────────────────────────────────────────────────────────────
@@ -258,6 +269,10 @@ class S3StorageBackend(StorageBackend):
             for obj in page.get("Contents", []):
                 keys.append(self._to_uri(obj["Key"]))
         return keys
+
+    def write_back(self, key: str, local_path: Path) -> None:
+        s3_key = self._from_uri(key)
+        self._s3.upload_file(str(local_path), self._bucket, s3_key)
 
 
 # ── Factory ───────────────────────────────────────────────────────────────────

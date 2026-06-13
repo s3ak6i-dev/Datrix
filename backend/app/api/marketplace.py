@@ -153,10 +153,12 @@ def _recalc_rating(asset_id: str) -> None:
 def _gen_dataset_preview(dataset_id: str) -> dict:
     import polars as pl
     ds = store.get_dataset(dataset_id)
-    if not ds or not Path(ds.file_path).exists():
+    storage = get_storage()
+    if not ds or not storage.exists(ds.file_path):
         return {}
-    df = pl.read_csv(ds.file_path, n_rows=3)
-    full = pl.read_csv(ds.file_path, n_rows=1)
+    _local = storage.local_path(ds.file_path)
+    df = pl.read_csv(_local, n_rows=3)
+    full = pl.read_csv(_local, n_rows=1)
     schema = [{'name': c, 'dtype': str(full[c].dtype), 'nullable': True} for c in full.columns]
     sample = [df.row(i, named=True) for i in range(min(3, len(df)))]
     clean = [{k: (None if str(v) == 'None' else v) for k, v in row.items()} for row in sample]

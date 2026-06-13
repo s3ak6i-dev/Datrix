@@ -22,6 +22,7 @@ import polars as pl
 from app.core.config import DATA_DIR
 from app.models.store import store, Dataset, SyntheticJob, TrainedModel
 from app.services.ingestion import infer_schema
+from app.services.storage import get_storage
 
 SYNTHETIC_DIR = DATA_DIR / "synthetic_outputs"
 MODELS_DIR = DATA_DIR / "trained_models"
@@ -156,7 +157,7 @@ def execute_synthetic_job(job_id: str) -> None:
         store.update_synthetic_job(job)
 
         df_source = pl.read_csv(
-            source_ds.file_path, infer_schema_length=10000, ignore_errors=True
+            get_storage().local_path(source_ds.file_path), infer_schema_length=10000, ignore_errors=True
         )
 
         try:

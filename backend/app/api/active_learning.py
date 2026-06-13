@@ -157,7 +157,7 @@ def create_session(request: Request, body: CreateSessionRequest):
     if body.task_type == "classification" and not label_classes:
         try:
             import polars as pl
-            df = pl.read_csv(ds.file_path)
+            df = pl.read_csv(get_storage().local_path(ds.file_path))
             if body.target_column in df.columns:
                 unique_vals = df[body.target_column].drop_nulls().unique().to_list()
                 if len(unique_vals) <= 30:

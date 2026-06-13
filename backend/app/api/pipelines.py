@@ -15,6 +15,7 @@ from pydantic import BaseModel, Field
 from app.core.config import DATA_DIR
 from app.models.store import store, Pipeline, PipelineRun
 from app.services.pipeline_executor import run_pipeline, save_output
+from app.services.storage import get_storage
 
 router = APIRouter(prefix="/pipelines", tags=["pipelines"])
 
@@ -113,7 +114,7 @@ def _execute_run(run_id: str) -> None:
         run.status = "running"
         store.update_pipeline_run(run)
 
-        result_df, step_results = run_pipeline(p.steps, ds.file_path, run.is_dry_run)
+        result_df, step_results = run_pipeline(p.steps, str(get_storage().local_path(ds.file_path)), run.is_dry_run)
 
         run.step_results = step_results
         run.rows_in = step_results[0]["rows_in"] if step_results else 0

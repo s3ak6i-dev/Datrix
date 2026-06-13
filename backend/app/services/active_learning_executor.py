@@ -16,6 +16,7 @@ import polars as pl
 
 from app.core.config import DATA_DIR
 from app.models.store import store, ALSession
+from app.services.storage import get_storage
 
 MODELS_DIR = DATA_DIR / "al_models"
 MODELS_DIR.mkdir(parents=True, exist_ok=True)
@@ -119,7 +120,7 @@ def _load_dataset(session: ALSession) -> pl.DataFrame:
     ds = store.get_dataset(session.dataset_id)
     if not ds:
         raise ValueError(f"Dataset {session.dataset_id} not found")
-    return pl.read_csv(ds.file_path)
+    return pl.read_csv(get_storage().local_path(ds.file_path))
 
 
 # ── Initial batch ─────────────────────────────────────────────────────

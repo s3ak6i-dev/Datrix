@@ -15,6 +15,7 @@ import polars as pl
 
 from app.models.store import store, ComplianceScan
 from app.services.audit_logger import log as audit_log
+from app.services.storage import get_storage
 
 # ── Keyword lists ─────────────────────────────────────────────────────
 
@@ -204,13 +205,14 @@ def scan_dataset(dataset_id: str) -> ComplianceScan:
 
     try:
         ds = store.get_dataset(dataset_id)
-        if not ds or not Path(ds.file_path).exists():
+        storage = get_storage()
+        if not ds or not storage.exists(ds.file_path):
             scan.status = "failed"
             scan.error_message = "Dataset file not found"
             store.update_compliance_scan(scan)
             return scan
 
-        df = pl.read_csv(ds.file_path, n_rows=SAMPLE_SIZE, ignore_errors=True)
+        df = pl.read_csv(storage.local_path(ds.file_path), n_rows=SAMPLE_SIZE, ignore_errors=True)
         scan.rows_sampled = len(df)
         findings = []
 

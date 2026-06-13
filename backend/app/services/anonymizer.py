@@ -23,6 +23,7 @@ import polars as pl
 from app.models.store import store, AnonymizationJob, Dataset
 from app.core.config import UPLOADS_DIR
 from app.services.audit_logger import log as audit_log
+from app.services.storage import get_storage
 
 # ── Transform functions ───────────────────────────────────────────────
 
@@ -126,10 +127,11 @@ def run_anonymization_job(job_id: str) -> None:
 
     try:
         src_ds = store.get_dataset(job.source_dataset_id)
-        if not src_ds or not Path(src_ds.file_path).exists():
+        storage = get_storage()
+        if not src_ds or not storage.exists(src_ds.file_path):
             raise FileNotFoundError("Source dataset file not found")
 
-        df = pl.read_csv(src_ds.file_path, ignore_errors=True)
+        df = pl.read_csv(storage.local_path(src_ds.file_path), ignore_errors=True)
         job.row_count = len(df)
 
         col_config_map = {c["column"]: c for c in job.column_configs}

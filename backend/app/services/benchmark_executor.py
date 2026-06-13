@@ -35,6 +35,7 @@ except ImportError:
     HAS_XGB = False
 
 from app.models.store import store, BenchmarkJob
+from app.services.storage import get_storage
 
 
 # ── Preprocessing ─────────────────────────────────────────────────────
@@ -203,7 +204,7 @@ def _run_candidate(job_id: str, candidate: dict, df_base: pl.DataFrame) -> None:
             if not session or not session.labels:
                 raise ValueError("AL session has no labels")
             src_ds = store.get_dataset(session.dataset_id)
-            df_src = pl.read_csv(src_ds.file_path)
+            df_src = pl.read_csv(get_storage().local_path(src_ds.file_path))
             indices = sorted([int(k) for k in session.labels.keys()])
             df = df_src[indices]
             label_vals = [session.labels[str(i)] for i in indices]
@@ -212,7 +213,7 @@ def _run_candidate(job_id: str, candidate: dict, df_base: pl.DataFrame) -> None:
             src_ds = store.get_dataset(ds_override)
             if not src_ds:
                 raise ValueError("Override dataset not found")
-            df = pl.read_csv(src_ds.file_path)
+            df = pl.read_csv(get_storage().local_path(src_ds.file_path))
         else:
             df = df_base
 
@@ -384,7 +385,7 @@ def run_benchmark(job_id: str) -> None:
         return
 
     try:
-        df_full = pl.read_csv(ds.file_path)
+        df_full = pl.read_csv(get_storage().local_path(ds.file_path))
     except Exception as e:
         job.status = 'failed'
         job.error_message = str(e)
