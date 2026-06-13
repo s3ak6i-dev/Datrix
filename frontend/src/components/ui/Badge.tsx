@@ -1,10 +1,34 @@
-import { cn } from '@/lib/utils'
 import type { IssueSeverity } from '@/types'
 
-const severityStyles: Record<IssueSeverity, string> = {
-  critical: 'bg-danger-50 text-danger border border-danger/20',
-  warning: 'bg-warning-50 text-warning border border-warning/20',
-  info: 'bg-brand-50 text-brand border border-brand/20',
+const baseStyle: React.CSSProperties = {
+  display: 'inline-flex',
+  alignItems: 'center',
+  padding: '4px 10px',
+  borderRadius: 'var(--radius-btn)',
+  fontSize: '11px',
+  fontFamily: 'var(--font-mono)',
+  letterSpacing: '0.1em',
+  textTransform: 'uppercase',
+  fontWeight: 400,
+  lineHeight: 1,
+}
+
+const severityStyles: Record<IssueSeverity, React.CSSProperties> = {
+  critical: {
+    background: 'var(--bad-dim)',
+    color: 'var(--bad)',
+    border: '1px solid rgba(248,113,113,.28)',
+  },
+  warning: {
+    background: 'var(--warn-dim)',
+    color: 'var(--warn)',
+    border: '1px solid rgba(251,191,36,.28)',
+  },
+  info: {
+    background: 'var(--blue-tint)',
+    color: 'var(--accent)',
+    border: '1px solid rgba(99,179,255,.22)',
+  },
 }
 
 interface SeverityBadgeProps {
@@ -13,12 +37,7 @@ interface SeverityBadgeProps {
 
 export function SeverityBadge({ severity }: SeverityBadgeProps) {
   return (
-    <span
-      className={cn(
-        'inline-flex items-center px-2 py-0.5 rounded text-xs font-medium uppercase tracking-wide',
-        severityStyles[severity],
-      )}
-    >
+    <span style={{ ...baseStyle, ...severityStyles[severity] }}>
       {severity}
     </span>
   )
@@ -30,21 +49,34 @@ interface BadgeProps {
   className?: string
 }
 
-const variantStyles = {
-  default: 'bg-surface-tertiary text-text-secondary',
-  success: 'bg-success-50 text-success',
-  warning: 'bg-warning-50 text-warning',
-  danger: 'bg-danger-50 text-danger',
+const variantStyles: Record<NonNullable<BadgeProps['variant']>, React.CSSProperties> = {
+  default: {
+    background: 'var(--bg-3)',
+    color: 'var(--text-secondary)',
+    border: '1px solid var(--border)',
+  },
+  success: {
+    background: 'var(--green-dim)',
+    color: 'var(--green)',
+    border: '1px solid rgba(52,211,153,.22)',
+  },
+  warning: {
+    background: 'var(--warn-dim)',
+    color: 'var(--warn)',
+    border: '1px solid rgba(251,191,36,.28)',
+  },
+  danger: {
+    background: 'var(--bad-dim)',
+    color: 'var(--bad)',
+    border: '1px solid rgba(248,113,113,.28)',
+  },
 }
 
 export function Badge({ children, variant = 'default', className }: BadgeProps) {
   return (
     <span
-      className={cn(
-        'inline-flex items-center px-2 py-0.5 rounded text-xs font-medium',
-        variantStyles[variant],
-        className,
-      )}
+      className={className}
+      style={{ ...baseStyle, ...variantStyles[variant] }}
     >
       {children}
     </span>

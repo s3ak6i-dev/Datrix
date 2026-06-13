@@ -2,8 +2,8 @@
 # Run from the Datrix/ root directory
 
 Write-Host "Starting Datrix backend (FastAPI on :8000)..." -ForegroundColor Cyan
-$backend = Start-Process -FilePath ".\backend\.venv\Scripts\uvicorn.exe" `
-    -ArgumentList "app.main:app", "--reload", "--port", "8000" `
+$backend = Start-Process -FilePath ".\backend\.venv\Scripts\python.exe" `
+    -ArgumentList "run.py", "--reload" `
     -WorkingDirectory ".\backend" -PassThru
 
 Write-Host "Starting Datrix frontend (Vite on :5173)..." -ForegroundColor Cyan

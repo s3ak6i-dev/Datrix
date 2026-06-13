@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useParams, useNavigate, NavLink } from 'react-router-dom'
+import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   ArrowLeft, RefreshCw, Loader2, AlertCircle, CheckCircle2,
@@ -67,11 +67,11 @@ export function DatasetDetail() {
 
   if (dsLoading) {
     return (
-      <div className="p-6 max-w-5xl mx-auto space-y-4">
+      <div style={{ padding: '24px', maxWidth: '1100px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '16px' }}>
         <Skeleton className="h-5 w-48" />
         <Skeleton className="h-7 w-72" />
         <StatRowSkeleton />
-        <div className="space-y-2">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
           {Array.from({ length: 3 }).map((_, i) => <IssueCardSkeleton key={i} />)}
         </div>
       </div>
@@ -80,9 +80,12 @@ export function DatasetDetail() {
 
   if (!dataset) {
     return (
-      <div className="p-6 text-center text-text-secondary">
+      <div style={{ padding: '24px', textAlign: 'center', color: 'var(--text-secondary)' }}>
         Dataset not found.{' '}
-        <button onClick={() => navigate('/datasets')} className="text-brand underline">
+        <button
+          onClick={() => navigate('/datasets')}
+          style={{ color: 'var(--accent)', textDecoration: 'underline', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: 'var(--font-sans)' }}
+        >
           Go back
         </button>
       </div>
@@ -93,7 +96,7 @@ export function DatasetDetail() {
   const openIssues = scan?.issues.filter((i) => i.status === 'open') ?? []
   const resolvedIssues = scan?.issues.filter((i) => i.status === 'resolved') ?? []
   const criticalCount = openIssues.filter((i) => i.severity === 'critical').length
-  const warningCount = openIssues.filter((i) => i.severity === 'warning').length
+  void openIssues.filter((i) => i.severity === 'warning').length
   const totalGain = openIssues.reduce((s, i) => s + (i.fix_available ? i.impact_score : 0), 0)
 
   const tabs: { key: Tab; label: string }[] = [
@@ -105,34 +108,50 @@ export function DatasetDetail() {
   ]
 
   return (
-    <div className="p-6 max-w-5xl mx-auto">
+    <div style={{ padding: '24px', maxWidth: '1100px', margin: '0 auto' }}>
       {/* Breadcrumb */}
-      <div className="flex items-center gap-2 mb-4">
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
         <button
           onClick={() => navigate('/datasets')}
-          className="flex items-center gap-1 text-sm text-text-secondary hover:text-text-primary transition-colors"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '4px',
+            fontSize: '14px',
+            color: 'var(--text-secondary)',
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            padding: 0,
+            fontFamily: 'var(--font-sans)',
+            transition: 'color 0.15s',
+          }}
+          onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--text-primary)')}
+          onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-secondary)')}
         >
-          <ArrowLeft className="w-3.5 h-3.5" />
+          <ArrowLeft style={{ width: '14px', height: '14px' }} />
           Datasets
         </button>
-        <ChevronRight className="w-3.5 h-3.5 text-text-tertiary" />
-        <span className="text-sm font-medium text-text-primary truncate max-w-xs">
+        <ChevronRight style={{ width: '14px', height: '14px', color: 'var(--text-tertiary)' }} />
+        <span style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '320px' }}>
           {dataset.name}
         </span>
       </div>
 
       {/* Page header */}
-      <div className="flex items-start justify-between mb-6">
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '24px' }}>
         <div>
-          <h1 className="text-xl font-semibold text-text-primary">{dataset.name}</h1>
+          <h1 style={{ fontSize: '24px', fontWeight: 300, letterSpacing: '-0.02em', color: 'var(--text-primary)', margin: '0 0 4px' }}>
+            {dataset.name}
+          </h1>
           {dataset.status === 'error' && (
-            <p className="flex items-center gap-1.5 text-sm text-danger mt-1">
-              <AlertCircle className="w-3.5 h-3.5" />
+            <p style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px', color: 'var(--bad)', margin: 0 }}>
+              <AlertCircle style={{ width: '14px', height: '14px' }} />
               Processing failed
             </p>
           )}
         </div>
-        <div className="flex items-center gap-2">
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           {dataset.status === 'ready' && allScans.length > 0 && (
             <Button
               variant="secondary"
@@ -158,9 +177,18 @@ export function DatasetDetail() {
       </div>
 
       {/* Stats row */}
-      <div className="grid grid-cols-5 gap-4 p-5 bg-surface-primary border border-border rounded-xl mb-4">
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(5, 1fr)',
+        gap: '16px',
+        padding: '20px',
+        background: 'var(--bg-card)',
+        border: '1px solid var(--border)',
+        borderRadius: 'var(--radius-card)',
+        marginBottom: '16px',
+      }}>
         {scan?.score ? (
-          <div className="flex flex-col items-center gap-1">
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
             <QualityBadge score={scan.score.overall} size="lg" showLabel />
           </div>
         ) : (
@@ -177,38 +205,70 @@ export function DatasetDetail() {
 
       {/* Processing state */}
       {isProcessing && (
-        <div className="flex items-center gap-3 p-4 mb-4 rounded-lg border border-brand/20 bg-brand-50">
-          <Loader2 className="w-4 h-4 animate-spin text-brand" />
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px',
+          padding: '16px',
+          marginBottom: '16px',
+          borderRadius: 'var(--radius-md)',
+          border: '1px solid var(--border-accent)',
+          background: 'var(--blue-tint)',
+        }}>
+          <Loader2 style={{ width: '16px', height: '16px', color: 'var(--accent)', flexShrink: 0 }} className="animate-spin" />
           <div>
-            <p className="text-sm font-medium text-brand">
+            <p style={{ fontSize: '14px', fontWeight: 500, color: 'var(--accent)', margin: '0 0 2px' }}>
               {dataset.status === 'ingesting' ? 'Ingesting data…' : 'Running quality scan…'}
             </p>
-            <p className="text-xs text-brand/70 mt-0.5">This may take a few minutes</p>
+            <p style={{ fontSize: '12px', color: 'var(--accent)', opacity: 0.7, margin: 0 }}>This may take a few minutes</p>
           </div>
         </div>
       )}
 
       {/* Scan running */}
       {scan?.status === 'running' && (
-        <div className="flex items-center gap-3 p-4 mb-4 rounded-lg border border-brand/20 bg-brand-50">
-          <Loader2 className="w-4 h-4 animate-spin text-brand" />
-          <p className="text-sm font-medium text-brand">Quality scan in progress…</p>
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px',
+          padding: '16px',
+          marginBottom: '16px',
+          borderRadius: 'var(--radius-md)',
+          border: '1px solid var(--border-accent)',
+          background: 'var(--blue-tint)',
+        }}>
+          <Loader2 style={{ width: '16px', height: '16px', color: 'var(--accent)' }} className="animate-spin" />
+          <p style={{ fontSize: '14px', fontWeight: 500, color: 'var(--accent)', margin: 0 }}>Quality scan in progress…</p>
         </div>
       )}
 
       {/* Tabs */}
       {dataset.status === 'ready' && (
         <>
-          <div className="flex gap-1 border-b border-border mb-5">
+          <div style={{ display: 'flex', gap: '4px', borderBottom: '1px solid var(--border)', marginBottom: '20px' }}>
             {tabs.map(({ key, label }) => (
               <button
                 key={key}
                 onClick={() => setTab(key)}
-                className={`px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors ${
-                  tab === key
-                    ? 'border-brand text-brand'
-                    : 'border-transparent text-text-secondary hover:text-text-primary'
-                }`}
+                style={{
+                  padding: '10px 16px',
+                  fontSize: '14px',
+                  fontWeight: 500,
+                  fontFamily: 'var(--font-sans)',
+                  background: 'none',
+                  border: 'none',
+                  borderBottom: tab === key ? '2px solid var(--accent)' : '2px solid transparent',
+                  marginBottom: '-1px',
+                  color: tab === key ? 'var(--accent)' : 'var(--text-secondary)',
+                  cursor: 'pointer',
+                  transition: 'color 0.15s',
+                }}
+                onMouseEnter={(e) => {
+                  if (tab !== key) (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-primary)'
+                }}
+                onMouseLeave={(e) => {
+                  if (tab !== key) (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-secondary)'
+                }}
               >
                 {label}
               </button>
@@ -217,11 +277,18 @@ export function DatasetDetail() {
 
           {/* Overview tab */}
           {tab === 'overview' && scan?.score && (
-            <div className="grid grid-cols-2 gap-5">
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
               {/* Quality breakdown */}
-              <div className="p-5 bg-surface-primary border border-border rounded-xl">
-                <h3 className="text-sm font-medium text-text-primary mb-4">Quality breakdown</h3>
-                <div className="space-y-2.5">
+              <div style={{
+                padding: '20px',
+                background: 'var(--bg-card)',
+                border: '1px solid var(--border)',
+                borderRadius: 'var(--radius-card)',
+              }}>
+                <h3 style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-primary)', margin: '0 0 16px' }}>
+                  Quality breakdown
+                </h3>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                   <ScoreBar label="Completeness" score={scan.score.completeness} />
                   <ScoreBar label="Consistency" score={scan.score.consistency} />
                   <ScoreBar label="Accuracy" score={scan.score.accuracy} />
@@ -229,22 +296,27 @@ export function DatasetDetail() {
                   <ScoreBar label="Label quality" score={scan.score.label_quality} />
                 </div>
                 {totalGain > 0 && (
-                  <div className="mt-4 pt-4 border-t border-border">
-                    <p className="text-xs text-text-secondary">
+                  <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid var(--border)' }}>
+                    <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: 0 }}>
                       Estimated gain from fixing all issues:{' '}
-                      <span className="text-success font-medium">+{totalGain.toFixed(1)}% accuracy</span>
+                      <span style={{ color: 'var(--green)', fontWeight: 500 }}>+{totalGain.toFixed(1)}% accuracy</span>
                     </p>
                   </div>
                 )}
               </div>
 
               {/* Top issues */}
-              <div className="p-5 bg-surface-primary border border-border rounded-xl">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-sm font-medium text-text-primary">
+              <div style={{
+                padding: '20px',
+                background: 'var(--bg-card)',
+                border: '1px solid var(--border)',
+                borderRadius: 'var(--radius-card)',
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+                  <h3 style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-primary)', margin: 0 }}>
                     Top issues
                     {criticalCount > 0 && (
-                      <span className="ml-2 text-xs text-danger">
+                      <span style={{ marginLeft: '8px', fontSize: '12px', color: 'var(--bad)' }}>
                         {criticalCount} critical
                       </span>
                     )}
@@ -252,13 +324,13 @@ export function DatasetDetail() {
                   {openIssues.length > 3 && (
                     <button
                       onClick={() => setTab('issues')}
-                      className="text-xs text-brand hover:underline"
+                      style={{ fontSize: '12px', color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: 'var(--font-sans)', textDecoration: 'underline' }}
                     >
                       View all
                     </button>
                   )}
                 </div>
-                <div className="space-y-2">
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   {openIssues.slice(0, 4).map((issue) => (
                     <IssueCard
                       key={issue.id}
@@ -268,8 +340,8 @@ export function DatasetDetail() {
                     />
                   ))}
                   {openIssues.length === 0 && (
-                    <div className="flex items-center gap-2 py-4 text-sm text-success">
-                      <CheckCircle2 className="w-4 h-4" />
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '16px 0', fontSize: '14px', color: 'var(--green)' }}>
+                      <CheckCircle2 style={{ width: '16px', height: '16px' }} />
                       {resolvedIssues.length > 0
                         ? `All ${resolvedIssues.length} issues fixed — re-scan for an updated score`
                         : 'No significant issues found'
@@ -292,12 +364,12 @@ export function DatasetDetail() {
           )}
 
           {tab === 'overview' && !scan && scanLoading && (
-            <div className="grid grid-cols-2 gap-5">
-              <div className="p-5 bg-surface-primary border border-border rounded-xl space-y-3">
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+              <div style={{ padding: '20px', background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 'var(--radius-card)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 <Skeleton className="h-4 w-32" />
                 {Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-4 w-full" />)}
               </div>
-              <div className="p-5 bg-surface-primary border border-border rounded-xl space-y-2">
+              <div style={{ padding: '20px', background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 'var(--radius-card)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 <Skeleton className="h-4 w-24" />
                 {Array.from({ length: 4 }).map((_, i) => <IssueCardSkeleton key={i} />)}
               </div>
@@ -305,8 +377,8 @@ export function DatasetDetail() {
           )}
 
           {tab === 'overview' && !scan && !scanLoading && (
-            <div className="text-center py-12">
-              <p className="text-text-secondary text-sm mb-3">No quality scan yet</p>
+            <div style={{ textAlign: 'center', padding: '48px 0' }}>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '14px', marginBottom: '12px' }}>No quality scan yet</p>
               <Button
                 onClick={() => scanMutation.mutate()}
                 loading={scanMutation.isPending}
@@ -318,9 +390,9 @@ export function DatasetDetail() {
 
           {tab === 'columns' && <ColumnExplorer datasetId={id!} />}
           {tab === 'issues' && scan && (
-            <div className="space-y-4">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               {openIssues.length > 0 ? (
-                <div className="space-y-2">
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   {openIssues.map((issue) => (
                     <IssueCard
                       key={issue.id}
@@ -330,8 +402,8 @@ export function DatasetDetail() {
                   ))}
                 </div>
               ) : (
-                <div className="flex items-center gap-2 py-6 text-sm text-success justify-center">
-                  <CheckCircle2 className="w-5 h-5" />
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '24px 0', fontSize: '14px', color: 'var(--green)', justifyContent: 'center' }}>
+                  <CheckCircle2 style={{ width: '20px', height: '20px' }} />
                   {resolvedIssues.length > 0
                     ? 'All issues fixed — run a new scan to update the quality score'
                     : 'No issues detected — your dataset is in great shape!'
@@ -340,10 +412,18 @@ export function DatasetDetail() {
               )}
               {resolvedIssues.length > 0 && (
                 <div>
-                  <p className="text-xs font-medium text-text-tertiary uppercase tracking-wide mb-2">
+                  <p style={{
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: '10px',
+                    letterSpacing: '0.12em',
+                    textTransform: 'uppercase',
+                    color: 'var(--text-tertiary)',
+                    fontWeight: 400,
+                    marginBottom: '8px',
+                  }}>
                     Resolved ({resolvedIssues.length})
                   </p>
-                  <div className="space-y-2">
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                     {resolvedIssues.map((issue) => (
                       <IssueCard key={issue.id} issue={issue} />
                     ))}

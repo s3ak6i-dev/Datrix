@@ -7,7 +7,6 @@ import {
 } from 'lucide-react'
 import { api } from '@/lib/api'
 import { Button } from '@/components/ui/Button'
-import { cn } from '@/lib/utils'
 import { formatRelativeTime } from '@/lib/utils'
 import type {
   ALSession, ALBatch, ALBatchRow, ALRound, ALPredictOut,
@@ -51,6 +50,42 @@ const BATCH_DESC: Record<number, string> = {
 }
 
 function fmtPct(v: number) { return `${(v * 100).toFixed(1)}%` }
+
+// ── Shared style helpers ──────────────────────────────────────────────
+
+const cardStyle: React.CSSProperties = {
+  padding: '20px',
+  background: 'var(--bg-card)',
+  border: '1px solid var(--border)',
+  borderRadius: 'var(--radius-card)',
+}
+
+const inputStyle: React.CSSProperties = {
+  background: 'var(--bg-inset)',
+  border: '1px solid var(--border)',
+  borderRadius: 'var(--radius-btn)',
+  padding: '8px 12px',
+  color: 'var(--text-primary)',
+  fontSize: '14px',
+  outline: 'none',
+  fontFamily: 'var(--font-sans)',
+  width: '100%',
+}
+
+const inputSmStyle: React.CSSProperties = {
+  ...inputStyle,
+  fontSize: '12px',
+  padding: '6px 8px',
+}
+
+const monoLabelStyle: React.CSSProperties = {
+  fontFamily: 'var(--font-mono)',
+  fontSize: '10px',
+  letterSpacing: '0.12em',
+  textTransform: 'uppercase',
+  color: 'var(--text-tertiary)',
+  fontWeight: 400,
+}
 
 // ── Setup form ────────────────────────────────────────────────────────
 
@@ -107,37 +142,23 @@ function SetupForm({ onCreated }: { onCreated: (s: ALSession) => void }) {
   const ready = !!datasetId && !!targetCol
 
   return (
-    <div className="space-y-5">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
       {/* Session identity */}
-      <div className="p-5 bg-surface-primary border border-border rounded-xl space-y-4">
-        <h2 className="text-sm font-semibold text-text-primary">Session setup</h2>
+      <div style={{ ...cardStyle, display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        <h2 style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)' }}>Session setup</h2>
 
-        <div className="grid grid-cols-2 gap-3">
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
           <div>
-            <label className="text-xs font-medium text-text-secondary block mb-1.5">Session name (optional)</label>
-            <input
-              className="w-full text-sm border border-border rounded-lg px-3 py-2 bg-surface-primary focus:outline-none focus:ring-2 focus:ring-brand/30 text-text-primary"
-              placeholder="e.g. Order classification v1"
-              value={name}
-              onChange={e => setName(e.target.value)}
-            />
+            <label style={{ fontSize: '12px', fontWeight: 500, color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>Session name (optional)</label>
+            <input style={inputStyle} placeholder="e.g. Order classification v1" value={name} onChange={e => setName(e.target.value)} />
           </div>
           <div>
-            <label className="text-xs font-medium text-text-secondary block mb-1.5">Export model name (optional)</label>
-            <input
-              className="w-full text-sm border border-border rounded-lg px-3 py-2 bg-surface-primary focus:outline-none focus:ring-2 focus:ring-brand/30 text-text-primary"
-              placeholder="e.g. order_value_classifier_v1"
-              value={modelName}
-              onChange={e => setModelName(e.target.value)}
-            />
+            <label style={{ fontSize: '12px', fontWeight: 500, color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>Export model name (optional)</label>
+            <input style={inputStyle} placeholder="e.g. order_value_classifier_v1" value={modelName} onChange={e => setModelName(e.target.value)} />
           </div>
           <div>
-            <label className="text-xs font-medium text-text-secondary block mb-1.5">Source dataset *</label>
-            <select
-              className="w-full text-sm border border-border rounded-lg px-3 py-2 bg-surface-primary focus:outline-none focus:ring-2 focus:ring-brand/30 text-text-primary"
-              value={datasetId}
-              onChange={e => { setDatasetId(e.target.value); setTargetCol('') }}
-            >
+            <label style={{ fontSize: '12px', fontWeight: 500, color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>Source dataset *</label>
+            <select style={inputStyle} value={datasetId} onChange={e => { setDatasetId(e.target.value); setTargetCol('') }}>
               <option value="">Select dataset…</option>
               {datasets.filter(d => d.status === 'ready').map(d => (
                 <option key={d.id} value={d.id}>{d.name}</option>
@@ -145,155 +166,158 @@ function SetupForm({ onCreated }: { onCreated: (s: ALSession) => void }) {
             </select>
           </div>
           <div>
-            <label className="text-xs font-medium text-text-secondary block mb-1.5">Target column *</label>
-            <select
-              className="w-full text-sm border border-border rounded-lg px-3 py-2 bg-surface-primary focus:outline-none focus:ring-2 focus:ring-brand/30 text-text-primary"
-              value={targetCol}
-              onChange={e => setTargetCol(e.target.value)}
-              disabled={!datasetId}
-            >
+            <label style={{ fontSize: '12px', fontWeight: 500, color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>Target column *</label>
+            <select style={inputStyle} value={targetCol} onChange={e => setTargetCol(e.target.value)} disabled={!datasetId}>
               <option value="">Select column…</option>
               {columns.map(c => <option key={c} value={c}>{c}</option>)}
             </select>
           </div>
           <div>
-            <label className="text-xs font-medium text-text-secondary block mb-1.5">Max rounds</label>
-            <input
-              type="number" min="1" max="50"
-              className="w-full text-sm border border-border rounded-lg px-3 py-2 bg-surface-primary focus:outline-none focus:ring-2 focus:ring-brand/30 text-text-primary"
-              value={maxRounds}
-              onChange={e => setMaxRounds(parseInt(e.target.value) || 10)}
-            />
+            <label style={{ fontSize: '12px', fontWeight: 500, color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>Max rounds</label>
+            <input type="number" min="1" max="50" style={inputStyle} value={maxRounds} onChange={e => setMaxRounds(parseInt(e.target.value) || 10)} />
           </div>
         </div>
 
         {/* Task type */}
         <div>
-          <label className="text-xs font-medium text-text-secondary block mb-1.5">Task type</label>
-          <div className="flex gap-2">
-            {(['classification', 'regression'] as ALTaskType[]).map(t => (
-              <button
-                key={t}
-                onClick={() => setTaskType(t)}
-                className={cn(
-                  'flex-1 py-2 rounded-lg text-sm font-medium border-2 transition-colors',
-                  taskType === t
-                    ? 'border-brand bg-brand-50 text-brand'
-                    : 'border-border text-text-secondary hover:border-brand/40 bg-surface-secondary'
-                )}
-              >
-                {t === 'classification' ? 'Classification' : 'Regression'}
-              </button>
-            ))}
+          <label style={{ fontSize: '12px', fontWeight: 500, color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>Task type</label>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            {(['classification', 'regression'] as ALTaskType[]).map(t => {
+              const isActive = taskType === t
+              return (
+                <button
+                  key={t}
+                  onClick={() => setTaskType(t)}
+                  style={{
+                    flex: 1,
+                    padding: '8px',
+                    borderRadius: 'var(--radius-btn)',
+                    fontSize: '14px',
+                    fontWeight: 500,
+                    border: isActive ? '2px solid var(--accent)' : '2px solid var(--border)',
+                    background: isActive ? 'var(--blue-tint)' : 'var(--bg-2)',
+                    color: isActive ? 'var(--accent)' : 'var(--text-secondary)',
+                    cursor: 'pointer',
+                    transition: 'border-color 0.15s',
+                  }}
+                >
+                  {t === 'classification' ? 'Classification' : 'Regression'}
+                </button>
+              )
+            })}
           </div>
         </div>
 
         {taskType === 'classification' && (
           <div>
-            <label className="text-xs font-medium text-text-secondary block mb-1.5">Label classes (comma-separated)</label>
-            <input
-              className="w-full text-sm border border-border rounded-lg px-3 py-2 bg-surface-primary focus:outline-none focus:ring-2 focus:ring-brand/30 text-text-primary"
-              placeholder="e.g. high, medium, low"
-              value={labelClasses}
-              onChange={e => setLabelClasses(e.target.value)}
-            />
-            <p className="text-xs text-text-tertiary mt-1">Leave blank to auto-detect from labels you enter.</p>
+            <label style={{ fontSize: '12px', fontWeight: 500, color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>Label classes (comma-separated)</label>
+            <input style={inputStyle} placeholder="e.g. high, medium, low" value={labelClasses} onChange={e => setLabelClasses(e.target.value)} />
+            <p style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginTop: '4px' }}>Leave blank to auto-detect from labels you enter.</p>
           </div>
         )}
 
         {taskType === 'classification' && targetAcc !== undefined && (
           <div>
-            <label className="text-xs font-medium text-text-secondary block mb-1.5">Stop when accuracy reaches (%)</label>
-            <input
-              type="number" min="50" max="100"
-              className="w-full text-sm border border-border rounded-lg px-3 py-2 bg-surface-primary focus:outline-none focus:ring-2 focus:ring-brand/30 text-text-primary"
-              placeholder="e.g. 90 — leave blank to run all rounds"
-              value={targetAcc}
-              onChange={e => setTargetAcc(e.target.value)}
-            />
+            <label style={{ fontSize: '12px', fontWeight: 500, color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>Stop when accuracy reaches (%)</label>
+            <input type="number" min="50" max="100" style={inputStyle} placeholder="e.g. 90 — leave blank to run all rounds" value={targetAcc} onChange={e => setTargetAcc(e.target.value)} />
           </div>
         )}
 
         <div>
-          <label className="text-xs font-medium text-text-secondary block mb-1.5">Exclude columns (comma-separated)</label>
-          <input
-            className="w-full text-sm border border-border rounded-lg px-3 py-2 bg-surface-primary focus:outline-none focus:ring-2 focus:ring-brand/30 text-text-primary"
-            placeholder="e.g. id, created_at, order_id"
-            value={excludeCols}
-            onChange={e => setExcludeCols(e.target.value)}
-          />
+          <label style={{ fontSize: '12px', fontWeight: 500, color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>Exclude columns (comma-separated)</label>
+          <input style={inputStyle} placeholder="e.g. id, created_at, order_id" value={excludeCols} onChange={e => setExcludeCols(e.target.value)} />
         </div>
       </div>
 
       {/* Model */}
-      <div className="p-5 bg-surface-primary border border-border rounded-xl space-y-3">
-        <h2 className="text-sm font-semibold text-text-primary">Model</h2>
-        <div className="flex flex-wrap gap-2">
-          {(Object.keys(MODEL_LABELS) as ALModelType[]).map(m => (
-            <button
-              key={m}
-              onClick={() => setModelType(m)}
-              className={cn(
-                'px-3 py-1.5 rounded-lg text-xs font-medium border-2 transition-colors',
-                modelType === m
-                  ? 'border-brand bg-brand-50 text-brand'
-                  : 'border-border text-text-secondary hover:border-brand/40 bg-surface-secondary'
-              )}
-            >
-              {MODEL_LABELS[m]}
-            </button>
-          ))}
+      <div style={{ ...cardStyle, display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        <h2 style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)' }}>Model</h2>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+          {(Object.keys(MODEL_LABELS) as ALModelType[]).map(m => {
+            const isActive = modelType === m
+            return (
+              <button
+                key={m}
+                onClick={() => setModelType(m)}
+                style={{
+                  padding: '6px 12px',
+                  borderRadius: 'var(--radius-btn)',
+                  fontSize: '12px',
+                  fontWeight: 500,
+                  border: isActive ? '2px solid var(--accent)' : '2px solid var(--border)',
+                  background: isActive ? 'var(--blue-tint)' : 'var(--bg-2)',
+                  color: isActive ? 'var(--accent)' : 'var(--text-secondary)',
+                  cursor: 'pointer',
+                  transition: 'border-color 0.15s',
+                }}
+              >
+                {MODEL_LABELS[m]}
+              </button>
+            )
+          })}
         </div>
       </div>
 
       {/* Sampling strategy */}
-      <div className="p-5 bg-surface-primary border border-border rounded-xl space-y-3">
-        <h2 className="text-sm font-semibold text-text-primary">Sampling strategy</h2>
-        <div className="grid grid-cols-2 gap-2">
-          {(Object.keys(STRATEGY_LABELS) as ALSamplingStrategy[]).map(s => (
-            <button
-              key={s}
-              onClick={() => setStrategy(s)}
-              className={cn(
-                'p-3 rounded-xl text-left border-2 transition-colors',
-                strategy === s
-                  ? 'border-brand bg-brand-50'
-                  : 'border-border hover:border-brand/40 bg-surface-secondary'
-              )}
-            >
-              <div className={cn('text-xs font-semibold', strategy === s ? 'text-brand' : 'text-text-primary')}>
-                {STRATEGY_LABELS[s]}
-              </div>
-              <div className="text-xs text-text-secondary mt-0.5 leading-snug">{STRATEGY_DESC[s]}</div>
-            </button>
-          ))}
+      <div style={{ ...cardStyle, display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        <h2 style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)' }}>Sampling strategy</h2>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+          {(Object.keys(STRATEGY_LABELS) as ALSamplingStrategy[]).map(s => {
+            const isActive = strategy === s
+            return (
+              <button
+                key={s}
+                onClick={() => setStrategy(s)}
+                style={{
+                  padding: '12px',
+                  borderRadius: 'var(--radius-card)',
+                  textAlign: 'left',
+                  border: isActive ? '2px solid var(--accent)' : '2px solid var(--border)',
+                  background: isActive ? 'var(--blue-tint)' : 'var(--bg-2)',
+                  cursor: 'pointer',
+                  transition: 'border-color 0.15s',
+                }}
+              >
+                <div style={{ fontSize: '12px', fontWeight: 600, color: isActive ? 'var(--accent)' : 'var(--text-primary)' }}>
+                  {STRATEGY_LABELS[s]}
+                </div>
+                <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '2px', lineHeight: 1.4 }}>{STRATEGY_DESC[s]}</div>
+              </button>
+            )
+          })}
         </div>
       </div>
 
       {/* Batch size */}
-      <div className="p-5 bg-surface-primary border border-border rounded-xl space-y-3">
-        <h2 className="text-sm font-semibold text-text-primary">Batch size per round</h2>
-        <div className="grid grid-cols-4 gap-2">
-          {[20, 30, 50, 100].map(b => (
-            <button
-              key={b}
-              onClick={() => setBatchSize(b)}
-              className={cn(
-                'p-3 rounded-xl text-left border-2 transition-colors',
-                batchSize === b
-                  ? 'border-brand bg-brand-50'
-                  : 'border-border hover:border-brand/40 bg-surface-secondary'
-              )}
-            >
-              <div className={cn('text-sm font-bold', batchSize === b ? 'text-brand' : 'text-text-primary')}>{b}</div>
-              <div className="text-xs text-text-secondary mt-0.5 leading-snug">{BATCH_DESC[b]}</div>
-            </button>
-          ))}
+      <div style={{ ...cardStyle, display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        <h2 style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)' }}>Batch size per round</h2>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '8px' }}>
+          {[20, 30, 50, 100].map(b => {
+            const isActive = batchSize === b
+            return (
+              <button
+                key={b}
+                onClick={() => setBatchSize(b)}
+                style={{
+                  padding: '12px',
+                  borderRadius: 'var(--radius-card)',
+                  textAlign: 'left',
+                  border: isActive ? '2px solid var(--accent)' : '2px solid var(--border)',
+                  background: isActive ? 'var(--blue-tint)' : 'var(--bg-2)',
+                  cursor: 'pointer',
+                  transition: 'border-color 0.15s',
+                }}
+              >
+                <div style={{ fontSize: '14px', fontWeight: 700, color: isActive ? 'var(--accent)' : 'var(--text-primary)' }}>{b}</div>
+                <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '2px', lineHeight: 1.4 }}>{BATCH_DESC[b]}</div>
+              </button>
+            )
+          })}
         </div>
       </div>
 
       {createMut.error && (
-        <div className="bg-danger-50 border border-danger/30 rounded-lg px-4 py-3 text-sm text-danger">
+        <div style={{ background: 'var(--bad-dim)', border: '1px solid rgba(239,68,68,.3)', borderRadius: 'var(--radius-btn)', padding: '12px 16px', fontSize: '14px', color: 'var(--bad)' }}>
           {(createMut.error as Error).message}
         </div>
       )}
@@ -304,9 +328,9 @@ function SetupForm({ onCreated }: { onCreated: (s: ALSession) => void }) {
         loading={createMut.isPending}
         onClick={() => createMut.mutate()}
       >
-        <Brain className="w-4 h-4" />
+        <Brain style={{ width: '16px', height: '16px' }} />
         Start Active Learning
-        <ArrowRight className="w-4 h-4" />
+        <ArrowRight style={{ width: '16px', height: '16px' }} />
       </Button>
     </div>
   )
@@ -317,30 +341,33 @@ function SetupForm({ onCreated }: { onCreated: (s: ALSession) => void }) {
 function ConfusionMatrix({ matrix, classes }: { matrix: number[][], classes: string[] }) {
   const maxVal = Math.max(...matrix.flat(), 1)
   return (
-    <div className="overflow-x-auto">
-      <table className="text-xs border-collapse">
+    <div style={{ overflowX: 'auto' }}>
+      <table style={{ fontSize: '12px', borderCollapse: 'collapse' }}>
         <thead>
           <tr>
-            <th className="p-1.5 text-text-tertiary text-right text-[10px]">Act ↓ / Pred →</th>
+            <th style={{ padding: '6px', color: 'var(--text-tertiary)', textAlign: 'right', fontSize: '10px' }}>Act ↓ / Pred →</th>
             {classes.map(c => (
-              <th key={c} className="p-1.5 text-text-secondary text-center min-w-[52px] font-medium">{c}</th>
+              <th key={c} style={{ padding: '6px', color: 'var(--text-secondary)', textAlign: 'center', minWidth: '52px', fontWeight: 500 }}>{c}</th>
             ))}
           </tr>
         </thead>
         <tbody>
           {matrix.map((row, ri) => (
             <tr key={ri}>
-              <td className="p-1.5 text-text-secondary text-right pr-2 font-medium">{classes[ri] ?? `C${ri}`}</td>
+              <td style={{ padding: '6px', color: 'var(--text-secondary)', textAlign: 'right', paddingRight: '8px', fontWeight: 500 }}>{classes[ri] ?? `C${ri}`}</td>
               {row.map((val, ci) => {
                 const intensity = val / maxVal
                 const isDiag = ri === ci
                 return (
-                  <td key={ci} className="p-1.5 text-center">
+                  <td key={ci} style={{ padding: '6px', textAlign: 'center' }}>
                     <div
-                      className={cn('rounded px-2 py-1 font-mono font-semibold text-xs',
-                        isDiag ? 'text-brand' : 'text-danger'
-                      )}
                       style={{
+                        borderRadius: 'var(--radius-xs)',
+                        padding: '4px 8px',
+                        fontFamily: 'var(--font-mono)',
+                        fontWeight: 600,
+                        fontSize: '12px',
+                        color: isDiag ? 'var(--accent)' : 'var(--bad)',
                         background: isDiag
                           ? `rgba(99,102,241,${0.08 + intensity * 0.25})`
                           : `rgba(239,68,68,${intensity * 0.18})`,
@@ -364,17 +391,16 @@ function ConfusionMatrix({ matrix, classes }: { matrix: number[][], classes: str
 function FeatureImportanceBar({ items }: { items: { feature: string; importance: number }[] }) {
   const max = items[0]?.importance ?? 1
   return (
-    <div className="space-y-2">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
       {items.slice(0, 8).map(item => (
-        <div key={item.feature} className="flex items-center gap-3">
-          <div className="w-28 text-xs text-text-secondary truncate text-right">{item.feature}</div>
-          <div className="flex-1 h-1.5 bg-surface-tertiary rounded-full overflow-hidden">
+        <div key={item.feature} style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{ width: '112px', fontSize: '12px', color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'right' }}>{item.feature}</div>
+          <div style={{ flex: 1, height: '6px', background: 'var(--bg-3)', borderRadius: '9999px', overflow: 'hidden' }}>
             <div
-              className="h-full bg-brand rounded-full"
-              style={{ width: `${(item.importance / max) * 100}%` }}
+              style={{ height: '100%', background: 'var(--accent)', borderRadius: '9999px', width: `${(item.importance / max) * 100}%` }}
             />
           </div>
-          <div className="w-10 text-xs text-text-tertiary text-right">{fmtPct(item.importance)}</div>
+          <div style={{ width: '40px', fontSize: '12px', color: 'var(--text-tertiary)', textAlign: 'right' }}>{fmtPct(item.importance)}</div>
         </div>
       ))}
     </div>
@@ -387,13 +413,15 @@ function MetricCard({ label, value, sub, accent = false }: {
   label: string; value: string; sub: string; accent?: boolean
 }) {
   return (
-    <div className={cn(
-      'rounded-xl p-3 border',
-      accent ? 'bg-brand-50 border-brand/20' : 'bg-surface-secondary border-border'
-    )}>
-      <div className="text-xs text-text-tertiary">{label}</div>
-      <div className={cn('text-xl font-bold mt-0.5', accent ? 'text-brand' : 'text-text-primary')}>{value}</div>
-      <div className="text-xs text-text-tertiary mt-0.5">{sub}</div>
+    <div style={{
+      borderRadius: 'var(--radius-card)',
+      padding: '12px',
+      border: accent ? '1px solid var(--border-accent)' : '1px solid var(--border)',
+      background: accent ? 'var(--blue-tint)' : 'var(--bg-2)',
+    }}>
+      <div style={{ fontSize: '12px', color: 'var(--text-tertiary)' }}>{label}</div>
+      <div style={{ fontSize: '20px', fontWeight: 700, marginTop: '2px', color: accent ? 'var(--accent)' : 'var(--text-primary)' }}>{value}</div>
+      <div style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginTop: '2px' }}>{sub}</div>
     </div>
   )
 }
@@ -405,8 +433,8 @@ function MetricsPanel({ round }: { round: ALRound }) {
   const [showExp, setShowExp] = useState(true)
 
   return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-2">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
         {isReg ? (
           <>
             <MetricCard label="R²" value={(round.metrics.r2 ?? 0).toFixed(3)} sub="Variance explained" accent />
@@ -424,31 +452,43 @@ function MetricsPanel({ round }: { round: ALRound }) {
       </div>
 
       {round.confusion_matrix && round.label_classes.length > 0 && (
-        <div className="p-4 bg-surface-secondary border border-border rounded-xl">
-          <p className="text-xs font-semibold text-text-secondary mb-3">Confusion Matrix</p>
+        <div style={{ padding: '16px', background: 'var(--bg-2)', border: '1px solid var(--border)', borderRadius: 'var(--radius-card)' }}>
+          <p style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '12px' }}>Confusion Matrix</p>
           <ConfusionMatrix matrix={round.confusion_matrix} classes={round.label_classes} />
         </div>
       )}
 
       {round.feature_importances.length > 0 && (
-        <div className="p-4 bg-surface-secondary border border-border rounded-xl">
-          <p className="text-xs font-semibold text-text-secondary mb-3">Feature Importance</p>
+        <div style={{ padding: '16px', background: 'var(--bg-2)', border: '1px solid var(--border)', borderRadius: 'var(--radius-card)' }}>
+          <p style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '12px' }}>Feature Importance</p>
           <FeatureImportanceBar items={round.feature_importances} />
         </div>
       )}
 
       {/* Explanation */}
-      <div className="border border-border rounded-xl overflow-hidden">
+      <div style={{ border: '1px solid var(--border)', borderRadius: 'var(--radius-card)', overflow: 'hidden' }}>
         <button
           onClick={() => setShowExp(v => !v)}
-          className="w-full flex items-center justify-between px-4 py-3 bg-surface-tertiary hover:bg-surface-secondary transition-colors"
+          style={{
+            width: '100%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '12px 16px',
+            background: 'var(--bg-inset)',
+            border: 'none',
+            cursor: 'pointer',
+            transition: 'background 0.15s',
+          }}
+          onMouseEnter={e => ((e.currentTarget as HTMLElement).style.background = 'var(--bg-2)')}
+          onMouseLeave={e => ((e.currentTarget as HTMLElement).style.background = 'var(--bg-inset)')}
         >
-          <span className="text-xs font-semibold text-text-primary">What happened this round?</span>
-          <ChevronRight className={cn('w-3.5 h-3.5 text-text-tertiary transition-transform', showExp && 'rotate-90')} />
+          <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-primary)' }}>What happened this round?</span>
+          <ChevronRight style={{ width: '14px', height: '14px', color: 'var(--text-tertiary)', transform: showExp ? 'rotate(90deg)' : 'none', transition: 'transform 0.15s' }} />
         </button>
         {showExp && (
-          <div className="px-4 pb-4 pt-3 bg-surface-primary">
-            <div className="text-xs text-text-secondary leading-relaxed space-y-2">
+          <div style={{ padding: '12px 16px 16px', background: 'var(--bg-card)' }}>
+            <div style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.6, display: 'flex', flexDirection: 'column', gap: '8px' }}>
               {round.explanation.split('\n').filter(l => l.trim()).map((line, i) => (
                 <p key={i} dangerouslySetInnerHTML={{
                   __html: line.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
@@ -479,24 +519,21 @@ function AccuracyChart({ rounds, taskType }: { rounds: ALRound[]; taskType: stri
   const lastVal = points[points.length - 1]
 
   return (
-    <div className="p-4 bg-surface-secondary border border-border rounded-xl">
-      <div className="flex items-center justify-between mb-2">
-        <p className="text-xs font-semibold text-text-secondary">{isReg ? 'R² Trend' : 'Accuracy Trend'}</p>
-        <span className="text-xs font-bold text-brand">{isReg ? lastVal.toFixed(3) : fmtPct(lastVal)}</span>
+    <div style={{ padding: '16px', background: 'var(--bg-2)', border: '1px solid var(--border)', borderRadius: 'var(--radius-card)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+        <p style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)' }}>{isReg ? 'R² Trend' : 'Accuracy Trend'}</p>
+        <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--accent)' }}>{isReg ? lastVal.toFixed(3) : fmtPct(lastVal)}</span>
       </div>
-      <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-20">
-        {/* Grid lines */}
+      <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: '80px' }}>
         {[0.25, 0.5, 0.75].map(t => {
           const y = H - PAD - t * (H - PAD * 2)
           return <line key={t} x1={PAD} y1={y} x2={W - PAD} y2={y} stroke="currentColor" strokeOpacity="0.1" strokeWidth="1" />
         })}
-        {/* Area fill */}
         <polygon
           points={`${xs[0]},${H - PAD} ${polyline} ${lastX},${H - PAD}`}
           fill="rgb(99,102,241)"
           fillOpacity="0.08"
         />
-        {/* Line */}
         <polyline
           points={polyline}
           fill="none"
@@ -505,15 +542,12 @@ function AccuracyChart({ rounds, taskType }: { rounds: ALRound[]; taskType: stri
           strokeLinecap="round"
           strokeLinejoin="round"
         />
-        {/* Dots */}
         {xs.map((x, i) => (
           <circle key={i} cx={x} cy={ys[i]} r="3" fill="rgb(99,102,241)" />
         ))}
-        {/* Last value label */}
         <text x={lastX} y={lastY - 7} textAnchor="middle" fontSize="9" fill="rgb(99,102,241)" fontWeight="600">
           {isReg ? lastVal.toFixed(2) : fmtPct(lastVal)}
         </text>
-        {/* X axis labels */}
         {xs.map((x, i) => (
           <text key={i} x={x} y={H - 4} textAnchor="middle" fontSize="8" fill="currentColor" opacity="0.4">
             R{rounds[i].round}
@@ -679,11 +713,9 @@ function RuleBuilder({
   const [defaultLabel, setDefaultLabel] = useState(classes[classes.length - 1] ?? '')
   const [refCol, setRefCol] = useState('')
 
-  // Column type cache
   const colTypes: Record<string, ColType> = {}
   featureCols.forEach(c => { colTypes[c] = detectColType(c, batch.batch) })
 
-  // Preview: count matches per rule
   const counts = rules.map(rule =>
     batch.batch.filter(row => evalRule(row, rule, colTypes)).length
   )
@@ -727,25 +759,32 @@ function RuleBuilder({
   }
 
   return (
-    <div className="border border-border rounded-xl overflow-hidden">
+    <div style={{ border: '1px solid var(--border)', borderRadius: 'var(--radius-card)', overflow: 'hidden' }}>
       {/* Header */}
-      <div className="px-4 py-3 bg-surface-tertiary border-b border-border flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Wand2 className="w-4 h-4 text-brand" />
-          <span className="text-sm font-semibold text-text-primary">Auto-label with rules</span>
+      <div style={{
+        padding: '12px 16px',
+        background: 'var(--bg-inset)',
+        borderBottom: '1px solid var(--border)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <Wand2 style={{ width: '16px', height: '16px', color: 'var(--accent)' }} />
+          <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)' }}>Auto-label with rules</span>
         </div>
-        <div className="text-xs text-text-tertiary">
+        <div style={{ fontSize: '12px', color: 'var(--text-tertiary)' }}>
           {totalCovered}/{batch.batch.length} rows matched · {uncovered} will use default
         </div>
       </div>
 
-      <div className="p-4 space-y-4 bg-surface-primary">
+      <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '16px', background: 'var(--bg-card)' }}>
         {/* Reference column shortcut */}
-        <div className="p-3 bg-surface-secondary border border-border rounded-xl">
-          <p className="text-xs font-semibold text-text-secondary mb-2">Quick: copy from existing column</p>
-          <div className="flex items-center gap-2">
+        <div style={{ padding: '12px', background: 'var(--bg-2)', border: '1px solid var(--border)', borderRadius: 'var(--radius-card)' }}>
+          <p style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '8px' }}>Quick: copy from existing column</p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <select
-              className="flex-1 text-sm border border-border rounded-lg px-3 py-1.5 bg-surface-primary focus:outline-none focus:ring-2 focus:ring-brand/30 text-text-primary"
+              style={{ ...inputSmStyle, flex: 1 }}
               value={refCol}
               onChange={e => setRefCol(e.target.value)}
             >
@@ -755,84 +794,93 @@ function RuleBuilder({
             {refCol && (
               <button
                 onClick={handleApply}
-                className="px-3 py-1.5 rounded-lg bg-brand text-white text-xs font-medium hover:bg-brand/90 transition-colors"
+                style={{ padding: '6px 12px', borderRadius: 'var(--radius-btn)', background: 'var(--accent)', color: '#fff', fontSize: '12px', fontWeight: 500, border: 'none', cursor: 'pointer' }}
               >
                 Apply
               </button>
             )}
           </div>
           {refCol && (
-            <p className="text-xs text-text-tertiary mt-1.5">
-              Will copy values from <span className="font-medium text-text-secondary">{refCol}</span> as labels for all {batch.batch.length} rows.
+            <p style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginTop: '6px' }}>
+              Will copy values from <span style={{ fontWeight: 500, color: 'var(--text-secondary)' }}>{refCol}</span> as labels for all {batch.batch.length} rows.
             </p>
           )}
         </div>
 
         {/* Divider */}
-        <div className="flex items-center gap-3">
-          <div className="flex-1 h-px bg-border" />
-          <span className="text-xs text-text-tertiary">or build rules</span>
-          <div className="flex-1 h-px bg-border" />
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{ flex: 1, height: '1px', background: 'var(--border)' }} />
+          <span style={{ fontSize: '12px', color: 'var(--text-tertiary)' }}>or build rules</span>
+          <div style={{ flex: 1, height: '1px', background: 'var(--border)' }} />
         </div>
 
         {/* Rules */}
-        <div className="space-y-3">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           {rules.map((rule, rIdx) => {
-            const ops = rule.conditions[0]
+            void (rule.conditions[0]
               ? getOpsForType(colTypes[rule.conditions[0].column] ?? 'categorical')
-              : CAT_OPS
+              : CAT_OPS)
 
             return (
-              <div key={rule.id} className="border border-border rounded-xl overflow-hidden">
+              <div key={rule.id} style={{ border: '1px solid var(--border)', borderRadius: 'var(--radius-card)', overflow: 'hidden' }}>
                 {/* Rule header */}
-                <div className="flex items-center gap-2 px-3 py-2 bg-surface-secondary border-b border-border">
-                  <span className="text-xs font-semibold text-text-tertiary w-16">Rule {rIdx + 1}</span>
-                  <div className="flex-1" />
-                  {/* Connector toggle */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px', background: 'var(--bg-2)', borderBottom: '1px solid var(--border)' }}>
+                  <span style={{ ...monoLabelStyle, width: '64px' }}>Rule {rIdx + 1}</span>
+                  <div style={{ flex: 1 }} />
                   {rule.conditions.length > 1 && (
-                    <div className="flex items-center gap-1 bg-surface-primary border border-border rounded-lg p-0.5">
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '2px', background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 'var(--radius-btn)', padding: '2px' }}>
                       {(['AND', 'OR'] as const).map(c => (
                         <button
                           key={c}
                           onClick={() => setRule(rule.id, { connector: c })}
-                          className={cn(
-                            'px-2 py-0.5 rounded text-xs font-semibold transition-colors',
-                            rule.connector === c ? 'bg-brand text-white' : 'text-text-tertiary hover:text-text-secondary'
-                          )}
+                          style={{
+                            padding: '2px 8px',
+                            borderRadius: 'var(--radius-xs)',
+                            fontSize: '12px',
+                            fontWeight: 600,
+                            border: 'none',
+                            cursor: 'pointer',
+                            background: rule.connector === c ? 'var(--accent)' : 'transparent',
+                            color: rule.connector === c ? '#fff' : 'var(--text-tertiary)',
+                            transition: 'background 0.15s',
+                          }}
                         >
                           {c}
                         </button>
                       ))}
                     </div>
                   )}
-                  {/* Label */}
-                  <span className="text-xs text-text-tertiary">→</span>
+                  <span style={{ fontSize: '12px', color: 'var(--text-tertiary)' }}>→</span>
                   <select
-                    className="text-xs border border-border rounded-lg px-2 py-1 bg-surface-primary focus:outline-none focus:ring-2 focus:ring-brand/30 text-text-primary font-medium"
+                    style={{ ...inputSmStyle, width: 'auto' }}
                     value={rule.label}
                     onChange={e => setRule(rule.id, { label: e.target.value })}
                   >
                     <option value="">select label…</option>
                     {classes.map(c => <option key={c} value={c}>{c}</option>)}
                   </select>
-                  {/* Match count */}
-                  <span className={cn(
-                    'text-xs px-2 py-0.5 rounded-full font-medium',
-                    counts[rIdx] > 0 ? 'bg-brand-50 text-brand' : 'bg-surface-tertiary text-text-tertiary'
-                  )}>
+                  <span style={{
+                    fontSize: '12px',
+                    padding: '2px 8px',
+                    borderRadius: 'var(--radius-pill)',
+                    fontWeight: 500,
+                    background: counts[rIdx] > 0 ? 'var(--blue-tint)' : 'var(--bg-3)',
+                    color: counts[rIdx] > 0 ? 'var(--accent)' : 'var(--text-tertiary)',
+                  }}>
                     {counts[rIdx]} rows
                   </span>
-                  {/* Delete rule */}
                   <button
                     onClick={() => setRules(rs => rs.filter(r => r.id !== rule.id))}
-                    className="text-text-tertiary hover:text-danger transition-colors"
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary)', display: 'flex' }}
+                    onMouseEnter={e => ((e.currentTarget as HTMLElement).style.color = 'var(--bad)')}
+                    onMouseLeave={e => ((e.currentTarget as HTMLElement).style.color = 'var(--text-tertiary)')}
                   >
-                    <Trash2 className="w-3.5 h-3.5" />
+                    <Trash2 style={{ width: '14px', height: '14px' }} />
                   </button>
                 </div>
 
                 {/* Conditions */}
-                <div className="p-3 space-y-2">
+                <div style={{ padding: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   {rule.conditions.map((cond, cIdx) => {
                     const cType = colTypes[cond.column] ?? 'categorical'
                     const availOps = getOpsForType(cType)
@@ -844,16 +892,15 @@ function RuleBuilder({
                     return (
                       <div key={cond.id}>
                         {cIdx > 0 && (
-                          <div className="flex items-center gap-2 my-1.5">
-                            <div className="flex-1 h-px bg-border" />
-                            <span className="text-[10px] font-bold text-brand bg-brand-50 px-2 py-0.5 rounded">{rule.connector}</span>
-                            <div className="flex-1 h-px bg-border" />
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: '6px 0' }}>
+                            <div style={{ flex: 1, height: '1px', background: 'var(--border)' }} />
+                            <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--accent)', background: 'var(--blue-tint)', padding: '2px 8px', borderRadius: 'var(--radius-btn)' }}>{rule.connector}</span>
+                            <div style={{ flex: 1, height: '1px', background: 'var(--border)' }} />
                           </div>
                         )}
-                        <div className="flex items-start gap-2 flex-wrap">
-                          {/* Column */}
+                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', flexWrap: 'wrap' }}>
                           <select
-                            className="text-xs border border-border rounded-lg px-2 py-1.5 bg-surface-primary focus:outline-none focus:ring-2 focus:ring-brand/30 text-text-primary"
+                            style={inputSmStyle}
                             value={cond.column}
                             onChange={e => {
                               const newType = colTypes[e.target.value] ?? 'categorical'
@@ -868,20 +915,18 @@ function RuleBuilder({
                             {featureCols.map(c => <option key={c} value={c}>{c}</option>)}
                           </select>
 
-                          {/* Operator */}
                           <select
-                            className="text-xs border border-border rounded-lg px-2 py-1.5 bg-surface-primary focus:outline-none focus:ring-2 focus:ring-brand/30 text-text-primary"
+                            style={inputSmStyle}
                             value={cond.operator}
                             onChange={e => setCond(rule.id, cond.id, { operator: e.target.value as Operator, value: '', value2: '', values: [] })}
                           >
                             {availOps.map(o => <option key={o.op} value={o.op}>{o.label}</option>)}
                           </select>
 
-                          {/* Value inputs */}
                           {!needsNoInput && !needsMulti && !needsTwo && (
                             cType === 'categorical' && uniqueVals.length > 0 && uniqueVals.length <= 20 ? (
                               <select
-                                className="text-xs border border-border rounded-lg px-2 py-1.5 bg-surface-primary focus:outline-none focus:ring-2 focus:ring-brand/30 text-text-primary"
+                                style={inputSmStyle}
                                 value={cond.value}
                                 onChange={e => setCond(rule.id, cond.id, { value: e.target.value })}
                               >
@@ -891,7 +936,7 @@ function RuleBuilder({
                             ) : (
                               <input
                                 type={cType === 'numeric' ? 'number' : 'text'}
-                                className="text-xs border border-border rounded-lg px-2 py-1.5 bg-surface-primary focus:outline-none focus:ring-2 focus:ring-brand/30 text-text-primary w-28"
+                                style={{ ...inputSmStyle, width: '112px' }}
                                 placeholder="value"
                                 value={cond.value}
                                 onChange={e => setCond(rule.id, cond.id, { value: e.target.value })}
@@ -903,15 +948,15 @@ function RuleBuilder({
                             <>
                               <input
                                 type="number"
-                                className="text-xs border border-border rounded-lg px-2 py-1.5 bg-surface-primary focus:outline-none focus:ring-2 focus:ring-brand/30 text-text-primary w-24"
+                                style={{ ...inputSmStyle, width: '96px' }}
                                 placeholder="min"
                                 value={cond.value}
                                 onChange={e => setCond(rule.id, cond.id, { value: e.target.value })}
                               />
-                              <span className="text-xs text-text-tertiary self-center">and</span>
+                              <span style={{ fontSize: '12px', color: 'var(--text-tertiary)', alignSelf: 'center' }}>and</span>
                               <input
                                 type="number"
-                                className="text-xs border border-border rounded-lg px-2 py-1.5 bg-surface-primary focus:outline-none focus:ring-2 focus:ring-brand/30 text-text-primary w-24"
+                                style={{ ...inputSmStyle, width: '96px' }}
                                 placeholder="max"
                                 value={cond.value2}
                                 onChange={e => setCond(rule.id, cond.id, { value2: e.target.value })}
@@ -920,36 +965,44 @@ function RuleBuilder({
                           )}
 
                           {needsMulti && (
-                            <div className="flex flex-wrap gap-1">
-                              {uniqueVals.map(v => (
-                                <button
-                                  key={v}
-                                  onClick={() => {
-                                    const next = cond.values.includes(v)
-                                      ? cond.values.filter(x => x !== v)
-                                      : [...cond.values, v]
-                                    setCond(rule.id, cond.id, { values: next })
-                                  }}
-                                  className={cn(
-                                    'text-xs px-2 py-0.5 rounded border transition-colors',
-                                    cond.values.includes(v)
-                                      ? 'bg-brand border-brand text-white'
-                                      : 'border-border text-text-secondary bg-surface-secondary hover:border-brand/40'
-                                  )}
-                                >
-                                  {v}
-                                </button>
-                              ))}
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                              {uniqueVals.map(v => {
+                                const isSelected = cond.values.includes(v)
+                                return (
+                                  <button
+                                    key={v}
+                                    onClick={() => {
+                                      const next = cond.values.includes(v)
+                                        ? cond.values.filter(x => x !== v)
+                                        : [...cond.values, v]
+                                      setCond(rule.id, cond.id, { values: next })
+                                    }}
+                                    style={{
+                                      fontSize: '12px',
+                                      padding: '2px 8px',
+                                      borderRadius: 'var(--radius-btn)',
+                                      border: isSelected ? '1px solid var(--accent)' : '1px solid var(--border)',
+                                      background: isSelected ? 'var(--accent)' : 'var(--bg-2)',
+                                      color: isSelected ? '#fff' : 'var(--text-secondary)',
+                                      cursor: 'pointer',
+                                      transition: 'all 0.15s',
+                                    }}
+                                  >
+                                    {v}
+                                  </button>
+                                )
+                              })}
                             </div>
                           )}
 
-                          {/* Remove condition */}
                           {rule.conditions.length > 1 && (
                             <button
                               onClick={() => removeCond(rule.id, cond.id)}
-                              className="text-text-tertiary hover:text-danger transition-colors self-center ml-auto"
+                              style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary)', display: 'flex', alignSelf: 'center', marginLeft: 'auto' }}
+                              onMouseEnter={e => ((e.currentTarget as HTMLElement).style.color = 'var(--bad)')}
+                              onMouseLeave={e => ((e.currentTarget as HTMLElement).style.color = 'var(--text-tertiary)')}
                             >
-                              <Trash2 className="w-3 h-3" />
+                              <Trash2 style={{ width: '12px', height: '12px' }} />
                             </button>
                           )}
                         </div>
@@ -959,9 +1012,9 @@ function RuleBuilder({
 
                   <button
                     onClick={() => addCond(rule.id)}
-                    className="flex items-center gap-1 text-xs text-brand hover:underline mt-1"
+                    style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', marginTop: '4px' }}
                   >
-                    <Plus className="w-3 h-3" /> Add condition
+                    <Plus style={{ width: '12px', height: '12px' }} /> Add condition
                   </button>
                 </div>
               </div>
@@ -970,32 +1023,65 @@ function RuleBuilder({
 
           <button
             onClick={() => setRules(rs => [...rs, mkRule(featureCols[0] ?? '', classes[0] ?? '')])}
-            className="flex items-center gap-1.5 text-xs text-brand border border-dashed border-brand/40 rounded-xl px-4 py-2.5 w-full justify-center hover:bg-brand-50 transition-colors"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '6px',
+              fontSize: '12px',
+              color: 'var(--accent)',
+              border: '1px dashed var(--border-accent)',
+              borderRadius: 'var(--radius-card)',
+              padding: '10px 16px',
+              width: '100%',
+              background: 'transparent',
+              cursor: 'pointer',
+              transition: 'background 0.15s',
+            }}
+            onMouseEnter={e => ((e.currentTarget as HTMLElement).style.background = 'var(--blue-tint)')}
+            onMouseLeave={e => ((e.currentTarget as HTMLElement).style.background = 'transparent')}
           >
-            <Plus className="w-3.5 h-3.5" /> Add rule
+            <Plus style={{ width: '14px', height: '14px' }} /> Add rule
           </button>
         </div>
 
         {/* Default label */}
-        <div className="flex items-center gap-3 p-3 bg-surface-secondary border border-border rounded-xl">
-          <span className="text-xs text-text-secondary font-medium flex-shrink-0">Default (no rule matched):</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', background: 'var(--bg-2)', border: '1px solid var(--border)', borderRadius: 'var(--radius-card)' }}>
+          <span style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 500, flexShrink: 0 }}>Default (no rule matched):</span>
           <select
-            className="text-xs border border-border rounded-lg px-2 py-1.5 bg-surface-primary focus:outline-none focus:ring-2 focus:ring-brand/30 text-text-primary"
+            style={{ ...inputSmStyle, width: 'auto' }}
             value={defaultLabel}
             onChange={e => setDefaultLabel(e.target.value)}
           >
             <option value="">— skip unmatched rows —</option>
             {classes.map(c => <option key={c} value={c}>{c}</option>)}
           </select>
-          <span className="text-xs text-text-tertiary">{uncovered} rows will use this</span>
+          <span style={{ fontSize: '12px', color: 'var(--text-tertiary)' }}>{uncovered} rows will use this</span>
         </div>
 
         {/* Apply */}
         <button
           onClick={handleApply}
-          className="w-full py-2.5 rounded-xl bg-brand text-white text-sm font-semibold hover:bg-brand/90 transition-colors flex items-center justify-center gap-2"
+          style={{
+            width: '100%',
+            padding: '10px',
+            borderRadius: 'var(--radius-card)',
+            background: 'var(--accent)',
+            color: '#fff',
+            fontSize: '14px',
+            fontWeight: 600,
+            border: 'none',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px',
+            transition: 'background 0.15s',
+          }}
+          onMouseEnter={e => ((e.currentTarget as HTMLElement).style.background = 'var(--accent-hover)')}
+          onMouseLeave={e => ((e.currentTarget as HTMLElement).style.background = 'var(--accent)')}
         >
-          <Wand2 className="w-4 h-4" />
+          <Wand2 style={{ width: '16px', height: '16px' }} />
           Apply rules to {batch.batch.length} rows
         </button>
       </div>
@@ -1042,7 +1128,6 @@ function AnnotationTable({
     setPendingLabels(p => ({ ...p, [String(row.row_index)]: cls }))
   }, [batch.batch])
 
-  // Keyboard shortcuts
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (!isClassification) return
@@ -1067,35 +1152,48 @@ function AnnotationTable({
     return () => window.removeEventListener('keydown', onKey)
   }, [isClassification, focusedIdx, classes, assignLabel, batch.batch.length])
 
+  const toggleBtnBase: React.CSSProperties = {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px',
+    fontSize: '12px',
+    padding: '6px 12px',
+    borderRadius: 'var(--radius-btn)',
+    cursor: 'pointer',
+    transition: 'all 0.15s',
+  }
+
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <p className="text-xs text-text-tertiary">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <p style={{ fontSize: '12px', color: 'var(--text-tertiary)' }}>
           Round {session.current_round} · {labeledCount} / {batch.batch.length} labeled
         </p>
-        <div className="flex items-center gap-2">
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           {isClassification && (
             <button
               onClick={() => setShowShortcuts(v => !v)}
-              className={cn(
-                'flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border transition-colors',
-                showShortcuts ? 'border-brand bg-brand-50 text-brand' : 'border-border text-text-secondary hover:border-brand/40'
-              )}
+              style={{
+                ...toggleBtnBase,
+                border: showShortcuts ? '1px solid var(--accent)' : '1px solid var(--border)',
+                background: showShortcuts ? 'var(--blue-tint)' : 'transparent',
+                color: showShortcuts ? 'var(--accent)' : 'var(--text-secondary)',
+              }}
               title="Keyboard shortcuts"
             >
-              <Keyboard className="w-3.5 h-3.5" />
+              <Keyboard style={{ width: '14px', height: '14px' }} />
             </button>
           )}
           <button
             onClick={() => setShowRules(v => !v)}
-            className={cn(
-              'flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border transition-colors',
-              showRules
-                ? 'border-brand bg-brand-50 text-brand'
-                : 'border-border text-text-secondary hover:border-brand/40'
-            )}
+            style={{
+              ...toggleBtnBase,
+              border: showRules ? '1px solid var(--accent)' : '1px solid var(--border)',
+              background: showRules ? 'var(--blue-tint)' : 'transparent',
+              color: showRules ? 'var(--accent)' : 'var(--text-secondary)',
+            }}
           >
-            <Wand2 className="w-3.5 h-3.5" />
+            <Wand2 style={{ width: '14px', height: '14px' }} />
             Auto-label
           </button>
           <Button
@@ -1111,13 +1209,13 @@ function AnnotationTable({
 
       {/* Keyboard shortcuts help */}
       {showShortcuts && isClassification && (
-        <div className="p-3 bg-brand-50 border border-brand/20 rounded-xl text-xs text-text-secondary space-y-1">
-          <p className="font-semibold text-brand mb-1.5">Keyboard shortcuts</p>
-          <p><kbd className="bg-surface-primary border border-border rounded px-1.5 py-0.5 font-mono">↑ ↓</kbd> Navigate rows</p>
+        <div style={{ padding: '12px', background: 'var(--blue-tint)', border: '1px solid var(--border-accent)', borderRadius: 'var(--radius-card)', fontSize: '12px', color: 'var(--text-secondary)', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+          <p style={{ fontWeight: 600, color: 'var(--accent)', marginBottom: '6px' }}>Keyboard shortcuts</p>
+          <p><kbd style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 'var(--radius-btn)', padding: '2px 6px', fontFamily: 'var(--font-mono)' }}>↑ ↓</kbd> Navigate rows</p>
           {classes.map((cls, i) => (
-            <p key={cls}><kbd className="bg-surface-primary border border-border rounded px-1.5 py-0.5 font-mono">{i + 1}</kbd> Label as <strong>{cls}</strong> (advances to next row)</p>
+            <p key={cls}><kbd style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 'var(--radius-btn)', padding: '2px 6px', fontFamily: 'var(--font-mono)' }}>{i + 1}</kbd> Label as <strong>{cls}</strong> (advances to next row)</p>
           ))}
-          <p className="text-text-tertiary mt-1">Click anywhere outside an input to use shortcuts.</p>
+          <p style={{ color: 'var(--text-tertiary)', marginTop: '4px' }}>Click anywhere outside an input to use shortcuts.</p>
         </div>
       )}
 
@@ -1134,13 +1232,25 @@ function AnnotationTable({
 
       {/* Bulk label bar */}
       {isClassification && classes.length > 0 && (
-        <div className="flex items-center gap-2 p-3 bg-surface-secondary border border-border rounded-xl">
-          <span className="text-xs text-text-tertiary flex-shrink-0">Label all as:</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '12px', background: 'var(--bg-2)', border: '1px solid var(--border)', borderRadius: 'var(--radius-card)' }}>
+          <span style={{ fontSize: '12px', color: 'var(--text-tertiary)', flexShrink: 0 }}>Label all as:</span>
           {classes.map(cls => (
             <button
               key={cls}
               onClick={() => labelAll(cls)}
-              className="px-3 py-1 rounded-lg text-xs font-medium border border-border bg-surface-primary text-text-secondary hover:border-brand hover:text-brand transition-colors"
+              style={{
+                padding: '4px 12px',
+                borderRadius: 'var(--radius-btn)',
+                fontSize: '12px',
+                fontWeight: 500,
+                border: '1px solid var(--border)',
+                background: 'var(--bg-card)',
+                color: 'var(--text-secondary)',
+                cursor: 'pointer',
+                transition: 'all 0.15s',
+              }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--accent)'; (e.currentTarget as HTMLElement).style.color = 'var(--accent)' }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--border)'; (e.currentTarget as HTMLElement).style.color = 'var(--text-secondary)' }}
             >
               {cls}
             </button>
@@ -1148,7 +1258,9 @@ function AnnotationTable({
           {labeledCount > 0 && (
             <button
               onClick={() => setPendingLabels({})}
-              className="ml-auto text-xs text-text-tertiary hover:text-danger transition-colors"
+              style={{ marginLeft: 'auto', fontSize: '12px', color: 'var(--text-tertiary)', background: 'none', border: 'none', cursor: 'pointer' }}
+              onMouseEnter={e => ((e.currentTarget as HTMLElement).style.color = 'var(--bad)')}
+              onMouseLeave={e => ((e.currentTarget as HTMLElement).style.color = 'var(--text-tertiary)')}
             >
               Clear all
             </button>
@@ -1156,22 +1268,22 @@ function AnnotationTable({
         </div>
       )}
 
-      <div className="border border-border rounded-xl overflow-hidden" ref={tableRef}>
-        <div className="overflow-x-auto max-h-[480px] overflow-y-auto">
-          <table className="w-full text-xs">
-            <thead className="sticky top-0">
-              <tr className="bg-surface-tertiary border-b border-border">
-                <th className="px-3 py-2.5 text-left text-text-tertiary font-medium w-12">#</th>
+      <div style={{ border: '1px solid var(--border)', borderRadius: 'var(--radius-card)', overflow: 'hidden' }} ref={tableRef}>
+        <div style={{ overflowX: 'auto', maxHeight: '480px', overflowY: 'auto' }}>
+          <table style={{ width: '100%', fontSize: '12px', borderCollapse: 'collapse' }}>
+            <thead style={{ position: 'sticky', top: 0 }}>
+              <tr style={{ background: 'var(--bg-inset)', borderBottom: '1px solid var(--border)' }}>
+                <th style={{ padding: '10px 12px', textAlign: 'left', ...monoLabelStyle, width: '48px' }}>#</th>
                 {displayCols.map(c => (
-                  <th key={c} className="px-3 py-2.5 text-left text-text-secondary font-medium max-w-[120px]">{c}</th>
+                  <th key={c} style={{ padding: '10px 12px', textAlign: 'left', color: 'var(--text-secondary)', fontWeight: 500, maxWidth: '120px' }}>{c}</th>
                 ))}
                 {hasConfidence && (
-                  <th className="px-3 py-2.5 text-left text-text-tertiary font-medium w-20">Conf.</th>
+                  <th style={{ padding: '10px 12px', textAlign: 'left', ...monoLabelStyle, width: '80px' }}>Conf.</th>
                 )}
-                <th className="px-3 py-2.5 text-left text-brand font-semibold">Label *</th>
+                <th style={{ padding: '10px 12px', textAlign: 'left', color: 'var(--accent)', fontWeight: 600 }}>Label *</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-border">
+            <tbody>
               {batch.batch.map((row: ALBatchRow, arrayIdx: number) => {
                 const labeled = pendingLabels[String(row.row_index)]
                 const isFocused = arrayIdx === focusedIdx
@@ -1179,62 +1291,76 @@ function AnnotationTable({
                   <tr
                     key={row.row_index}
                     onClick={() => setFocusedIdx(arrayIdx)}
-                    className={cn(
-                      'transition-colors cursor-pointer',
-                      labeled ? 'bg-brand-50' : isFocused ? 'bg-surface-secondary' : 'hover:bg-surface-secondary'
-                    )}
+                    style={{
+                      borderBottom: '1px solid var(--border)',
+                      cursor: 'pointer',
+                      background: labeled ? 'var(--blue-tint)' : isFocused ? 'var(--bg-2)' : 'transparent',
+                      transition: 'background 0.1s',
+                    }}
+                    onMouseEnter={e => { if (!labeled && !isFocused) (e.currentTarget as HTMLElement).style.background = 'var(--bg-2)' }}
+                    onMouseLeave={e => { if (!labeled && !isFocused) (e.currentTarget as HTMLElement).style.background = 'transparent' }}
                   >
-                    <td className="px-3 py-2">
-                      <span className={cn('font-mono', isFocused ? 'text-brand font-semibold' : 'text-text-tertiary')}>
+                    <td style={{ padding: '8px 12px' }}>
+                      <span style={{ fontFamily: 'var(--font-mono)', color: isFocused ? 'var(--accent)' : 'var(--text-tertiary)', fontWeight: isFocused ? 600 : 400 }}>
                         {isFocused ? '→' : row.row_index}
                       </span>
                     </td>
                     {displayCols.map(c => (
-                      <td key={c} className="px-3 py-2 text-text-secondary max-w-[120px] truncate">
+                      <td key={c} style={{ padding: '8px 12px', color: 'var(--text-secondary)', maxWidth: '120px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {row.data[c] == null
-                          ? <span className="text-text-tertiary italic">null</span>
+                          ? <span style={{ color: 'var(--text-tertiary)', fontStyle: 'italic' }}>null</span>
                           : String(row.data[c])}
                       </td>
                     ))}
                     {hasConfidence && (
-                      <td className="px-3 py-2">
+                      <td style={{ padding: '8px 12px' }}>
                         {row.confidence != null ? (
-                          <span className={cn(
-                            'text-xs font-medium px-1.5 py-0.5 rounded',
-                            row.confidence >= 0.8 ? 'bg-success-50 text-success' :
-                            row.confidence >= 0.5 ? 'bg-brand-50 text-brand' :
-                            'bg-danger-50 text-danger'
-                          )}>
+                          <span style={{
+                            fontSize: '12px',
+                            fontWeight: 500,
+                            padding: '2px 6px',
+                            borderRadius: 'var(--radius-btn)',
+                            background: row.confidence >= 0.8 ? 'var(--green-dim)' : row.confidence >= 0.5 ? 'var(--blue-tint)' : 'var(--bad-dim)',
+                            color: row.confidence >= 0.8 ? 'var(--green)' : row.confidence >= 0.5 ? 'var(--accent)' : 'var(--bad)',
+                          }}>
                             {(row.confidence * 100).toFixed(0)}%
                           </span>
                         ) : (
-                          <span className="text-text-tertiary">—</span>
+                          <span style={{ color: 'var(--text-tertiary)' }}>—</span>
                         )}
                       </td>
                     )}
-                    <td className="px-3 py-2">
+                    <td style={{ padding: '8px 12px' }}>
                       {isClassification && classes.length > 0 ? (
-                        <div className="flex flex-wrap gap-1">
-                          {classes.map((cls, ci) => (
-                            <button
-                              key={cls}
-                              onClick={e => { e.stopPropagation(); setPendingLabels(p => ({ ...p, [String(row.row_index)]: cls })) }}
-                              className={cn(
-                                'px-2 py-0.5 rounded text-xs font-medium border transition-colors',
-                                labeled === cls
-                                  ? 'bg-brand border-brand text-white'
-                                  : 'bg-surface-secondary border-border text-text-secondary hover:border-brand/40'
-                              )}
-                              title={`Press ${ci + 1}`}
-                            >
-                              {cls}
-                            </button>
-                          ))}
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                          {classes.map((cls, ci) => {
+                            const isActive = labeled === cls
+                            return (
+                              <button
+                                key={cls}
+                                onClick={e => { e.stopPropagation(); setPendingLabels(p => ({ ...p, [String(row.row_index)]: cls })) }}
+                                style={{
+                                  padding: '2px 8px',
+                                  borderRadius: 'var(--radius-btn)',
+                                  fontSize: '12px',
+                                  fontWeight: 500,
+                                  border: isActive ? '1px solid var(--accent)' : '1px solid var(--border)',
+                                  background: isActive ? 'var(--accent)' : 'var(--bg-2)',
+                                  color: isActive ? '#fff' : 'var(--text-secondary)',
+                                  cursor: 'pointer',
+                                  transition: 'all 0.1s',
+                                }}
+                                title={`Press ${ci + 1}`}
+                              >
+                                {cls}
+                              </button>
+                            )
+                          })}
                         </div>
                       ) : (
                         <input
                           type={isClassification ? 'text' : 'number'}
-                          className="w-28 text-sm border border-border rounded px-2 py-0.5 bg-surface-primary focus:outline-none focus:ring-2 focus:ring-brand/30 text-text-primary"
+                          style={{ ...inputSmStyle, width: '112px' }}
                           placeholder={isClassification ? 'class' : 'value'}
                           value={pendingLabels[String(row.row_index)] ?? ''}
                           onChange={e => setPendingLabels(p => ({ ...p, [String(row.row_index)]: e.target.value }))}
@@ -1249,7 +1375,7 @@ function AnnotationTable({
         </div>
       </div>
       {labeledCount > 0 && labeledCount < batch.batch.length && (
-        <p className="text-xs text-text-tertiary">
+        <p style={{ fontSize: '12px', color: 'var(--text-tertiary)' }}>
           You can submit a partial batch — only the {labeledCount} labeled rows will be used for training.
         </p>
       )}
@@ -1324,7 +1450,7 @@ function SessionView({ sessionId, onBack }: { sessionId: string; onBack: () => v
   })
 
   if (isLoading || !session) {
-    return <div className="flex items-center justify-center h-64 text-text-tertiary text-sm">Loading…</div>
+    return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '256px', color: 'var(--text-tertiary)', fontSize: '14px' }}>Loading…</div>
   }
 
   const currentRoundData = activeRound != null
@@ -1333,50 +1459,67 @@ function SessionView({ sessionId, onBack }: { sessionId: string; onBack: () => v
 
   const progressPct = Math.min(100, ((session.current_round - 1) / session.max_rounds) * 100)
 
+  const actionBtnBase: React.CSSProperties = {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px',
+    fontSize: '12px',
+    padding: '6px 12px',
+    borderRadius: 'var(--radius-btn)',
+    cursor: 'pointer',
+    fontWeight: 500,
+    transition: 'all 0.15s',
+    textDecoration: 'none',
+  }
+
   return (
-    <div className="space-y-5">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
       {/* Header */}
-      <div className="flex items-start justify-between">
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
         <div>
           <button
             onClick={onBack}
-            className="flex items-center gap-1 text-xs text-text-tertiary hover:text-text-secondary mb-2 transition-colors"
+            style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', color: 'var(--text-tertiary)', background: 'none', border: 'none', cursor: 'pointer', marginBottom: '8px', transition: 'color 0.15s' }}
+            onMouseEnter={e => ((e.currentTarget as HTMLElement).style.color = 'var(--text-secondary)')}
+            onMouseLeave={e => ((e.currentTarget as HTMLElement).style.color = 'var(--text-tertiary)')}
           >
             ← All sessions
           </button>
-          <h1 className="text-xl font-semibold text-text-primary">
+          <h1 style={{ fontSize: '20px', fontWeight: 600, color: 'var(--text-primary)' }}>
             {session.name || 'Active Learning Session'}
           </h1>
-          <div className="flex items-center gap-4 mt-1 text-xs text-text-tertiary flex-wrap">
-            <span>Target: <span className="text-text-secondary font-medium">{session.target_column}</span></span>
-            <span>Model: <span className="text-text-secondary font-medium">{MODEL_LABELS[session.model_type]}</span></span>
-            <span>Strategy: <span className="text-text-secondary font-medium">{STRATEGY_LABELS[session.sampling_strategy]}</span></span>
-            <span className="text-text-secondary font-medium">{session.labeled_count} labeled</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginTop: '4px', fontSize: '12px', color: 'var(--text-tertiary)', flexWrap: 'wrap' }}>
+            <span>Target: <span style={{ color: 'var(--text-secondary)', fontWeight: 500 }}>{session.target_column}</span></span>
+            <span>Model: <span style={{ color: 'var(--text-secondary)', fontWeight: 500 }}>{MODEL_LABELS[session.model_type]}</span></span>
+            <span>Strategy: <span style={{ color: 'var(--text-secondary)', fontWeight: 500 }}>{STRATEGY_LABELS[session.sampling_strategy]}</span></span>
+            <span style={{ color: 'var(--text-secondary)', fontWeight: 500 }}>{session.labeled_count} labeled</span>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           {session.status === 'training' && (
-            <span className="flex items-center gap-1.5 text-xs font-medium text-brand bg-brand-50 border border-brand/20 px-2.5 py-1 rounded-full">
-              <Loader2 className="w-3 h-3 animate-spin" /> Training…
+            <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 500, color: 'var(--accent)', background: 'var(--blue-tint)', border: '1px solid var(--border-accent)', padding: '4px 10px', borderRadius: 'var(--radius-pill)' }}>
+              <Loader2 style={{ width: '12px', height: '12px', animation: 'spin 1s linear infinite' }} /> Training…
             </span>
           )}
           {session.status === 'annotating' && (
-            <span className="flex items-center gap-1.5 text-xs font-medium text-success bg-success-50 border border-success/20 px-2.5 py-1 rounded-full">
-              <Zap className="w-3 h-3" /> Annotating
+            <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 500, color: 'var(--green)', background: 'var(--green-dim)', border: '1px solid rgba(52,211,153,.22)', padding: '4px 10px', borderRadius: 'var(--radius-pill)' }}>
+              <Zap style={{ width: '12px', height: '12px' }} /> Annotating
             </span>
           )}
           {session.status === 'complete' && (
-            <span className="flex items-center gap-1.5 text-xs font-medium text-success bg-success-50 border border-success/20 px-2.5 py-1 rounded-full">
-              <CheckCircle2 className="w-3 h-3" /> Complete
+            <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 500, color: 'var(--green)', background: 'var(--green-dim)', border: '1px solid rgba(52,211,153,.22)', padding: '4px 10px', borderRadius: 'var(--radius-pill)' }}>
+              <CheckCircle2 style={{ width: '12px', height: '12px' }} /> Complete
             </span>
           )}
           {session.labeled_count > 0 && (
             <a
               href={api.al.exportLabelsUrl(sessionId)}
               download
-              className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border border-border text-text-secondary hover:text-text-primary hover:border-text-secondary transition-colors font-medium"
+              style={{ ...actionBtnBase, border: '1px solid var(--border)', color: 'var(--text-secondary)', background: 'transparent' }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = 'var(--text-primary)'; (e.currentTarget as HTMLElement).style.borderColor = 'var(--border-strong)' }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'var(--text-secondary)'; (e.currentTarget as HTMLElement).style.borderColor = 'var(--border)' }}
             >
-              <Download className="w-3.5 h-3.5" />
+              <Download style={{ width: '14px', height: '14px' }} />
               Export labels
             </a>
           )}
@@ -1385,18 +1528,22 @@ function SessionView({ sessionId, onBack }: { sessionId: string; onBack: () => v
               <button
                 onClick={() => predictMut.mutate()}
                 disabled={predictMut.isPending}
-                className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border border-brand text-brand hover:bg-brand-50 transition-colors font-medium disabled:opacity-50"
+                style={{ ...actionBtnBase, border: '1px solid var(--border-accent)', color: 'var(--accent)', background: 'transparent', opacity: predictMut.isPending ? 0.5 : 1 }}
+                onMouseEnter={e => ((e.currentTarget as HTMLElement).style.background = 'var(--blue-tint)')}
+                onMouseLeave={e => ((e.currentTarget as HTMLElement).style.background = 'transparent')}
               >
                 {predictMut.isPending
-                  ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Predicting…</>
-                  : <><TrendingUp className="w-3.5 h-3.5" /> Predict dataset</>}
+                  ? <><Loader2 style={{ width: '14px', height: '14px', animation: 'spin 1s linear infinite' }} /> Predicting…</>
+                  : <><TrendingUp style={{ width: '14px', height: '14px' }} /> Predict dataset</>}
               </button>
               <a
                 href={api.al.exportUrl(sessionId)}
                 download
-                className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-brand text-white hover:bg-brand/90 transition-colors font-medium"
+                style={{ ...actionBtnBase, background: 'var(--accent)', color: '#fff', border: 'none' }}
+                onMouseEnter={e => ((e.currentTarget as HTMLElement).style.background = 'var(--accent-hover)')}
+                onMouseLeave={e => ((e.currentTarget as HTMLElement).style.background = 'var(--accent)')}
               >
-                <Download className="w-3.5 h-3.5" />
+                <Download style={{ width: '14px', height: '14px' }} />
                 Export model
               </a>
             </>
@@ -1404,7 +1551,9 @@ function SessionView({ sessionId, onBack }: { sessionId: string; onBack: () => v
           {session.status !== 'complete' && (
             <button
               onClick={() => stopMut.mutate()}
-              className="text-xs px-3 py-1.5 rounded-lg border border-border text-text-secondary hover:text-text-primary hover:border-text-secondary transition-colors"
+              style={{ ...actionBtnBase, border: '1px solid var(--border)', color: 'var(--text-secondary)', background: 'transparent' }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = 'var(--text-primary)'; (e.currentTarget as HTMLElement).style.borderColor = 'var(--border-strong)' }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'var(--text-secondary)'; (e.currentTarget as HTMLElement).style.borderColor = 'var(--border)' }}
             >
               Stop
             </button>
@@ -1413,26 +1562,25 @@ function SessionView({ sessionId, onBack }: { sessionId: string; onBack: () => v
       </div>
 
       {/* Progress + model name */}
-      <div className="p-4 bg-surface-primary border border-border rounded-xl space-y-3">
-        <div className="flex items-center justify-between text-xs text-text-tertiary">
+      <div style={{ ...cardStyle, display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '12px', color: 'var(--text-tertiary)' }}>
           <span>Round {Math.max(0, session.current_round - 1)} of {session.max_rounds}</span>
           <span>{session.labeled_count} total labeled examples</span>
         </div>
-        <div className="h-1.5 bg-surface-tertiary rounded-full overflow-hidden">
+        <div style={{ height: '6px', background: 'var(--bg-3)', borderRadius: 'var(--radius-pill)', overflow: 'hidden' }}>
           <div
-            className="h-full bg-brand rounded-full transition-all"
-            style={{ width: `${progressPct}%` }}
+            style={{ height: '100%', background: 'var(--accent)', borderRadius: 'var(--radius-pill)', transition: 'width 0.3s', width: `${progressPct}%` }}
           />
         </div>
 
         {/* Model name */}
-        <div className="flex items-center gap-2 pt-1 border-t border-border">
-          <span className="text-xs text-text-tertiary flex-shrink-0">Model name:</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', paddingTop: '4px', borderTop: '1px solid var(--border)' }}>
+          <span style={{ fontSize: '12px', color: 'var(--text-tertiary)', flexShrink: 0 }}>Model name:</span>
           {editingModelName ? (
-            <div className="flex items-center gap-2 flex-1">
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
               <input
                 autoFocus
-                className="flex-1 text-xs border border-border rounded px-2 py-1 bg-surface-primary focus:outline-none focus:ring-2 focus:ring-brand/30 text-text-primary"
+                style={{ ...inputSmStyle, flex: 1 }}
                 value={modelNameDraft}
                 onChange={e => setModelNameDraft(e.target.value)}
                 onKeyDown={e => {
@@ -1443,23 +1591,23 @@ function SessionView({ sessionId, onBack }: { sessionId: string; onBack: () => v
               <button
                 onClick={() => renameMut.mutate(modelNameDraft)}
                 disabled={renameMut.isPending || !modelNameDraft.trim()}
-                className="text-xs px-2 py-1 rounded bg-brand text-white disabled:opacity-40"
+                style={{ fontSize: '12px', padding: '4px 8px', borderRadius: 'var(--radius-btn)', background: 'var(--accent)', color: '#fff', border: 'none', cursor: 'pointer', opacity: (renameMut.isPending || !modelNameDraft.trim()) ? 0.4 : 1 }}
               >
                 Save
               </button>
               <button
                 onClick={() => setEditingModelName(false)}
-                className="text-xs text-text-tertiary hover:text-text-secondary"
+                style={{ fontSize: '12px', color: 'var(--text-tertiary)', background: 'none', border: 'none', cursor: 'pointer' }}
               >
                 Cancel
               </button>
             </div>
           ) : (
-            <div className="flex items-center gap-2 flex-1">
-              <span className="text-xs font-medium text-text-primary">{session.model_name || '—'}</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
+              <span style={{ fontSize: '12px', fontWeight: 500, color: 'var(--text-primary)' }}>{session.model_name || '—'}</span>
               <button
                 onClick={() => { setModelNameDraft(session.model_name || ''); setEditingModelName(true) }}
-                className="text-xs text-brand hover:underline"
+                style={{ fontSize: '12px', color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}
               >
                 Rename
               </button>
@@ -1470,46 +1618,46 @@ function SessionView({ sessionId, onBack }: { sessionId: string; onBack: () => v
 
       {/* Predict result banner */}
       {predictResult && (
-        <div className="p-3 bg-success-50 border border-success/20 rounded-xl flex items-center justify-between">
-          <div className="text-xs text-text-secondary">
-            <span className="font-semibold text-success">Predictions complete!</span>
-            {' '}Created dataset <span className="font-medium text-text-primary">{predictResult.dataset_name}</span> with {predictResult.row_count.toLocaleString()} rows.
+        <div style={{ padding: '12px', background: 'var(--green-dim)', border: '1px solid rgba(52,211,153,.22)', borderRadius: 'var(--radius-card)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+            <span style={{ fontWeight: 600, color: 'var(--green)' }}>Predictions complete!</span>
+            {' '}Created dataset <span style={{ fontWeight: 500, color: 'var(--text-primary)' }}>{predictResult.dataset_name}</span> with {predictResult.row_count.toLocaleString()} rows.
           </div>
-          <div className="flex items-center gap-2">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <a
               href="/datasets"
-              className="flex items-center gap-1 text-xs text-brand hover:underline font-medium"
+              style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', color: 'var(--accent)', textDecoration: 'underline', fontWeight: 500 }}
             >
-              View in Datasets <ExternalLink className="w-3 h-3" />
+              View in Datasets <ExternalLink style={{ width: '12px', height: '12px' }} />
             </a>
-            <button onClick={() => setPredictResult(null)} className="text-text-tertiary hover:text-text-secondary text-xs ml-2">✕</button>
+            <button onClick={() => setPredictResult(null)} style={{ color: 'var(--text-tertiary)', background: 'none', border: 'none', cursor: 'pointer', fontSize: '12px', marginLeft: '8px' }}>✕</button>
           </div>
         </div>
       )}
 
       {/* Predict error */}
       {predictMut.isError && (
-        <div className="p-3 bg-danger-50 border border-danger/20 rounded-xl text-xs text-danger">
+        <div style={{ padding: '12px', background: 'var(--bad-dim)', border: '1px solid rgba(239,68,68,.22)', borderRadius: 'var(--radius-card)', fontSize: '12px', color: 'var(--bad)' }}>
           Prediction failed: {(predictMut.error as Error).message}
         </div>
       )}
 
       {/* Main grid */}
-      <div className="grid grid-cols-5 gap-5">
+      <div style={{ display: 'grid', gridTemplateColumns: '3fr 2fr', gap: '20px' }}>
         {/* Left: annotation */}
-        <div className="col-span-3">
+        <div>
           {session.status === 'training' && (
-            <div className="p-8 bg-brand-50 border border-brand/20 rounded-xl text-center">
-              <Loader2 className="w-8 h-8 text-brand animate-spin mx-auto mb-3" />
-              <p className="text-sm font-medium text-text-primary">Training in progress…</p>
-              <p className="text-xs text-text-secondary mt-1">The model is learning from your labels. This usually takes a few seconds.</p>
+            <div style={{ padding: '32px', background: 'var(--blue-tint)', border: '1px solid var(--border-accent)', borderRadius: 'var(--radius-card)', textAlign: 'center' }}>
+              <Loader2 style={{ width: '32px', height: '32px', color: 'var(--accent)', animation: 'spin 1s linear infinite', margin: '0 auto 12px' }} />
+              <p style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-primary)' }}>Training in progress…</p>
+              <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '4px' }}>The model is learning from your labels. This usually takes a few seconds.</p>
             </div>
           )}
           {session.status === 'complete' && (
-            <div className="p-8 bg-success-50 border border-success/20 rounded-xl text-center">
-              <CheckCircle2 className="w-10 h-10 text-success mx-auto mb-3" />
-              <p className="text-sm font-semibold text-text-primary">Session Complete</p>
-              <p className="text-xs text-text-secondary mt-1">
+            <div style={{ padding: '32px', background: 'var(--green-dim)', border: '1px solid rgba(52,211,153,.22)', borderRadius: 'var(--radius-card)', textAlign: 'center' }}>
+              <CheckCircle2 style={{ width: '40px', height: '40px', color: 'var(--green)', margin: '0 auto 12px' }} />
+              <p style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)' }}>Session Complete</p>
+              <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '4px' }}>
                 {session.rounds.length} round{session.rounds.length !== 1 ? 's' : ''} completed · {session.labeled_count} examples labeled
               </p>
             </div>
@@ -1523,35 +1671,43 @@ function SessionView({ sessionId, onBack }: { sessionId: string; onBack: () => v
             />
           )}
           {session.status === 'annotating' && !batch && (
-            <div className="flex items-center justify-center h-40 text-text-tertiary text-sm">
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '160px', color: 'var(--text-tertiary)', fontSize: '14px' }}>
               Loading batch…
             </div>
           )}
         </div>
 
         {/* Right: metrics */}
-        <div className="col-span-2 space-y-4">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           {session.rounds.length >= 2 && (
             <AccuracyChart rounds={session.rounds} taskType={session.task_type} />
           )}
           {session.rounds.length > 0 && (
             <div>
-              <p className="text-xs font-semibold text-text-secondary mb-2">Round history</p>
-              <div className="flex flex-wrap gap-1.5">
-                {session.rounds.map(r => (
-                  <button
-                    key={r.round}
-                    onClick={() => setActiveRound(r.round)}
-                    className={cn(
-                      'px-2.5 py-1 rounded-lg text-xs font-medium border-2 transition-colors',
-                      activeRound === r.round
-                        ? 'border-brand bg-brand-50 text-brand'
-                        : 'border-border text-text-secondary hover:border-brand/40 bg-surface-secondary'
-                    )}
-                  >
-                    Round {r.round}
-                  </button>
-                ))}
+              <p style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '8px' }}>Round history</p>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                {session.rounds.map(r => {
+                  const isActive = activeRound === r.round
+                  return (
+                    <button
+                      key={r.round}
+                      onClick={() => setActiveRound(r.round)}
+                      style={{
+                        padding: '4px 10px',
+                        borderRadius: 'var(--radius-btn)',
+                        fontSize: '12px',
+                        fontWeight: 500,
+                        border: isActive ? '2px solid var(--accent)' : '2px solid var(--border)',
+                        background: isActive ? 'var(--blue-tint)' : 'var(--bg-2)',
+                        color: isActive ? 'var(--accent)' : 'var(--text-secondary)',
+                        cursor: 'pointer',
+                        transition: 'border-color 0.15s',
+                      }}
+                    >
+                      Round {r.round}
+                    </button>
+                  )
+                })}
               </div>
             </div>
           )}
@@ -1559,10 +1715,10 @@ function SessionView({ sessionId, onBack }: { sessionId: string; onBack: () => v
           {currentRoundData ? (
             <MetricsPanel round={currentRoundData} />
           ) : (
-            <div className="p-6 bg-surface-primary border border-border rounded-xl text-center">
-              <BarChart3 className="w-8 h-8 text-text-tertiary mx-auto mb-2" />
-              <p className="text-sm text-text-secondary">Metrics appear after the first training round.</p>
-              <p className="text-xs text-text-tertiary mt-1">Label some examples and click Submit &amp; Train.</p>
+            <div style={{ padding: '24px', background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 'var(--radius-card)', textAlign: 'center' }}>
+              <BarChart3 style={{ width: '32px', height: '32px', color: 'var(--text-tertiary)', margin: '0 auto 8px' }} />
+              <p style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>Metrics appear after the first training round.</p>
+              <p style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginTop: '4px' }}>Label some examples and click Submit &amp; Train.</p>
             </div>
           )}
         </div>
@@ -1600,36 +1756,36 @@ function SessionList({
   }
 
   return (
-    <div className="space-y-6">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
       {/* Header */}
-      <div className="flex items-center gap-3">
-        <div className="w-9 h-9 rounded-xl bg-brand-50 flex items-center justify-center">
-          <Brain className="w-5 h-5 text-brand" />
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <div style={{ width: '36px', height: '36px', borderRadius: 'var(--radius-card)', background: 'var(--blue-tint)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <Brain style={{ width: '20px', height: '20px', color: 'var(--accent)' }} />
         </div>
-        <div className="flex-1">
-          <h1 className="text-xl font-semibold text-text-primary">Active Learning</h1>
-          <p className="text-sm text-text-secondary">Train models with minimal labeled data — the model picks the most informative examples each round.</p>
+        <div style={{ flex: 1 }}>
+          <h1 style={{ fontSize: '20px', fontWeight: 600, color: 'var(--text-primary)' }}>Active Learning</h1>
+          <p style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>Train models with minimal labeled data — the model picks the most informative examples each round.</p>
         </div>
         <Button onClick={onCreate}>
-          <Brain className="w-4 h-4" />
+          <Brain style={{ width: '16px', height: '16px' }} />
           New Session
         </Button>
       </div>
 
       {sessions.length === 0 ? (
-        <div className="p-12 bg-surface-primary border border-dashed border-border rounded-2xl text-center">
-          <Target className="w-10 h-10 text-text-tertiary mx-auto mb-3" />
-          <p className="text-sm font-medium text-text-primary mb-1">No sessions yet</p>
-          <p className="text-sm text-text-tertiary mb-6">
+        <div style={{ padding: '48px', background: 'var(--bg-card)', border: '1px dashed var(--border)', borderRadius: '16px', textAlign: 'center' }}>
+          <Target style={{ width: '40px', height: '40px', color: 'var(--text-tertiary)', margin: '0 auto 12px' }} />
+          <p style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-primary)', marginBottom: '4px' }}>No sessions yet</p>
+          <p style={{ fontSize: '14px', color: 'var(--text-tertiary)', marginBottom: '24px' }}>
             Start an active learning session to train a model with minimal labeled data.
           </p>
           <Button onClick={onCreate}>
             Create first session
-            <ArrowRight className="w-4 h-4" />
+            <ArrowRight style={{ width: '16px', height: '16px' }} />
           </Button>
         </div>
       ) : (
-        <div className="space-y-3">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           {sessions.map(s => {
             const metricSummary = getMetricSummary(s)
             const lastRound = s.rounds[s.rounds.length - 1]
@@ -1637,16 +1793,25 @@ function SessionList({
               <div
                 key={s.id}
                 onClick={() => onSelect(s.id)}
-                className="p-5 bg-surface-primary border border-border hover:border-brand/30 rounded-xl cursor-pointer transition-colors"
+                style={{
+                  padding: '20px',
+                  background: 'var(--bg-card)',
+                  border: '1px solid var(--border)',
+                  borderRadius: 'var(--radius-card)',
+                  cursor: 'pointer',
+                  transition: 'border-color 0.15s',
+                }}
+                onMouseEnter={e => ((e.currentTarget as HTMLElement).style.borderColor = 'var(--border-accent)')}
+                onMouseLeave={e => ((e.currentTarget as HTMLElement).style.borderColor = 'var(--border)')}
               >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2.5 flex-wrap">
-                      <span className="font-medium text-text-primary">{s.name || 'Unnamed Session'}</span>
+                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px' }}>
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                      <span style={{ fontWeight: 500, color: 'var(--text-primary)' }}>{s.name || 'Unnamed Session'}</span>
                       <StatusBadge status={s.status} />
                     </div>
-                    <div className="text-xs text-text-tertiary mt-1 flex items-center gap-3 flex-wrap">
-                      <span>Target: <span className="text-text-secondary">{s.target_column}</span></span>
+                    <div style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                      <span>Target: <span style={{ color: 'var(--text-secondary)' }}>{s.target_column}</span></span>
                       <span>{MODEL_LABELS[s.model_type]}</span>
                       <span>{STRATEGY_LABELS[s.sampling_strategy]}</span>
                       <span>Round {Math.max(0, s.current_round - 1)} / {s.max_rounds}</span>
@@ -1654,16 +1819,18 @@ function SessionList({
                       <span>{formatRelativeTime(s.created_at)}</span>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3 flex-shrink-0">
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0 }}>
                     {metricSummary && (
-                      <div className="text-right">
-                        <p className="text-sm font-semibold text-brand">{metricSummary}</p>
-                        <p className="text-xs text-text-tertiary">round {lastRound?.round}</p>
+                      <div style={{ textAlign: 'right' }}>
+                        <p style={{ fontSize: '14px', fontWeight: 600, color: 'var(--accent)' }}>{metricSummary}</p>
+                        <p style={{ fontSize: '12px', color: 'var(--text-tertiary)' }}>round {lastRound?.round}</p>
                       </div>
                     )}
                     <button
                       onClick={e => { e.stopPropagation(); deleteMut.mutate(s.id) }}
-                      className="text-xs text-text-tertiary hover:text-danger transition-colors px-2 py-1"
+                      style={{ fontSize: '12px', color: 'var(--text-tertiary)', background: 'none', border: 'none', cursor: 'pointer', padding: '4px 8px', transition: 'color 0.15s' }}
+                      onMouseEnter={e => ((e.currentTarget as HTMLElement).style.color = 'var(--bad)')}
+                      onMouseLeave={e => ((e.currentTarget as HTMLElement).style.color = 'var(--text-tertiary)')}
                     >
                       Delete
                     </button>
@@ -1671,11 +1838,15 @@ function SessionList({
                 </div>
 
                 {/* Mini progress */}
-                <div className="mt-3">
-                  <div className="h-1 bg-surface-tertiary rounded-full overflow-hidden">
+                <div style={{ marginTop: '12px' }}>
+                  <div style={{ height: '4px', background: 'var(--bg-3)', borderRadius: 'var(--radius-pill)', overflow: 'hidden' }}>
                     <div
-                      className={cn('h-full rounded-full', s.status === 'complete' ? 'bg-success' : 'bg-brand')}
-                      style={{ width: `${Math.min(100, ((s.current_round - 1) / s.max_rounds) * 100)}%` }}
+                      style={{
+                        height: '100%',
+                        borderRadius: 'var(--radius-pill)',
+                        background: s.status === 'complete' ? 'var(--green)' : 'var(--accent)',
+                        width: `${Math.min(100, ((s.current_round - 1) / s.max_rounds) * 100)}%`,
+                      }}
                     />
                   </div>
                 </div>
@@ -1690,18 +1861,18 @@ function SessionList({
 
 function StatusBadge({ status }: { status: string }) {
   if (status === 'complete') return (
-    <span className="flex items-center gap-1 text-xs font-medium text-success bg-success-50 border border-success/20 px-2 py-0.5 rounded-full">
-      <CheckCircle2 className="w-3 h-3" /> Complete
+    <span style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: '0.1em', background: 'var(--green-dim)', color: 'var(--green)', border: '1px solid rgba(52,211,153,.22)', borderRadius: 'var(--radius-pill)', padding: '3px 10px' }}>
+      <CheckCircle2 style={{ width: '12px', height: '12px' }} /> Complete
     </span>
   )
   if (status === 'training') return (
-    <span className="flex items-center gap-1 text-xs font-medium text-brand bg-brand-50 border border-brand/20 px-2 py-0.5 rounded-full">
-      <Loader2 className="w-3 h-3 animate-spin" /> Training
+    <span style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: '0.1em', background: 'var(--blue-tint)', color: 'var(--accent)', border: '1px solid var(--border-accent)', borderRadius: 'var(--radius-pill)', padding: '3px 10px' }}>
+      <Loader2 style={{ width: '12px', height: '12px', animation: 'spin 1s linear infinite' }} /> Training
     </span>
   )
   return (
-    <span className="flex items-center gap-1 text-xs font-medium text-success bg-success-50 border border-success/20 px-2 py-0.5 rounded-full">
-      <TrendingUp className="w-3 h-3" /> Annotating
+    <span style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: '0.1em', background: 'var(--green-dim)', color: 'var(--green)', border: '1px solid rgba(52,211,153,.22)', borderRadius: 'var(--radius-pill)', padding: '3px 10px' }}>
+      <TrendingUp style={{ width: '12px', height: '12px' }} /> Annotating
     </span>
   )
 }
@@ -1724,14 +1895,14 @@ export default function ActiveLearningPage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 className="w-5 h-5 text-text-tertiary animate-spin" />
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '256px' }}>
+        <Loader2 style={{ width: '20px', height: '20px', color: 'var(--text-tertiary)', animation: 'spin 1s linear infinite' }} />
       </div>
     )
   }
 
   return (
-    <div className="p-6 max-w-6xl mx-auto">
+    <div style={{ padding: '24px', maxWidth: '1100px', margin: '0 auto' }}>
       {view.type === 'list' && (
         <SessionList
           sessions={sessions}
@@ -1741,20 +1912,22 @@ export default function ActiveLearningPage() {
       )}
 
       {view.type === 'setup' && (
-        <div className="max-w-3xl mx-auto">
+        <div style={{ maxWidth: '768px', margin: '0 auto' }}>
           <button
             onClick={() => setView({ type: 'list' })}
-            className="flex items-center gap-1 text-xs text-text-tertiary hover:text-text-secondary mb-5 transition-colors"
+            style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', color: 'var(--text-tertiary)', background: 'none', border: 'none', cursor: 'pointer', marginBottom: '20px', transition: 'color 0.15s' }}
+            onMouseEnter={e => ((e.currentTarget as HTMLElement).style.color = 'var(--text-secondary)')}
+            onMouseLeave={e => ((e.currentTarget as HTMLElement).style.color = 'var(--text-tertiary)')}
           >
             ← All sessions
           </button>
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-9 h-9 rounded-xl bg-brand-50 flex items-center justify-center">
-              <Brain className="w-5 h-5 text-brand" />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
+            <div style={{ width: '36px', height: '36px', borderRadius: 'var(--radius-card)', background: 'var(--blue-tint)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Brain style={{ width: '20px', height: '20px', color: 'var(--accent)' }} />
             </div>
             <div>
-              <h1 className="text-xl font-semibold text-text-primary">New Session</h1>
-              <p className="text-sm text-text-secondary">Configure your active learning experiment</p>
+              <h1 style={{ fontSize: '20px', fontWeight: 600, color: 'var(--text-primary)' }}>New Session</h1>
+              <p style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>Configure your active learning experiment</p>
             </div>
           </div>
           <SetupForm onCreated={s => setView({ type: 'session', id: s.id })} />

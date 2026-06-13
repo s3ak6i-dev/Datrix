@@ -5,7 +5,6 @@ import {
   ShieldCheck, ShoppingBag, Settings, HelpCircle,
   Sun, Moon, LogOut,
 } from 'lucide-react'
-import { cn } from '@/lib/utils'
 import { useAuth } from '@/contexts/AuthContext'
 
 // ── Theme toggle ───────────────────────────────────────────────────────────────
@@ -22,7 +21,6 @@ function useTheme() {
     setThemeState(t)
   }
 
-  // Sync in case index.html script already set it
   useEffect(() => {
     const stored = localStorage.getItem('datrix-theme') as 'dark' | 'light' | null
     if (stored && stored !== theme) setThemeState(stored)
@@ -48,7 +46,21 @@ const bottomItems = [
   { to: '/docs',        icon: HelpCircle,  label: 'Docs' },
 ]
 
-// ── Component ──────────────────────────────────────────────────────────────────
+// ── NavItem ────────────────────────────────────────────────────────────────────
+
+function NavItem({ to, icon, label }: { to: string; icon: React.ReactNode; label: string }) {
+  return (
+    <NavLink
+      to={to}
+      className={({ isActive }) => isActive ? 'active' : ''}
+    >
+      {icon}
+      <span>{label}</span>
+    </NavLink>
+  )
+}
+
+// ── Sidebar ────────────────────────────────────────────────────────────────────
 
 export function Sidebar() {
   const { theme, setTheme } = useTheme()
@@ -61,89 +73,141 @@ export function Sidebar() {
   }
 
   return (
-    <aside className="w-52 flex-shrink-0 bg-surface-primary border-r border-border flex flex-col h-full">
+    <div className="sidebar-inner">
       {/* Logo */}
-      <div className="h-14 flex items-center px-4 border-b border-border gap-2.5">
-        {/* Live-signal dot */}
-        <span className="dot-live w-[7px] h-[7px] flex-shrink-0" />
+      <div
+        style={{
+          height: '56px',
+          display: 'flex',
+          alignItems: 'center',
+          padding: '0 16px',
+          borderBottom: '1px solid var(--border)',
+          gap: '10px',
+          flexShrink: 0,
+        }}
+      >
         <span
-          className="text-[15px] font-light tracking-[-0.03em] text-text-primary"
-          style={{ fontFamily: 'var(--font-sans)' }}
+          className="dot-live"
+          style={{ width: '7px', height: '7px', flexShrink: 0, borderRadius: '50%' }}
+        />
+        <span
+          style={{
+            fontFamily: 'var(--font-sans)',
+            fontSize: '15px',
+            fontWeight: 300,
+            letterSpacing: '-0.03em',
+            color: 'var(--text-primary)',
+          }}
         >
           Datrix
         </span>
-        <span className="ml-auto mono-micro text-[9px] px-1.5 py-0.5 bg-surface-tertiary rounded-[var(--radius-xs)]">
+        <span
+          style={{
+            marginLeft: 'auto',
+            fontFamily: 'var(--font-mono)',
+            fontSize: '9px',
+            fontWeight: 400,
+            letterSpacing: '0.12em',
+            textTransform: 'uppercase',
+            color: 'var(--text-tertiary)',
+            padding: '2px 6px',
+            background: 'var(--bg-3)',
+            borderRadius: 'var(--radius-xs)',
+            border: '1px solid var(--border)',
+          }}
+        >
           beta
         </span>
       </div>
 
       {/* Primary nav */}
-      <nav className="flex-1 py-3 overflow-y-auto flex flex-col">
-        <div className="flex-1">
+      <nav className="side-nav">
           {navItems.map(({ to, icon: Icon, label }) => (
-            <NavItem key={to} to={to} icon={<Icon className="w-4 h-4" />} label={label} />
+            <NavItem key={to} to={to} icon={<Icon size={15} />} label={label} />
           ))}
-          <div className="my-3 mx-3 border-t border-border" />
+          <div style={{ margin: '10px 12px', borderTop: '1px solid var(--border)' }} />
           {bottomItems.map(({ to, icon: Icon, label }) => (
-            <NavItem key={to} to={to} icon={<Icon className="w-4 h-4" />} label={label} />
+            <NavItem key={to} to={to} icon={<Icon size={15} />} label={label} />
           ))}
-        </div>
 
-        {/* Bottom controls */}
-        <div className="px-3 pb-3 pt-1 border-t border-border mt-3 space-y-1">
-          {/* User email */}
+        {/* Footer controls */}
+        <div
+          style={{
+            padding: '10px 8px',
+            borderTop: '1px solid var(--border)',
+            marginTop: '8px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '2px',
+          }}
+        >
           {user && (
-            <p className="mono-micro text-[10px] text-text-tertiary px-3 py-1 truncate">
+            <p
+              style={{
+                fontFamily: 'var(--font-mono)',
+                fontSize: '10px',
+                letterSpacing: '0.08em',
+                color: 'var(--text-tertiary)',
+                padding: '4px 12px',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+                margin: 0,
+              }}
+            >
               {user.email}
             </p>
           )}
-          {/* Theme toggle */}
-          <button
+          <SidebarButton
             onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
             aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
-            className={cn(
-              'w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors btn-lift',
-              'text-text-tertiary hover:text-text-secondary hover:bg-surface-secondary',
-            )}
           >
-            {theme === 'dark'
-              ? <Sun className="w-4 h-4 flex-shrink-0" />
-              : <Moon className="w-4 h-4 flex-shrink-0" />
-            }
+            {theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
             <span>{theme === 'dark' ? 'Light mode' : 'Dark mode'}</span>
-          </button>
-          {/* Logout */}
-          <button
-            onClick={handleLogout}
-            className={cn(
-              'w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors btn-lift',
-              'text-text-tertiary hover:text-bad hover:bg-surface-secondary',
-            )}
-          >
-            <LogOut className="w-4 h-4 flex-shrink-0" />
+          </SidebarButton>
+          <SidebarButton onClick={handleLogout} danger>
+            <LogOut size={15} />
             <span>Sign out</span>
-          </button>
+          </SidebarButton>
         </div>
       </nav>
-    </aside>
+    </div>
   )
 }
 
-function NavItem({ to, icon, label }: { to: string; icon: React.ReactNode; label: string }) {
+// ── SidebarButton (utility) ────────────────────────────────────────────────────
+
+function SidebarButton({
+  children,
+  danger,
+  onClick,
+  ...props
+}: React.ButtonHTMLAttributes<HTMLButtonElement> & { danger?: boolean }) {
+  const [hovered, setHovered] = useState(false)
+
   return (
-    <NavLink
-      to={to}
-      className={({ isActive }) =>
-        cn(
-          'flex items-center gap-2.5 mx-2 px-3 py-2 rounded-lg text-sm transition-colors btn-lift',
-          isActive
-            ? 'bg-brand-50 text-brand font-medium'
-            : 'text-text-secondary hover:text-text-primary hover:bg-surface-secondary',
-        )
-      }
+    <button
+      onClick={onClick}
+      style={{
+        width: '100%',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '10px',
+        padding: '8px 12px',
+        borderRadius: 'var(--radius-md)',
+        fontSize: '13.5px',
+        color: hovered ? (danger ? 'var(--bad)' : 'var(--text-secondary)') : 'var(--text-tertiary)',
+        background: hovered ? 'var(--bg-3)' : 'transparent',
+        border: 'none',
+        cursor: 'pointer',
+        textAlign: 'left',
+        transition: 'background-color 0.15s, color 0.15s',
+      }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      {...props}
     >
-      {icon}
-      <span>{label}</span>
-    </NavLink>
+      {children}
+    </button>
   )
 }

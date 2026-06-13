@@ -151,6 +151,7 @@ export const api = {
   al: {
     createSession: (body: {
       name?: string
+      model_name?: string
       dataset_id: string
       target_column: string
       task_type: ALTaskType

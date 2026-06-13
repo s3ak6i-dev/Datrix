@@ -7,14 +7,13 @@ import {
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
 import {
-  ArrowLeft, Play, Download, Save, Loader2, CheckCircle2,
+  ArrowLeft, Play, Download, Loader2, CheckCircle2,
   XCircle, Plus, Trash2, Filter, Columns, Minus, PenLine,
   Droplets, Copy, CaseSensitive, BarChart2, Hash, ArrowUpDown,
   ChevronRight, Database, AlertCircle, TableIcon, ChevronDown, ChevronUp,
 } from 'lucide-react'
 import { api } from '@/lib/api'
 import { Button } from '@/components/ui/Button'
-import { cn } from '@/lib/utils'
 import { formatRelativeTime } from '@/lib/utils'
 import type { Pipeline, PipelineStep, PipelineRun, StepType, ColumnSchema } from '@/types'
 
@@ -70,16 +69,34 @@ function stepSummary(step: PipelineStep): string {
 function SourceNode({ data }: NodeProps) {
   const d = data as { name: string; rows: number | null; cols: number | null }
   return (
-    <div className="bg-brand-50 border-2 border-brand/40 rounded-lg px-3 py-2 w-36 shadow-sm">
-      <div className="flex items-center gap-1.5 mb-1">
-        <Database className="w-3 h-3 text-brand flex-shrink-0" />
-        <span className="text-[10px] font-bold text-brand uppercase tracking-wider">Source</span>
+    <div style={{
+      background: 'var(--blue-tint)',
+      border: '2px solid var(--accent)',
+      borderRadius: 'var(--radius-md)',
+      padding: '8px 12px',
+      width: '144px',
+      boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
+        <Database style={{ width: '12px', height: '12px', color: 'var(--accent)', flexShrink: 0 }} />
+        <span style={{
+          fontSize: '10px',
+          fontWeight: 700,
+          color: 'var(--accent)',
+          fontFamily: 'var(--font-mono)',
+          letterSpacing: '0.1em',
+          textTransform: 'uppercase',
+        }}>Source</span>
       </div>
-      <p className="text-xs font-medium text-text-primary truncate">{d.name || 'No dataset'}</p>
+      <p style={{ fontSize: '12px', fontWeight: 500, color: 'var(--text-primary)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        {d.name || 'No dataset'}
+      </p>
       {d.rows != null && (
-        <p className="text-[10px] text-text-tertiary mt-0.5">{d.rows.toLocaleString()} rows</p>
+        <p style={{ fontSize: '10px', color: 'var(--text-tertiary)', margin: '2px 0 0', fontFamily: 'var(--font-mono)' }}>
+          {d.rows.toLocaleString()} rows
+        </p>
       )}
-      <Handle type="source" position={Position.Right} className="!bg-brand !border-brand !w-2 !h-2" />
+      <Handle type="source" position={Position.Right} style={{ background: 'var(--accent)', border: '1px solid var(--accent)', width: '8px', height: '8px' }} />
     </div>
   )
 }
@@ -89,33 +106,62 @@ function StepNode({ data, selected }: NodeProps) {
   const { step, result } = d
   const dropped = result ? result.rows_in - result.rows_out : 0
   return (
-    <div className={cn(
-      'bg-surface-primary border-2 rounded-xl px-4 py-3 w-44 shadow-sm transition-colors group',
-      selected ? 'border-brand' : 'border-border hover:border-brand/40',
-    )}>
-      <Handle type="target" position={Position.Left} className="!bg-border !w-2.5 !h-2.5" />
-      <div className="flex items-center justify-between mb-1">
-        <div className="flex items-center gap-1.5 text-text-secondary">
+    <div style={{
+      background: 'var(--bg-card)',
+      border: `2px solid ${selected ? 'var(--accent)' : 'var(--border)'}`,
+      borderRadius: 'var(--radius-card)',
+      padding: '12px 16px',
+      width: '176px',
+      boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
+      transition: 'border-color 0.15s',
+    }}>
+      <Handle type="target" position={Position.Left} style={{ background: 'var(--border-strong)', border: '1px solid var(--border)', width: '10px', height: '10px' }} />
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--text-secondary)' }}>
           {STEP_ICON[step.type]}
-          <span className="text-xs font-semibold uppercase tracking-wide">{step.type.replace(/_/g, ' ')}</span>
+          <span style={{ fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+            {step.type.replace(/_/g, ' ')}
+          </span>
         </div>
         <button
           onClick={(e) => { e.stopPropagation(); d.onDelete() }}
-          className="opacity-0 group-hover:opacity-100 text-text-tertiary hover:text-danger transition-colors nodrag p-0.5 rounded"
           title="Remove step"
+          className="nodrag"
+          style={{
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            color: 'var(--text-tertiary)',
+            padding: '2px',
+            borderRadius: 'var(--radius-xs)',
+            display: 'flex',
+            alignItems: 'center',
+            opacity: 0,
+            transition: 'color 0.15s, opacity 0.15s',
+          }}
+          onMouseEnter={(e) => {
+            (e.currentTarget as HTMLButtonElement).style.opacity = '1'
+            ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--bad)'
+          }}
+          onMouseLeave={(e) => {
+            (e.currentTarget as HTMLButtonElement).style.opacity = '0'
+            ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--text-tertiary)'
+          }}
         >
-          <Trash2 className="w-3 h-3" />
+          <Trash2 style={{ width: '12px', height: '12px' }} />
         </button>
       </div>
-      <p className="text-xs text-text-secondary truncate">{stepSummary(step)}</p>
+      <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        {stepSummary(step)}
+      </p>
       {result && (
-        <div className="mt-2 pt-2 border-t border-border flex items-center gap-1 text-xs">
-          <span className="text-text-primary font-medium">{result.rows_out.toLocaleString()}</span>
-          <span className="text-text-tertiary">rows</span>
-          {dropped > 0 && <span className="text-danger ml-1">−{dropped.toLocaleString()}</span>}
+        <div style={{ marginTop: '8px', paddingTop: '8px', borderTop: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px' }}>
+          <span style={{ color: 'var(--text-primary)', fontWeight: 500 }}>{result.rows_out.toLocaleString()}</span>
+          <span style={{ color: 'var(--text-tertiary)' }}>rows</span>
+          {dropped > 0 && <span style={{ color: 'var(--bad)', marginLeft: '4px' }}>−{dropped.toLocaleString()}</span>}
         </div>
       )}
-      <Handle type="source" position={Position.Right} className="!bg-border !w-2.5 !h-2.5" />
+      <Handle type="source" position={Position.Right} style={{ background: 'var(--border-strong)', border: '1px solid var(--border)', width: '10px', height: '10px' }} />
     </div>
   )
 }
@@ -124,26 +170,42 @@ function OutputNode({ data }: NodeProps) {
   const d = data as { run: PipelineRun | null }
   const run = d.run
   return (
-    <div className="bg-success-50 border-2 border-success/40 rounded-lg px-3 py-2 w-32 shadow-sm">
-      <Handle type="target" position={Position.Left} className="!bg-success/60 !w-2 !h-2" />
-      <div className="flex items-center gap-1.5 mb-1">
-        <Download className="w-3 h-3 text-success flex-shrink-0" />
-        <span className="text-[10px] font-bold text-success uppercase tracking-wider">Output</span>
+    <div style={{
+      background: 'var(--green-dim)',
+      border: '2px solid var(--green)',
+      borderRadius: 'var(--radius-md)',
+      padding: '8px 12px',
+      width: '128px',
+      boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
+    }}>
+      <Handle type="target" position={Position.Left} style={{ background: 'var(--green)', opacity: 0.6, width: '8px', height: '8px' }} />
+      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
+        <Download style={{ width: '12px', height: '12px', color: 'var(--green)', flexShrink: 0 }} />
+        <span style={{
+          fontSize: '10px',
+          fontWeight: 700,
+          color: 'var(--green)',
+          fontFamily: 'var(--font-mono)',
+          letterSpacing: '0.1em',
+          textTransform: 'uppercase',
+        }}>Output</span>
       </div>
       {run?.status === 'complete' && !run.is_dry_run ? (
         <a
           href={api.pipelines.downloadUrl(run.id)}
           download
           onClick={(e) => e.stopPropagation()}
-          className="text-[10px] text-brand underline"
+          style={{ fontSize: '10px', color: 'var(--accent)', textDecoration: 'underline' }}
         >
           Download CSV
         </a>
       ) : (
-        <p className="text-[10px] text-text-tertiary">CSV · Parquet</p>
+        <p style={{ fontSize: '10px', color: 'var(--text-tertiary)', margin: 0 }}>CSV · Parquet</p>
       )}
       {run?.rows_out != null && (
-        <p className="text-[10px] text-text-tertiary mt-0.5">{run.rows_out.toLocaleString()} rows</p>
+        <p style={{ fontSize: '10px', color: 'var(--text-tertiary)', margin: '2px 0 0', fontFamily: 'var(--font-mono)' }}>
+          {run.rows_out.toLocaleString()} rows
+        </p>
       )}
     </div>
   )
@@ -157,14 +219,26 @@ function PreviewTable({ rows }: { rows: Record<string, unknown>[] }) {
   if (!rows.length) return null
   const cols = Object.keys(rows[0])
   return (
-    <div className="overflow-auto h-full">
-      <table className="text-xs border-collapse min-w-full">
-        <thead className="sticky top-0 z-10">
+    <div style={{ overflow: 'auto', height: '100%' }}>
+      <table style={{ fontSize: '12px', borderCollapse: 'collapse', minWidth: '100%' }}>
+        <thead style={{ position: 'sticky', top: 0, zIndex: 10 }}>
           <tr>
             {cols.map((col) => (
               <th
                 key={col}
-                className="px-3 py-2 text-left font-medium text-text-secondary bg-surface-tertiary border-b border-r border-border whitespace-nowrap"
+                style={{
+                  padding: '8px 12px',
+                  textAlign: 'left',
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: '10px',
+                  letterSpacing: '0.08em',
+                  fontWeight: 500,
+                  color: 'var(--text-secondary)',
+                  background: 'var(--bg-2)',
+                  borderBottom: '1px solid var(--border)',
+                  borderRight: '1px solid var(--border)',
+                  whiteSpace: 'nowrap',
+                }}
               >
                 {col}
               </th>
@@ -173,16 +247,30 @@ function PreviewTable({ rows }: { rows: Record<string, unknown>[] }) {
         </thead>
         <tbody>
           {rows.map((row, i) => (
-            <tr key={i} className={i % 2 === 0 ? 'bg-surface-primary' : 'bg-surface-secondary'}>
+            <tr key={i} style={{ background: i % 2 === 0 ? 'var(--bg-card)' : 'var(--bg-2)' }}>
               {cols.map((col) => {
                 const val = row[col]
                 const display = val === null || val === undefined ? (
-                  <span className="text-text-tertiary italic">null</span>
+                  <span style={{ color: 'var(--text-tertiary)', fontStyle: 'italic' }}>null</span>
                 ) : typeof val === 'number' ? (
                   Number.isInteger(val) ? String(val) : val.toFixed(4)
                 ) : String(val)
                 return (
-                  <td key={col} className="px-3 py-1.5 border-b border-r border-border whitespace-nowrap max-w-[200px] truncate text-text-primary font-mono">
+                  <td
+                    key={col}
+                    style={{
+                      padding: '6px 12px',
+                      borderBottom: '1px solid var(--border)',
+                      borderRight: '1px solid var(--border)',
+                      whiteSpace: 'nowrap',
+                      maxWidth: '200px',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      color: 'var(--text-primary)',
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: '12px',
+                    }}
+                  >
                     {display}
                   </td>
                 )
@@ -196,6 +284,30 @@ function PreviewTable({ rows }: { rows: Record<string, unknown>[] }) {
 }
 
 // ── Step config panel ─────────────────────────────────────────────────
+
+const inputStyle: React.CSSProperties = {
+  background: 'var(--bg-inset)',
+  border: '1px solid var(--border)',
+  borderRadius: 'var(--radius-btn)',
+  padding: '8px 12px',
+  color: 'var(--text-primary)',
+  fontSize: '14px',
+  outline: 'none',
+  width: '100%',
+  fontFamily: 'var(--font-sans)',
+  boxSizing: 'border-box',
+}
+
+const labelStyle: React.CSSProperties = {
+  display: 'block',
+  fontFamily: 'var(--font-mono)',
+  fontSize: '10px',
+  letterSpacing: '0.12em',
+  textTransform: 'uppercase',
+  color: 'var(--text-tertiary)',
+  fontWeight: 400,
+  marginBottom: '6px',
+}
 
 function StepConfigPanel({
   step,
@@ -219,7 +331,7 @@ function StepConfigPanel({
     <select
       value={(c[k] as string) ?? ''}
       onChange={(e) => set(k, e.target.value)}
-      className="w-full text-sm border border-border rounded-lg px-3 py-2 bg-surface-primary focus:outline-none focus:ring-2 focus:ring-brand/30"
+      style={inputStyle}
     >
       <option value="">Select column…</option>
       {colNames.map((n) => <option key={n} value={n}>{n}</option>)}
@@ -231,18 +343,29 @@ function StepConfigPanel({
     const toggle = (name: string) =>
       set(k, selected.includes(name) ? selected.filter((x) => x !== name) : [...selected, name])
     return (
-      <div className="border border-border rounded-lg overflow-hidden max-h-48 overflow-y-auto">
+      <div style={{ border: '1px solid var(--border)', borderRadius: 'var(--radius-btn)', overflow: 'hidden', maxHeight: '192px', overflowY: 'auto' }}>
         {colNames.length === 0 ? (
-          <p className="px-3 py-2 text-xs text-text-tertiary">No columns available</p>
+          <p style={{ padding: '8px 12px', fontSize: '12px', color: 'var(--text-tertiary)', margin: 0 }}>No columns available</p>
         ) : colNames.map((n) => (
-          <label key={n} className="flex items-center gap-2 px-3 py-2 hover:bg-surface-tertiary cursor-pointer border-b border-border last:border-0">
+          <label
+            key={n}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '8px 12px',
+              cursor: 'pointer',
+              borderBottom: '1px solid var(--border)',
+              fontSize: '14px',
+            }}
+          >
             <input
               type="checkbox"
               checked={selected.includes(n)}
               onChange={() => toggle(n)}
-              className="accent-brand"
+              style={{ accentColor: 'var(--accent)' }}
             />
-            <span className="text-sm font-mono text-text-primary">{n}</span>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '13px', color: 'var(--text-primary)' }}>{n}</span>
           </label>
         ))}
       </div>
@@ -250,25 +373,42 @@ function StepConfigPanel({
   }
 
   return (
-    <div className="w-72 border-l border-border bg-surface-primary flex flex-col h-full">
-      <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-surface-tertiary">
-        <div className="flex items-center gap-2">
+    <div style={{
+      width: '288px',
+      borderLeft: '1px solid var(--border)',
+      background: 'var(--bg-card)',
+      display: 'flex',
+      flexDirection: 'column',
+      height: '100%',
+      flexShrink: 0,
+    }}>
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: '12px 16px',
+        borderBottom: '1px solid var(--border)',
+        background: 'var(--bg-2)',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-secondary)' }}>
           {def?.icon}
-          <span className="text-sm font-semibold text-text-primary">{def?.label}</span>
+          <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)' }}>{def?.label}</span>
         </div>
-        <button onClick={onClose} className="text-text-tertiary hover:text-text-primary">
-          <XCircle className="w-4 h-4" />
+        <button
+          onClick={onClose}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary)', display: 'flex', padding: '2px' }}
+        >
+          <XCircle style={{ width: '16px', height: '16px' }} />
         </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-4 pb-0">
+      <div style={{ flex: 1, overflowY: 'auto', padding: '16px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
         {step.type === 'filter' && (
           <>
-            <div><label className="label">Column</label><ColSelect k="column" /></div>
+            <div><label style={labelStyle}>Column</label><ColSelect k="column" /></div>
             <div>
-              <label className="label">Operator</label>
-              <select value={(c.operator as string) ?? '>'} onChange={(e) => set('operator', e.target.value)}
-                className="w-full text-sm border border-border rounded-lg px-3 py-2 bg-surface-primary focus:outline-none focus:ring-2 focus:ring-brand/30">
+              <label style={labelStyle}>Operator</label>
+              <select value={(c.operator as string) ?? '>'} onChange={(e) => set('operator', e.target.value)} style={inputStyle}>
                 <option value=">">Greater than (&gt;)</option>
                 <option value="<">Less than (&lt;)</option>
                 <option value=">=">Greater or equal (≥)</option>
@@ -282,9 +422,13 @@ function StepConfigPanel({
             </div>
             {c.operator !== 'not_null' && c.operator !== 'is_null' && (
               <div>
-                <label className="label">Value</label>
-                <input value={(c.value as string) ?? ''} onChange={(e) => set('value', e.target.value)}
-                  placeholder="e.g. 0" className="w-full text-sm border border-border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand/30" />
+                <label style={labelStyle}>Value</label>
+                <input
+                  value={(c.value as string) ?? ''}
+                  onChange={(e) => set('value', e.target.value)}
+                  placeholder="e.g. 0"
+                  style={inputStyle}
+                />
               </div>
             )}
           </>
@@ -292,7 +436,7 @@ function StepConfigPanel({
 
         {(step.type === 'select_columns' || step.type === 'drop_columns') && (
           <div>
-            <label className="label">
+            <label style={labelStyle}>
               {step.type === 'select_columns' ? 'Columns to keep' : 'Columns to drop'}
             </label>
             <MultiColSelect k="columns" />
@@ -301,22 +445,25 @@ function StepConfigPanel({
 
         {step.type === 'rename_column' && (
           <>
-            <div><label className="label">Rename from</label><ColSelect k="from" /></div>
+            <div><label style={labelStyle}>Rename from</label><ColSelect k="from" /></div>
             <div>
-              <label className="label">New name</label>
-              <input value={(c.to as string) ?? ''} onChange={(e) => set('to', e.target.value)}
-                placeholder="new_column_name" className="w-full text-sm border border-border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand/30" />
+              <label style={labelStyle}>New name</label>
+              <input
+                value={(c.to as string) ?? ''}
+                onChange={(e) => set('to', e.target.value)}
+                placeholder="new_column_name"
+                style={inputStyle}
+              />
             </div>
           </>
         )}
 
         {step.type === 'fill_nulls' && (
           <>
-            <div><label className="label">Column</label><ColSelect k="column" /></div>
+            <div><label style={labelStyle}>Column</label><ColSelect k="column" /></div>
             <div>
-              <label className="label">Strategy</label>
-              <select value={(c.strategy as string) ?? 'drop_rows'} onChange={(e) => set('strategy', e.target.value)}
-                className="w-full text-sm border border-border rounded-lg px-3 py-2 bg-surface-primary focus:outline-none focus:ring-2 focus:ring-brand/30">
+              <label style={labelStyle}>Strategy</label>
+              <select value={(c.strategy as string) ?? 'drop_rows'} onChange={(e) => set('strategy', e.target.value)} style={inputStyle}>
                 <option value="drop_rows">Drop rows with nulls</option>
                 <option value="mean">Fill with mean</option>
                 <option value="mode">Fill with mode</option>
@@ -325,9 +472,13 @@ function StepConfigPanel({
             </div>
             {c.strategy === 'value' && (
               <div>
-                <label className="label">Fill value</label>
-                <input value={(c.value as string) ?? ''} onChange={(e) => set('value', e.target.value)}
-                  placeholder="e.g. unknown" className="w-full text-sm border border-border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand/30" />
+                <label style={labelStyle}>Fill value</label>
+                <input
+                  value={(c.value as string) ?? ''}
+                  onChange={(e) => set('value', e.target.value)}
+                  placeholder="e.g. unknown"
+                  style={inputStyle}
+                />
               </div>
             )}
           </>
@@ -335,32 +486,57 @@ function StepConfigPanel({
 
         {step.type === 'deduplicate' && (
           <div>
-            <label className="label">Subset columns <span className="text-text-tertiary font-normal">(empty = all)</span></label>
+            <label style={labelStyle}>
+              Subset columns{' '}
+              <span style={{ color: 'var(--text-tertiary)', fontWeight: 400 }}>(empty = all)</span>
+            </label>
             <MultiColSelect k="columns" />
           </div>
         )}
 
         {(step.type === 'lowercase' || step.type === 'normalize' || step.type === 'encode_categorical') && (
-          <div><label className="label">Column</label><ColSelect k="column" /></div>
+          <div><label style={labelStyle}>Column</label><ColSelect k="column" /></div>
         )}
 
         {step.type === 'sort' && (
           <>
-            <div><label className="label">Column</label><ColSelect k="column" /></div>
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input type="checkbox" checked={!!(c.descending)} onChange={(e) => set('descending', e.target.checked)} className="accent-brand" />
-              <span className="text-sm text-text-primary">Descending</span>
+            <div><label style={labelStyle}>Column</label><ColSelect k="column" /></div>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                checked={!!(c.descending)}
+                onChange={(e) => set('descending', e.target.checked)}
+                style={{ accentColor: 'var(--accent)' }}
+              />
+              <span style={{ fontSize: '14px', color: 'var(--text-primary)' }}>Descending</span>
             </label>
           </>
         )}
       </div>
 
-      <div className="p-4 border-t border-border">
+      <div style={{ padding: '16px', borderTop: '1px solid var(--border)' }}>
         <button
           onClick={onDelete}
-          className="w-full flex items-center justify-center gap-2 px-3 py-2 text-sm text-danger border border-danger/20 rounded-lg hover:bg-danger-50 transition-colors"
+          style={{
+            width: '100%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px',
+            padding: '8px 12px',
+            fontSize: '14px',
+            color: 'var(--bad)',
+            border: '1px solid var(--bad-dim)',
+            borderRadius: 'var(--radius-btn)',
+            background: 'transparent',
+            cursor: 'pointer',
+            fontFamily: 'var(--font-sans)',
+            transition: 'background 0.15s',
+          }}
+          onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--bad-dim)')}
+          onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
         >
-          <Trash2 className="w-3.5 h-3.5" />
+          <Trash2 style={{ width: '14px', height: '14px' }} />
           Remove step
         </button>
       </div>
@@ -462,7 +638,7 @@ export function PipelineEditor() {
     if (!p) return
     const updated = { ...p, steps }
     setLocalPipeline(updated)
-    saveMutation.mutate({ steps: steps as unknown[] })
+    saveMutation.mutate({ steps })
   }, [p, saveMutation])
 
   const addStep = (def: StepDef) => {
@@ -526,7 +702,7 @@ export function PipelineEditor() {
       source: src,
       target: ids[i + 1],
       type: 'smoothstep',
-      style: { stroke: '#E5E7EB', strokeWidth: 2 },
+      style: { stroke: 'var(--border-strong)', strokeWidth: 2 },
     }))
   }, [p])
 
@@ -534,24 +710,46 @@ export function PipelineEditor() {
 
   if (isLoading || !p) {
     return (
-      <div className="flex items-center justify-center h-full">
-        <Loader2 className="w-5 h-5 animate-spin text-text-tertiary" />
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+        <Loader2 style={{ width: '20px', height: '20px', color: 'var(--text-tertiary)' }} className="animate-spin" />
       </div>
     )
   }
 
   return (
-    <div className="flex flex-col" style={{ height: '100vh' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
       {/* ── Top bar ── */}
-      <div className="flex items-center gap-3 px-4 py-3 border-b border-border bg-surface-primary flex-shrink-0">
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: '12px',
+        padding: '12px 16px',
+        borderBottom: '1px solid var(--border)',
+        background: 'var(--bg-card)',
+        flexShrink: 0,
+      }}>
         <button
           onClick={() => navigate('/pipelines')}
-          className="flex items-center gap-1 text-sm text-text-secondary hover:text-text-primary transition-colors"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '4px',
+            fontSize: '14px',
+            color: 'var(--text-secondary)',
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            padding: 0,
+            fontFamily: 'var(--font-sans)',
+            transition: 'color 0.15s',
+          }}
+          onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--text-primary)')}
+          onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-secondary)')}
         >
-          <ArrowLeft className="w-3.5 h-3.5" />
+          <ArrowLeft style={{ width: '14px', height: '14px' }} />
           Pipelines
         </button>
-        <ChevronRight className="w-3.5 h-3.5 text-text-tertiary" />
+        <ChevronRight style={{ width: '14px', height: '14px', color: 'var(--text-tertiary)' }} />
 
         <input
           value={p.name}
@@ -560,7 +758,23 @@ export function PipelineEditor() {
             setLocalPipeline(updated)
           }}
           onBlur={() => saveMutation.mutate({ name: p.name })}
-          className="text-sm font-semibold text-text-primary bg-transparent border-b border-transparent hover:border-border focus:border-brand focus:outline-none px-1 py-0.5 min-w-0 flex-shrink"
+          style={{
+            fontSize: '14px',
+            fontWeight: 600,
+            color: 'var(--text-primary)',
+            background: 'transparent',
+            border: 'none',
+            borderBottom: '1px solid transparent',
+            outline: 'none',
+            padding: '2px 4px',
+            fontFamily: 'var(--font-sans)',
+            minWidth: 0,
+            flexShrink: 1,
+            transition: 'border-color 0.15s',
+          }}
+          onMouseEnter={(e) => (e.currentTarget.style.borderBottomColor = 'var(--border)')}
+          onMouseLeave={(e) => (e.currentTarget.style.borderBottomColor = 'transparent')}
+          onFocus={(e) => (e.currentTarget.style.borderBottomColor = 'var(--accent)')}
         />
 
         {/* Dataset selector */}
@@ -572,7 +786,17 @@ export function PipelineEditor() {
             setLocalPipeline(updated)
             saveMutation.mutate({ dataset_id: dsId ?? undefined })
           }}
-          className="text-xs border border-border rounded-lg px-2 py-1.5 bg-surface-primary text-text-secondary focus:outline-none focus:ring-2 focus:ring-brand/30 max-w-[160px]"
+          style={{
+            fontSize: '12px',
+            border: '1px solid var(--border)',
+            borderRadius: 'var(--radius-btn)',
+            padding: '6px 8px',
+            background: 'var(--bg-inset)',
+            color: 'var(--text-secondary)',
+            outline: 'none',
+            maxWidth: '160px',
+            fontFamily: 'var(--font-sans)',
+          }}
         >
           <option value="">No dataset</option>
           {datasets.filter((d) => d.status === 'ready').map((d) => (
@@ -580,11 +804,11 @@ export function PipelineEditor() {
           ))}
         </select>
 
-        <div className="flex-1" />
+        <div style={{ flex: 1 }} />
 
         {saveMutation.isPending && (
-          <span className="text-xs text-text-tertiary flex items-center gap-1">
-            <Loader2 className="w-3 h-3 animate-spin" /> Saving…
+          <span style={{ fontSize: '12px', color: 'var(--text-tertiary)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <Loader2 style={{ width: '12px', height: '12px' }} className="animate-spin" /> Saving…
           </span>
         )}
 
@@ -611,48 +835,101 @@ export function PipelineEditor() {
       </div>
 
       {/* ── Main area ── */}
-      <div className="flex flex-1 min-h-0">
+      <div style={{ display: 'flex', flex: 1, minHeight: 0 }}>
 
         {/* Left: step library */}
-        <div className="w-52 border-r border-border bg-surface-primary flex flex-col flex-shrink-0">
-          <div className="px-3 py-2.5 border-b border-border">
-            <p className="text-xs font-semibold text-text-tertiary uppercase tracking-wide">Add step</p>
+        <div style={{
+          width: '208px',
+          borderRight: '1px solid var(--border)',
+          background: 'var(--bg-card)',
+          display: 'flex',
+          flexDirection: 'column',
+          flexShrink: 0,
+        }}>
+          <div style={{ padding: '10px 12px', borderBottom: '1px solid var(--border)' }}>
+            <p style={{
+              fontFamily: 'var(--font-mono)',
+              fontSize: '10px',
+              letterSpacing: '0.12em',
+              textTransform: 'uppercase',
+              color: 'var(--text-tertiary)',
+              fontWeight: 400,
+              margin: 0,
+            }}>Add step</p>
           </div>
-          <div className="flex-1 overflow-y-auto py-1">
+          <div style={{ flex: 1, overflowY: 'auto', padding: '4px 0' }}>
             {STEP_DEFS.map((def) => (
               <button
                 key={def.type}
                 onClick={() => addStep(def)}
-                className="w-full flex items-center gap-2.5 px-3 py-2 text-left hover:bg-surface-tertiary transition-colors group"
+                style={{
+                  width: '100%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '10px',
+                  padding: '8px 12px',
+                  textAlign: 'left',
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  fontFamily: 'var(--font-sans)',
+                  transition: 'background 0.15s',
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--bg-3)')}
+                onMouseLeave={(e) => (e.currentTarget.style.background = 'none')}
               >
-                <span className="text-text-tertiary group-hover:text-brand transition-colors">{def.icon}</span>
-                <span className="text-sm text-text-secondary group-hover:text-text-primary transition-colors">{def.label}</span>
-                <Plus className="w-3 h-3 text-text-tertiary group-hover:text-brand ml-auto opacity-0 group-hover:opacity-100 transition-all" />
+                <span style={{ color: 'var(--text-tertiary)', display: 'flex', flexShrink: 0 }}>{def.icon}</span>
+                <span style={{ fontSize: '14px', color: 'var(--text-secondary)', flex: 1 }}>{def.label}</span>
+                <Plus style={{ width: '12px', height: '12px', color: 'var(--accent)', flexShrink: 0, opacity: 0 }} />
               </button>
             ))}
           </div>
 
           {/* Recent runs */}
           {runs.length > 0 && (
-            <div className="border-t border-border">
-              <div className="px-3 py-2 border-b border-border">
-                <p className="text-xs font-semibold text-text-tertiary uppercase tracking-wide">Recent runs</p>
+            <div style={{ borderTop: '1px solid var(--border)' }}>
+              <div style={{ padding: '8px 12px', borderBottom: '1px solid var(--border)' }}>
+                <p style={{
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: '10px',
+                  letterSpacing: '0.12em',
+                  textTransform: 'uppercase',
+                  color: 'var(--text-tertiary)',
+                  fontWeight: 400,
+                  margin: 0,
+                }}>Recent runs</p>
               </div>
-              <div className="max-h-40 overflow-y-auto">
+              <div style={{ maxHeight: '160px', overflowY: 'auto' }}>
                 {runs.slice(0, 5).map((run) => (
                   <button
                     key={run.id}
                     onClick={() => setLatestRun(run)}
-                    className="w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-surface-tertiary transition-colors"
+                    style={{
+                      width: '100%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      padding: '8px 12px',
+                      textAlign: 'left',
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      fontFamily: 'var(--font-sans)',
+                      transition: 'background 0.15s',
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--bg-3)')}
+                    onMouseLeave={(e) => (e.currentTarget.style.background = 'none')}
                   >
-                    {run.status === 'complete' && <CheckCircle2 className="w-3.5 h-3.5 text-success flex-shrink-0" />}
-                    {run.status === 'failed' && <XCircle className="w-3.5 h-3.5 text-danger flex-shrink-0" />}
-                    {(run.status === 'pending' || run.status === 'running') && <Loader2 className="w-3.5 h-3.5 animate-spin text-brand flex-shrink-0" />}
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs text-text-secondary truncate">
+                    {run.status === 'complete' && <CheckCircle2 style={{ width: '14px', height: '14px', color: 'var(--green)', flexShrink: 0 }} />}
+                    {run.status === 'failed' && <XCircle style={{ width: '14px', height: '14px', color: 'var(--bad)', flexShrink: 0 }} />}
+                    {(run.status === 'pending' || run.status === 'running') && <Loader2 style={{ width: '14px', height: '14px', color: 'var(--accent)', flexShrink: 0 }} className="animate-spin" />}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {run.is_dry_run ? 'Dry run' : 'Full run'}
                       </p>
-                      <p className="text-xs text-text-tertiary">{formatRelativeTime(run.created_at)}</p>
+                      <p style={{ fontSize: '11px', color: 'var(--text-tertiary)', margin: 0, fontFamily: 'var(--font-mono)' }}>
+                        {formatRelativeTime(run.created_at)}
+                      </p>
                     </div>
                   </button>
                 ))}
@@ -662,16 +939,36 @@ export function PipelineEditor() {
         </div>
 
         {/* Centre: canvas */}
-        <div className="flex-1 min-w-0 relative">
+        <div style={{ flex: 1, minWidth: 0, position: 'relative' }}>
           {p.steps.length === 0 && !p.dataset_id ? (
-            <div className="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none">
-              <p className="text-sm font-medium text-text-secondary mb-1">Start by selecting a dataset above</p>
-              <p className="text-xs text-text-tertiary">then add steps from the left panel</p>
+            <div style={{
+              position: 'absolute',
+              inset: 0,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              textAlign: 'center',
+              pointerEvents: 'none',
+            }}>
+              <p style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-secondary)', margin: '0 0 4px' }}>
+                Start by selecting a dataset above
+              </p>
+              <p style={{ fontSize: '12px', color: 'var(--text-tertiary)', margin: 0 }}>then add steps from the left panel</p>
             </div>
           ) : p.steps.length === 0 ? (
-            <div className="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none">
-              <p className="text-sm font-medium text-text-secondary mb-1">No steps yet</p>
-              <p className="text-xs text-text-tertiary">Click a step type on the left to add it</p>
+            <div style={{
+              position: 'absolute',
+              inset: 0,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              textAlign: 'center',
+              pointerEvents: 'none',
+            }}>
+              <p style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-secondary)', margin: '0 0 4px' }}>No steps yet</p>
+              <p style={{ fontSize: '12px', color: 'var(--text-tertiary)', margin: 0 }}>Click a step type on the left to add it</p>
             </div>
           ) : null}
 
@@ -700,70 +997,150 @@ export function PipelineEditor() {
             minZoom={0.3}
             maxZoom={2}
           >
-            <Background color="#E5E7EB" gap={20} size={1} />
+            <Background color="var(--border)" gap={20} size={1} />
             <Controls showInteractive={false} />
           </ReactFlow>
 
           {/* Run status banner */}
           {latestRun && (latestRun.status === 'running' || latestRun.status === 'pending') && (
-            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-brand text-white text-sm px-4 py-2 rounded-full shadow-lg">
-              <Loader2 className="w-4 h-4 animate-spin" />
+            <div style={{
+              position: 'absolute',
+              bottom: '16px',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              background: 'var(--accent)',
+              color: '#fff',
+              fontSize: '14px',
+              padding: '8px 16px',
+              borderRadius: '999px',
+              boxShadow: 'var(--blue-glow)',
+            }}>
+              <Loader2 style={{ width: '16px', height: '16px' }} className="animate-spin" />
               {latestRun.is_dry_run ? 'Dry run' : 'Full run'} in progress…
             </div>
           )}
           {latestRun?.status === 'failed' && (
-            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-danger text-white text-sm px-4 py-2 rounded-xl shadow-lg max-w-sm">
-              <AlertCircle className="w-4 h-4 flex-shrink-0" />
-              <span className="truncate">{latestRun.error_message ?? 'Run failed'}</span>
+            <div style={{
+              position: 'absolute',
+              bottom: '16px',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              background: 'var(--bad)',
+              color: '#fff',
+              fontSize: '14px',
+              padding: '8px 16px',
+              borderRadius: 'var(--radius-card)',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+              maxWidth: '320px',
+            }}>
+              <AlertCircle style={{ width: '16px', height: '16px', flexShrink: 0 }} />
+              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {latestRun.error_message ?? 'Run failed'}
+              </span>
             </div>
           )}
           {latestRun?.status === 'complete' && (
-            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-success text-white text-sm px-4 py-2 rounded-full shadow-lg">
-              <CheckCircle2 className="w-4 h-4" />
+            <div style={{
+              position: 'absolute',
+              bottom: '16px',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              background: 'var(--green)',
+              color: '#fff',
+              fontSize: '14px',
+              padding: '8px 16px',
+              borderRadius: '999px',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+            }}>
+              <CheckCircle2 style={{ width: '16px', height: '16px' }} />
               {latestRun.is_dry_run
                 ? `Dry run complete — ${latestRun.rows_out?.toLocaleString()} rows out`
-                : `Full run complete — `}
+                : 'Full run complete — '}
               {!latestRun.is_dry_run && latestRun.output_path && (
-                <a href={api.pipelines.downloadUrl(latestRun.id)} download className="underline font-medium">
+                <a
+                  href={api.pipelines.downloadUrl(latestRun.id)}
+                  download
+                  style={{ textDecoration: 'underline', fontWeight: 500, color: '#fff' }}
+                >
                   Download
                 </a>
               )}
             </div>
           )}
-        </div>
 
-        {/* Bottom: dry run preview panel */}
-        {latestRun?.is_dry_run && latestRun.status === 'complete' && latestRun.output_preview && (
-          <div
-            className="absolute bottom-0 left-0 right-0 bg-surface-primary border-t border-border z-20 flex flex-col transition-all"
-            style={{ height: showPreview ? '260px' : '36px' }}
-          >
-            <button
-              onClick={() => setShowPreview((v) => !v)}
-              className="flex items-center gap-2 px-4 py-2 w-full text-left border-b border-border hover:bg-surface-tertiary transition-colors flex-shrink-0"
+          {/* Bottom: dry run preview panel */}
+          {latestRun?.is_dry_run && latestRun.status === 'complete' && latestRun.output_preview && (
+            <div
+              style={{
+                position: 'absolute',
+                bottom: 0,
+                left: 0,
+                right: 0,
+                background: 'var(--bg-card)',
+                borderTop: '1px solid var(--border)',
+                zIndex: 20,
+                display: 'flex',
+                flexDirection: 'column',
+                transition: 'height 0.2s',
+                height: showPreview ? '260px' : '36px',
+              }}
             >
-              <TableIcon className="w-3.5 h-3.5 text-text-secondary" />
-              <span className="text-xs font-semibold text-text-primary">Dry run preview</span>
-              <span className="text-xs text-text-tertiary ml-1">
-                {latestRun.output_preview.length} of {latestRun.rows_out?.toLocaleString()} rows · {Object.keys(latestRun.output_preview[0] ?? {}).length} columns
-              </span>
-              <span className="ml-auto text-text-tertiary">
-                {showPreview ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronUp className="w-3.5 h-3.5" />}
-              </span>
-            </button>
-            {showPreview && (
-              <div className="flex-1 min-h-0">
-                <PreviewTable rows={latestRun.output_preview} />
-              </div>
-            )}
-          </div>
-        )}
+              <button
+                onClick={() => setShowPreview((v) => !v)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '8px 16px',
+                  width: '100%',
+                  textAlign: 'left',
+                  borderBottom: '1px solid var(--border)',
+                  background: 'none',
+                  border: 'none',
+                  borderBottom: '1px solid var(--border)',
+                  cursor: 'pointer',
+                  flexShrink: 0,
+                  fontFamily: 'var(--font-sans)',
+                  transition: 'background 0.15s',
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--bg-3)')}
+                onMouseLeave={(e) => (e.currentTarget.style.background = 'none')}
+              >
+                <TableIcon style={{ width: '14px', height: '14px', color: 'var(--text-secondary)' }} />
+                <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-primary)' }}>Dry run preview</span>
+                <span style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginLeft: '4px' }}>
+                  {latestRun.output_preview.length} of {latestRun.rows_out?.toLocaleString()} rows · {Object.keys(latestRun.output_preview[0] ?? {}).length} columns
+                </span>
+                <span style={{ marginLeft: 'auto', color: 'var(--text-tertiary)', display: 'flex' }}>
+                  {showPreview
+                    ? <ChevronDown style={{ width: '14px', height: '14px' }} />
+                    : <ChevronUp style={{ width: '14px', height: '14px' }} />
+                  }
+                </span>
+              </button>
+              {showPreview && (
+                <div style={{ flex: 1, minHeight: 0 }}>
+                  <PreviewTable rows={latestRun.output_preview} />
+                </div>
+              )}
+            </div>
+          )}
+        </div>
 
         {/* Right: step config panel (slide in when a step is selected) */}
         {selectedStep && (
           <StepConfigPanel
             step={selectedStep}
-            columns={columns}
+            columns={columns as unknown as import('@/types').ColumnSchema[]}
             onChange={(config) => updateStepConfig(selectedStep.id, config)}
             onClose={() => setSelectedStepId(null)}
             onDelete={() => { deleteStep(selectedStep.id); setSelectedStepId(null) }}

@@ -2,11 +2,9 @@ import { useState, useEffect, useCallback } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   Settings, HardDrive, Brain, BarChart3, Sparkles, GitBranch,
-  Download, AlertTriangle, Info, Check, ChevronRight, RotateCcw,
-  Trash2, Database, Server, RefreshCw, Keyboard,
+  AlertTriangle, Info, Server, RefreshCw, Keyboard,
 } from 'lucide-react'
 import { api } from '@/lib/api'
-import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/Button'
 import type { AppSettings, StorageStats } from '@/types'
 
@@ -29,13 +27,13 @@ function pct(part: number, total: number) {
 function StorageBar({ label, bytes, total, color }: { label: string; bytes: number; total: number; color: string }) {
   const p = pct(bytes, total)
   return (
-    <div className="space-y-1">
-      <div className="flex items-center justify-between text-xs">
-        <span className="text-text-secondary">{label}</span>
-        <span className="text-text-tertiary">{fmtBytes(bytes)} ({p}%)</span>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 12 }}>
+        <span style={{ color: 'var(--text-secondary)' }}>{label}</span>
+        <span style={{ color: 'var(--text-tertiary)' }}>{fmtBytes(bytes)} ({p}%)</span>
       </div>
-      <div className="h-1.5 bg-surface-tertiary rounded-full overflow-hidden">
-        <div className={cn('h-full rounded-full transition-all', color)} style={{ width: `${p}%` }} />
+      <div style={{ height: 6, background: 'var(--bg-inset)', borderRadius: 'var(--radius-pill)', overflow: 'hidden' }}>
+        <div style={{ height: '100%', borderRadius: 'var(--radius-pill)', background: color, width: `${p}%`, transition: 'width 0.3s' }} />
       </div>
     </div>
   )
@@ -47,13 +45,13 @@ function Section({ id, icon, title, description, children }: {
   id: string; icon: React.ReactNode; title: string; description: string; children: React.ReactNode
 }) {
   return (
-    <section id={id} className="scroll-mt-4">
-      <div className="flex items-center gap-3 mb-1">
-        <div className="text-brand">{icon}</div>
-        <h2 className="text-base font-semibold text-text-primary">{title}</h2>
+    <section id={id} style={{ scrollMarginTop: 16, fontFamily: 'var(--font-sans)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 4 }}>
+        <span style={{ color: 'var(--accent)' }}>{icon}</span>
+        <h2 style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)' }}>{title}</h2>
       </div>
-      <p className="text-sm text-text-tertiary mb-5 ml-7">{description}</p>
-      <div className="space-y-4 ml-7">{children}</div>
+      <p style={{ fontSize: 13, color: 'var(--text-tertiary)', marginBottom: 20, marginLeft: 28 }}>{description}</p>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginLeft: 28 }}>{children}</div>
     </section>
   )
 }
@@ -62,20 +60,26 @@ function Section({ id, icon, title, description, children }: {
 
 function Field({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
   return (
-    <div className="flex items-start justify-between gap-6">
-      <div className="min-w-0 flex-1 max-w-sm">
-        <label className="block text-sm font-medium text-text-primary">{label}</label>
-        {hint && <p className="text-xs text-text-tertiary mt-0.5">{hint}</p>}
+    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 24, fontFamily: 'var(--font-sans)' }}>
+      <div style={{ minWidth: 0, flex: 1, maxWidth: 384 }}>
+        <label style={{ display: 'block', fontSize: 14, fontWeight: 500, color: 'var(--text-primary)' }}>{label}</label>
+        {hint && <p style={{ fontSize: 12, color: 'var(--text-tertiary)', marginTop: 2 }}>{hint}</p>}
       </div>
-      <div className="flex-shrink-0 w-56">{children}</div>
+      <div style={{ flexShrink: 0, width: 224 }}>{children}</div>
     </div>
   )
+}
+
+const inputStyle: React.CSSProperties = {
+  width: '100%', background: 'var(--bg-inset)', border: '1px solid var(--border)',
+  borderRadius: 'var(--radius-btn)', padding: '8px 12px', color: 'var(--text-primary)',
+  fontSize: 14, outline: 'none', fontFamily: 'var(--font-sans)', boxSizing: 'border-box',
 }
 
 function TextInput({ value, onChange, placeholder }: { value: string; onChange: (v: string) => void; placeholder?: string }) {
   return (
     <input
-      className="w-full bg-surface-secondary border border-border rounded-lg px-3 py-2 text-sm text-text-primary placeholder:text-text-tertiary focus:outline-none focus:border-brand"
+      style={inputStyle}
       value={value}
       onChange={e => onChange(e.target.value)}
       placeholder={placeholder}
@@ -87,7 +91,7 @@ function NumberInput({ value, onChange, min, max }: { value: number; onChange: (
   return (
     <input
       type="number"
-      className="w-full bg-surface-secondary border border-border rounded-lg px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-brand"
+      style={inputStyle}
       value={value}
       min={min}
       max={max}
@@ -105,7 +109,7 @@ function SelectInput({ value, onChange, options }: {
 }) {
   return (
     <select
-      className="w-full bg-surface-secondary border border-border rounded-lg px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-brand"
+      style={inputStyle}
       value={value}
       onChange={e => onChange(e.target.value)}
     >
@@ -120,7 +124,7 @@ function NullableNumberInput({ value, onChange, min, max, placeholder }: {
   return (
     <input
       type="number"
-      className="w-full bg-surface-secondary border border-border rounded-lg px-3 py-2 text-sm text-text-primary placeholder:text-text-tertiary focus:outline-none focus:border-brand"
+      style={inputStyle}
       value={value ?? ''}
       placeholder={placeholder ?? 'None'}
       min={min}
@@ -140,17 +144,23 @@ function SaveBar({ dirty, onSave, onDiscard, saving, error }: {
 }) {
   if (!dirty && !error) return null
   return (
-    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center gap-3 bg-surface-primary border border-border rounded-xl shadow-2xl px-5 py-3">
+    <div style={{
+      position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)',
+      zIndex: 40, display: 'flex', alignItems: 'center', gap: 12,
+      background: 'var(--bg)', border: '1px solid var(--border)',
+      borderRadius: 'var(--radius-card)', boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+      padding: '12px 20px', fontFamily: 'var(--font-sans)',
+    }}>
       {error ? (
-        <span className="text-sm text-danger flex items-center gap-1.5">
-          <AlertTriangle className="w-4 h-4" />{error}
+        <span style={{ fontSize: 14, color: 'var(--bad)', display: 'flex', alignItems: 'center', gap: 6 }}>
+          <AlertTriangle style={{ width: 16, height: 16 }} />{error}
         </span>
       ) : (
-        <span className="text-sm text-text-secondary">You have unsaved changes</span>
+        <span style={{ fontSize: 14, color: 'var(--text-secondary)' }}>You have unsaved changes</span>
       )}
-      <Button variant="outline" size="sm" onClick={onDiscard} disabled={saving}>Discard</Button>
+      <Button variant="ghost" size="sm" onClick={onDiscard} disabled={saving}>Discard</Button>
       <Button size="sm" onClick={onSave} disabled={saving}>
-        {saving ? <><RefreshCw className="w-3.5 h-3.5 mr-1.5 animate-spin" />Saving…</> : 'Save changes'}
+        {saving ? <><RefreshCw style={{ width: 14, height: 14, marginRight: 6 }} className="animate-spin" />Saving…</> : 'Save changes'}
       </Button>
     </div>
   )
@@ -174,16 +184,16 @@ function DangerAction({
   onConfirm: () => void; confirmMessage: string; result?: string
 }) {
   return (
-    <div className="flex items-start justify-between gap-6 py-4 border-b border-border last:border-0">
+    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 24, padding: '16px 0', borderBottom: '1px solid var(--border)' }}>
       <div>
-        <p className="text-sm font-medium text-text-primary">{title}</p>
-        <p className="text-xs text-text-tertiary mt-0.5">{description}</p>
-        {result && <p className="text-xs text-success mt-1">{result}</p>}
+        <p style={{ fontSize: 14, fontWeight: 500, color: 'var(--text-primary)' }}>{title}</p>
+        <p style={{ fontSize: 12, color: 'var(--text-tertiary)', marginTop: 2 }}>{description}</p>
+        {result && <p style={{ fontSize: 12, color: 'var(--green)', marginTop: 4 }}>{result}</p>}
       </div>
       <Button
-        variant="outline"
+        variant="ghost"
         size="sm"
-        className="flex-shrink-0 border-danger/40 text-danger hover:bg-danger/10"
+        style={{ flexShrink: 0, borderColor: 'var(--bad)', color: 'var(--bad)' }}
         onClick={() => { if (window.confirm(confirmMessage)) onConfirm() }}
       >
         {buttonLabel}
@@ -196,9 +206,12 @@ function DangerAction({
 
 function StatCard({ label, value }: { label: string; value: string | number }) {
   return (
-    <div className="bg-surface-secondary border border-border rounded-lg px-4 py-3 text-center">
-      <div className="text-xl font-bold text-text-primary">{value}</div>
-      <div className="text-xs text-text-tertiary mt-0.5">{label}</div>
+    <div style={{
+      background: 'var(--bg-card)', border: '1px solid var(--border)',
+      borderRadius: 'var(--radius-md)', padding: '12px 16px', textAlign: 'center',
+    }}>
+      <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--text-primary)' }}>{value}</div>
+      <div style={{ fontSize: 12, color: 'var(--text-tertiary)', marginTop: 2 }}>{label}</div>
     </div>
   )
 }
@@ -206,15 +219,15 @@ function StatCard({ label, value }: { label: string; value: string | number }) {
 // ── Section nav ───────────────────────────────────────────────────────
 
 const NAV_SECTIONS = [
-  { id: 'general',     icon: <Settings className="w-4 h-4" />,    label: 'General' },
-  { id: 'storage',     icon: <HardDrive className="w-4 h-4" />,   label: 'Storage' },
-  { id: 'al',          icon: <Brain className="w-4 h-4" />,        label: 'Active Learning' },
-  { id: 'benchmark',   icon: <BarChart3 className="w-4 h-4" />,   label: 'Benchmark' },
-  { id: 'synthetic',   icon: <Sparkles className="w-4 h-4" />,    label: 'Synthetic Data' },
-  { id: 'pipeline',    icon: <GitBranch className="w-4 h-4" />,   label: 'Pipelines & Export' },
-  { id: 'shortcuts',   icon: <Keyboard className="w-4 h-4" />,    label: 'Keyboard Shortcuts' },
-  { id: 'about',       icon: <Info className="w-4 h-4" />,         label: 'About' },
-  { id: 'danger',      icon: <AlertTriangle className="w-4 h-4" />, label: 'Danger Zone' },
+  { id: 'general',     icon: <Settings style={{ width: 16, height: 16 }} />,      label: 'General' },
+  { id: 'storage',     icon: <HardDrive style={{ width: 16, height: 16 }} />,     label: 'Storage' },
+  { id: 'al',          icon: <Brain style={{ width: 16, height: 16 }} />,          label: 'Active Learning' },
+  { id: 'benchmark',   icon: <BarChart3 style={{ width: 16, height: 16 }} />,     label: 'Benchmark' },
+  { id: 'synthetic',   icon: <Sparkles style={{ width: 16, height: 16 }} />,      label: 'Synthetic Data' },
+  { id: 'pipeline',    icon: <GitBranch style={{ width: 16, height: 16 }} />,     label: 'Pipelines & Export' },
+  { id: 'shortcuts',   icon: <Keyboard style={{ width: 16, height: 16 }} />,      label: 'Keyboard Shortcuts' },
+  { id: 'about',       icon: <Info style={{ width: 16, height: 16 }} />,           label: 'About' },
+  { id: 'danger',      icon: <AlertTriangle style={{ width: 16, height: 16 }} />, label: 'Danger Zone' },
 ]
 
 // ── Main page ─────────────────────────────────────────────────────────
@@ -289,41 +302,52 @@ export default function SettingsPage() {
 
   if (isLoading || !draft) {
     return (
-      <div className="flex items-center justify-center h-full text-sm text-text-tertiary">
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', fontSize: 14, color: 'var(--text-tertiary)', fontFamily: 'var(--font-sans)' }}>
         Loading settings…
       </div>
     )
   }
 
+  const navLinkStyle = (id: string): React.CSSProperties => ({
+    display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px',
+    borderRadius: 'var(--radius-md)', fontSize: 14, textDecoration: 'none',
+    fontFamily: 'var(--font-sans)', cursor: 'pointer', border: 'none',
+    background: activeSection === id ? 'var(--blue-tint)' : 'transparent',
+    color: activeSection === id
+      ? 'var(--accent)'
+      : id === 'danger'
+      ? 'var(--bad)'
+      : 'var(--text-secondary)',
+    fontWeight: activeSection === id ? 500 : 400,
+    width: '100%', textAlign: 'left',
+    transition: 'background 0.15s, color 0.15s',
+  })
+
   return (
-    <div className="flex h-full overflow-hidden">
+    <div style={{ display: 'flex', height: '100%', overflow: 'hidden', fontFamily: 'var(--font-sans)' }}>
       {/* Left nav */}
-      <nav className="w-48 flex-shrink-0 border-r border-border overflow-y-auto py-4 px-2 space-y-0.5">
+      <div style={{ width: 192, flexShrink: 0, borderRight: '1px solid var(--border)', overflowY: 'auto', padding: '16px 8px', display: 'flex', flexDirection: 'column', gap: 2 }}>
         {NAV_SECTIONS.map(s => (
-          <a
+          <button
             key={s.id}
-            href={`#${s.id}`}
-            onClick={e => { e.preventDefault(); document.getElementById(s.id)?.scrollIntoView({ behavior: 'smooth' }); setActiveSection(s.id) }}
-            className={cn(
-              'flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors',
-              activeSection === s.id
-                ? 'bg-brand/5 text-brand font-medium'
-                : s.id === 'danger'
-                ? 'text-danger/70 hover:text-danger hover:bg-danger/5'
-                : 'text-text-secondary hover:text-text-primary hover:bg-surface-secondary'
-            )}
+            style={navLinkStyle(s.id)}
+            onClick={e => {
+              e.preventDefault()
+              document.getElementById(s.id)?.scrollIntoView({ behavior: 'smooth' })
+              setActiveSection(s.id)
+            }}
           >
             {s.icon}
             {s.label}
-          </a>
+          </button>
         ))}
-      </nav>
+      </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto p-8 space-y-12 pb-24">
+      <div style={{ flex: 1, overflowY: 'auto', padding: 32, paddingBottom: 96, display: 'flex', flexDirection: 'column', gap: 48 }}>
 
         {/* ── General ── */}
-        <Section id="general" icon={<Settings className="w-5 h-5" />} title="General" description="Application-wide display preferences">
+        <Section id="general" icon={<Settings style={{ width: 20, height: 20 }} />} title="General" description="Application-wide display preferences">
           <Field label="App name" hint="Shown in the browser tab and header">
             <TextInput value={draft.app_name} onChange={v => set('app_name', v)} placeholder="Datrix" />
           </Field>
@@ -338,39 +362,57 @@ export default function SettingsPage() {
           <Field label="Table page size" hint="Default number of rows shown per page in data tables">
             <NumberInput value={draft.table_page_size} onChange={v => set('table_page_size', v)} min={10} max={500} />
           </Field>
+          <Field label="Platform tour" hint="Walk through all 7 modules with the interactive guide">
+            <button
+              onClick={() => window.dispatchEvent(new CustomEvent('datrix:open-tour'))}
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: 6,
+                padding: '7px 16px', borderRadius: 'var(--radius-btn)',
+                background: 'var(--accent)', color: 'var(--text-on-accent)',
+                border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 500,
+                fontFamily: 'var(--font-sans)',
+              }}
+            >
+              Relaunch tour
+            </button>
+          </Field>
         </Section>
 
         {/* ── Storage ── */}
-        <Section id="storage" icon={<HardDrive className="w-5 h-5" />} title="Storage" description="File storage configuration and disk usage">
+        <Section id="storage" icon={<HardDrive style={{ width: 20, height: 20 }} />} title="Storage" description="File storage configuration and disk usage">
 
           {stats && (
-            <div className="bg-surface-secondary border border-border rounded-xl p-5 space-y-4 mb-2">
-              <div className="flex items-center justify-between mb-1">
-                <h3 className="text-sm font-semibold text-text-primary">Disk usage</h3>
-                <span className="text-xs text-text-tertiary">{fmtBytes(stats.disk_free_bytes)} free of {fmtBytes(stats.disk_total_bytes)}</span>
+            <div style={{
+              background: 'var(--bg-card)', border: '1px solid var(--border)',
+              borderRadius: 'var(--radius-card)', padding: 20,
+              display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 8,
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                <h3 style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)' }}>Disk usage</h3>
+                <span style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>{fmtBytes(stats.disk_free_bytes)} free of {fmtBytes(stats.disk_total_bytes)}</span>
               </div>
               {/* Overall disk bar */}
-              <div className="space-y-1">
-                <div className="flex justify-between text-xs text-text-tertiary">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--text-tertiary)' }}>
                   <span>Used by system</span>
                   <span>{fmtBytes(stats.disk_used_bytes)} ({pct(stats.disk_used_bytes, stats.disk_total_bytes)}%)</span>
                 </div>
-                <div className="h-3 bg-surface-tertiary rounded-full overflow-hidden flex gap-px">
-                  <div className="bg-blue-500/60 h-full" style={{ width: `${pct(stats.uploads_bytes, stats.disk_total_bytes)}%` }} />
-                  <div className="bg-purple-500/60 h-full" style={{ width: `${pct(stats.models_bytes, stats.disk_total_bytes)}%` }} />
-                  <div className="bg-orange-500/60 h-full" style={{ width: `${pct(stats.db_bytes, stats.disk_total_bytes)}%` }} />
+                <div style={{ height: 12, background: 'var(--bg-inset)', borderRadius: 'var(--radius-pill)', overflow: 'hidden', display: 'flex', gap: 1 }}>
+                  <div style={{ background: 'rgba(59,130,246,0.6)', height: '100%', width: `${pct(stats.uploads_bytes, stats.disk_total_bytes)}%` }} />
+                  <div style={{ background: 'rgba(168,85,247,0.6)', height: '100%', width: `${pct(stats.models_bytes, stats.disk_total_bytes)}%` }} />
+                  <div style={{ background: 'rgba(249,115,22,0.6)', height: '100%', width: `${pct(stats.db_bytes, stats.disk_total_bytes)}%` }} />
                 </div>
-                <div className="flex gap-4 text-xs text-text-tertiary">
-                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-blue-500/60" />Uploads</span>
-                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-purple-500/60" />Models</span>
-                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-orange-500/60" />Database</span>
+                <div style={{ display: 'flex', gap: 16, fontSize: 12, color: 'var(--text-tertiary)' }}>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><span style={{ width: 8, height: 8, borderRadius: '50%', background: 'rgba(59,130,246,0.6)', display: 'inline-block' }} />Uploads</span>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><span style={{ width: 8, height: 8, borderRadius: '50%', background: 'rgba(168,85,247,0.6)', display: 'inline-block' }} />Models</span>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><span style={{ width: 8, height: 8, borderRadius: '50%', background: 'rgba(249,115,22,0.6)', display: 'inline-block' }} />Database</span>
                 </div>
               </div>
-              <StorageBar label="Uploaded files" bytes={stats.uploads_bytes} total={stats.disk_total_bytes} color="bg-blue-500/70" />
-              <StorageBar label="Trained models" bytes={stats.models_bytes} total={stats.disk_total_bytes} color="bg-purple-500/70" />
-              <StorageBar label="Database (db.json)" bytes={stats.db_bytes} total={stats.disk_total_bytes} color="bg-orange-500/70" />
-              <div className="pt-1">
-                <div className="grid grid-cols-4 gap-3">
+              <StorageBar label="Uploaded files" bytes={stats.uploads_bytes} total={stats.disk_total_bytes} color="rgba(59,130,246,0.7)" />
+              <StorageBar label="Trained models" bytes={stats.models_bytes} total={stats.disk_total_bytes} color="rgba(168,85,247,0.7)" />
+              <StorageBar label="Database (db.json)" bytes={stats.db_bytes} total={stats.disk_total_bytes} color="rgba(249,115,22,0.7)" />
+              <div style={{ paddingTop: 4 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 12 }}>
                   <StatCard label="Datasets" value={stats.dataset_count} />
                   <StatCard label="Pipelines" value={stats.pipeline_count} />
                   <StatCard label="AL Sessions" value={stats.al_session_count} />
@@ -381,9 +423,9 @@ export default function SettingsPage() {
           )}
 
           <Field label="Max upload size" hint="Maximum file size allowed per upload in megabytes">
-            <div className="flex items-center gap-2">
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <NumberInput value={draft.max_upload_mb} onChange={v => set('max_upload_mb', v)} min={1} max={102400} />
-              <span className="text-sm text-text-tertiary flex-shrink-0">MB</span>
+              <span style={{ fontSize: 14, color: 'var(--text-tertiary)', flexShrink: 0 }}>MB</span>
             </div>
           </Field>
           <Field label="Allowed extensions" hint="Comma-separated list of allowed file extensions">
@@ -396,7 +438,7 @@ export default function SettingsPage() {
         </Section>
 
         {/* ── Active Learning ── */}
-        <Section id="al" icon={<Brain className="w-5 h-5" />} title="Active Learning" description="Default values pre-filled when creating a new AL session">
+        <Section id="al" icon={<Brain style={{ width: 20, height: 20 }} />} title="Active Learning" description="Default values pre-filled when creating a new AL session">
           <Field label="Batch size" hint="Rows shown per annotation round">
             <NumberInput value={draft.al_default_batch_size} onChange={v => set('al_default_batch_size', v)} min={1} max={500} />
           </Field>
@@ -432,7 +474,7 @@ export default function SettingsPage() {
         </Section>
 
         {/* ── Benchmark ── */}
-        <Section id="benchmark" icon={<BarChart3 className="w-5 h-5" />} title="Benchmark" description="Default values pre-filled when creating a benchmark job">
+        <Section id="benchmark" icon={<BarChart3 style={{ width: 20, height: 20 }} />} title="Benchmark" description="Default values pre-filled when creating a benchmark job">
           <Field label="Evaluation protocol" hint="Default cross-validation or holdout strategy">
             <SelectInput value={draft.benchmark_default_eval_protocol} onChange={v => set('benchmark_default_eval_protocol', v)} options={[
               { value: 'kfold_5', label: '5-Fold Cross Validation' },
@@ -457,7 +499,7 @@ export default function SettingsPage() {
         </Section>
 
         {/* ── Synthetic Data ── */}
-        <Section id="synthetic" icon={<Sparkles className="w-5 h-5" />} title="Synthetic Data" description="Default values for new synthetic generation jobs">
+        <Section id="synthetic" icon={<Sparkles style={{ width: 20, height: 20 }} />} title="Synthetic Data" description="Default values for new synthetic generation jobs">
           <Field label="Generation method" hint="Algorithm used to synthesize rows">
             <SelectInput value={draft.synthetic_default_method} onChange={v => set('synthetic_default_method', v)} options={[
               { value: 'statistical', label: 'Statistical (fast, column-wise)' },
@@ -471,7 +513,7 @@ export default function SettingsPage() {
         </Section>
 
         {/* ── Pipelines & Export ── */}
-        <Section id="pipeline" icon={<GitBranch className="w-5 h-5" />} title="Pipelines & Export" description="Default output formats for pipeline runs and data exports">
+        <Section id="pipeline" icon={<GitBranch style={{ width: 20, height: 20 }} />} title="Pipelines & Export" description="Default output formats for pipeline runs and data exports">
           <Field label="Pipeline output format" hint="File format written when a pipeline run completes">
             <SelectInput value={draft.pipeline_default_output_format} onChange={v => set('pipeline_default_output_format', v)} options={[
               { value: 'csv', label: 'CSV' },
@@ -489,24 +531,29 @@ export default function SettingsPage() {
         </Section>
 
         {/* ── Keyboard Shortcuts ── */}
-        <Section id="shortcuts" icon={<Keyboard className="w-5 h-5" />} title="Keyboard Shortcuts" description="All keyboard shortcuts available in the application">
-          <div className="border border-border rounded-xl overflow-hidden">
-            <table className="w-full text-sm">
+        <Section id="shortcuts" icon={<Keyboard style={{ width: 20, height: 20 }} />} title="Keyboard Shortcuts" description="All keyboard shortcuts available in the application">
+          <div style={{ border: '1px solid var(--border)', borderRadius: 'var(--radius-card)', overflow: 'hidden' }}>
+            <table style={{ width: '100%', fontSize: 14, borderCollapse: 'collapse' }}>
               <thead>
-                <tr className="bg-surface-secondary border-b border-border">
-                  <th className="px-4 py-2.5 text-left text-xs font-medium text-text-tertiary">Context</th>
-                  <th className="px-4 py-2.5 text-left text-xs font-medium text-text-tertiary">Shortcut</th>
-                  <th className="px-4 py-2.5 text-left text-xs font-medium text-text-tertiary">Action</th>
+                <tr style={{ background: 'var(--bg-card)', borderBottom: '1px solid var(--border)' }}>
+                  <th style={{ padding: '10px 16px', textAlign: 'left', fontSize: 12, fontWeight: 500, color: 'var(--text-tertiary)' }}>Context</th>
+                  <th style={{ padding: '10px 16px', textAlign: 'left', fontSize: 12, fontWeight: 500, color: 'var(--text-tertiary)' }}>Shortcut</th>
+                  <th style={{ padding: '10px 16px', textAlign: 'left', fontSize: 12, fontWeight: 500, color: 'var(--text-tertiary)' }}>Action</th>
                 </tr>
               </thead>
               <tbody>
                 {SHORTCUTS.map((s, i) => (
-                  <tr key={i} className={cn('border-b border-border last:border-0', i % 2 === 0 ? 'bg-surface-primary' : 'bg-surface-secondary')}>
-                    <td className="px-4 py-2.5 text-text-tertiary text-xs">{s.context}</td>
-                    <td className="px-4 py-2.5">
-                      <kbd className="inline-flex items-center gap-0.5 px-2 py-0.5 bg-surface-tertiary border border-border rounded text-xs font-mono text-text-primary">{s.key}</kbd>
+                  <tr key={i} style={{ borderBottom: i < SHORTCUTS.length - 1 ? '1px solid var(--border)' : 'none', background: i % 2 === 0 ? 'var(--bg)' : 'var(--bg-card)' }}>
+                    <td style={{ padding: '10px 16px', color: 'var(--text-tertiary)', fontSize: 12 }}>{s.context}</td>
+                    <td style={{ padding: '10px 16px' }}>
+                      <kbd style={{
+                        display: 'inline-flex', alignItems: 'center', gap: 2,
+                        padding: '2px 8px', background: 'var(--bg-inset)', border: '1px solid var(--border)',
+                        borderRadius: 'var(--radius-btn)', fontSize: 12,
+                        fontFamily: 'var(--font-mono)', color: 'var(--text-primary)',
+                      }}>{s.key}</kbd>
                     </td>
-                    <td className="px-4 py-2.5 text-text-secondary text-xs">{s.action}</td>
+                    <td style={{ padding: '10px 16px', color: 'var(--text-secondary)', fontSize: 12 }}>{s.action}</td>
                   </tr>
                 ))}
               </tbody>
@@ -515,8 +562,8 @@ export default function SettingsPage() {
         </Section>
 
         {/* ── About ── */}
-        <Section id="about" icon={<Info className="w-5 h-5" />} title="About" description="Version information and technology stack">
-          <div className="grid grid-cols-2 gap-4">
+        <Section id="about" icon={<Info style={{ width: 20, height: 20 }} />} title="About" description="Version information and technology stack">
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
             {[
               { label: 'Application', value: draft.app_name },
               { label: 'Version', value: '0.2.0' },
@@ -527,17 +574,23 @@ export default function SettingsPage() {
               { label: 'Styling', value: 'Tailwind CSS v4' },
               { label: 'State management', value: 'TanStack Query' },
             ].map(item => (
-              <div key={item.label} className="bg-surface-secondary border border-border rounded-lg px-4 py-3">
-                <div className="text-xs text-text-tertiary mb-0.5">{item.label}</div>
-                <div className="text-sm font-medium text-text-primary">{item.value}</div>
+              <div key={item.label} style={{
+                background: 'var(--bg-card)', border: '1px solid var(--border)',
+                borderRadius: 'var(--radius-md)', padding: '12px 16px',
+              }}>
+                <div style={{ fontSize: 12, color: 'var(--text-tertiary)', marginBottom: 2 }}>{item.label}</div>
+                <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--text-primary)' }}>{item.value}</div>
               </div>
             ))}
           </div>
-          <div className="bg-brand/5 border border-brand/20 rounded-xl p-4 flex items-start gap-3">
-            <Server className="w-4 h-4 text-brand mt-0.5 flex-shrink-0" />
+          <div style={{
+            background: 'var(--blue-tint)', border: '1px solid var(--border-accent)',
+            borderRadius: 'var(--radius-card)', padding: 16, display: 'flex', alignItems: 'flex-start', gap: 12,
+          }}>
+            <Server style={{ width: 16, height: 16, color: 'var(--accent)', marginTop: 2, flexShrink: 0 }} />
             <div>
-              <p className="text-sm font-medium text-text-primary">Running locally</p>
-              <p className="text-xs text-text-tertiary mt-0.5">
+              <p style={{ fontSize: 14, fontWeight: 500, color: 'var(--text-primary)' }}>Running locally</p>
+              <p style={{ fontSize: 12, color: 'var(--text-tertiary)', marginTop: 2 }}>
                 Datrix runs entirely on your machine. All data stays local — no cloud sync, no telemetry.
               </p>
             </div>
@@ -545,8 +598,8 @@ export default function SettingsPage() {
         </Section>
 
         {/* ── Danger Zone ── */}
-        <Section id="danger" icon={<AlertTriangle className="w-5 h-5 text-danger" />} title="Danger Zone" description="Irreversible actions. These cannot be undone.">
-          <div className="border border-danger/30 rounded-xl px-5 bg-danger/5">
+        <Section id="danger" icon={<AlertTriangle style={{ width: 20, height: 20, color: 'var(--bad)' }} />} title="Danger Zone" description="Irreversible actions. These cannot be undone.">
+          <div style={{ border: '1px solid var(--bad)', borderRadius: 'var(--radius-card)', padding: '0 20px', background: 'var(--bad-dim)' }}>
             <DangerAction
               title="Reset settings to defaults"
               description="Restore all settings on this page to their original factory values."

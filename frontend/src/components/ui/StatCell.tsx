@@ -1,5 +1,3 @@
-import { cn } from '@/lib/utils'
-
 interface Props {
   value: string | number
   label: string
@@ -9,16 +7,31 @@ interface Props {
 
 export function StatCell({ value, label, mono, className }: Props) {
   return (
-    <div className={cn('flex flex-col gap-1', className)}>
+    <div
+      className={className}
+      style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}
+    >
       <span
-        className={cn(
-          'text-2xl font-semibold text-text-primary',
-          mono && 'font-mono',
-        )}
+        style={{
+          fontSize: '24px',
+          fontWeight: 600,
+          color: 'var(--text-primary)',
+          fontFamily: mono ? 'var(--font-mono)' : 'var(--font-sans)',
+          lineHeight: 1.2,
+        }}
       >
         {value}
       </span>
-      <span className="text-xs text-text-secondary uppercase tracking-wide">{label}</span>
+      <span
+        style={{
+          fontSize: '12px',
+          color: 'var(--text-secondary)',
+          textTransform: 'uppercase',
+          letterSpacing: '0.06em',
+        }}
+      >
+        {label}
+      </span>
     </div>
   )
 }

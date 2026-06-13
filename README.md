@@ -13,15 +13,13 @@ A self-hosted, full-stack AI data infrastructure platform — built for data sci
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-v4-06B6D4?style=flat&logo=tailwindcss&logoColor=white)](https://tailwindcss.com)
 [![License](https://img.shields.io/badge/License-MIT-22c55e?style=flat)](LICENSE)
 
-![Datrix Screenshot](frontend/src/assets/hero.png)
-
 </div>
 
 ---
 
 ## What is Datrix?
 
-Datrix is a local-first data workspace. You upload raw CSV files and it handles everything from automatic quality scanning through to model training, compliance reporting, and a team marketplace — all through a browser UI backed by a Python API.
+Datrix is a local-first data workspace. You upload raw files and it handles everything from automatic quality scanning through to model training, compliance reporting, and a team marketplace — all through a browser UI backed by a Python API.
 
 Everything runs on your machine. No data leaves your network unless you push it yourself.
 
@@ -30,20 +28,21 @@ Everything runs on your machine. No data leaves your network unless you push it 
 ## Features
 
 ### Datasets
-Upload CSV files and get instant quality intelligence. Every dataset is automatically profiled on upload — column types, null rates, row counts — and then scanned across five quality dimensions.
+Upload CSV / JSON / JSONL / Parquet / Excel and get instant quality intelligence. Every dataset is automatically profiled on upload — column types, null rates, row counts — and then scanned across five quality dimensions.
 
-- **Upload** — drag-and-drop CSV upload with progress bar, XHR-based so progress is real
-- **Quality Scans** — five-dimension automated analysis: Completeness, Consistency, Accuracy, Distribution, Label Quality; overall weighted score 0–100
-- **Column Explorer** — per-column null rate, cardinality, distribution chart, stats (min/max/mean/std/percentiles)
-- **Cleaning Wizard** — 7 automated fix types (fill mean/median/mode/constant, deduplicate, clip outliers, cast type) with preview and per-fix rollback
-- **Change History** — every fix recorded, reversible individually
+- **Upload** — drag-and-drop upload with live progress bar (XHR-based, real byte tracking)
+- **Quality Scans** — five-dimension weighted scoring: Completeness 25%, Consistency 25%, Accuracy 25%, Distribution 15%, Label Quality 10%; overall score 0–100
+- **Status lifecycle** — `pending → ingesting → scanning → ready → error`; UI auto-polls every 2 s
+- **Column Explorer** — per-column type, null rate bar, unique count, distribution chart, and full descriptive stats (min/max/mean/std/p25/p50/p75)
+- **Cleaning Wizard** — 7 automated fix types (fill mean/median/mode/constant, deduplicate, clip outliers, cast type) with before/after preview and per-fix rollback
+- **Scan History** — every scan stored with timestamp, score, and delta from previous scan
 
 ### Pipelines
-Build reusable data transformation sequences visually. Run them on any dataset. Outputs are downloadable files.
+Build reusable data transformation sequences. Run them on any dataset. Outputs are downloadable files.
 
 - **10 step types** — filter, select/drop columns, rename, fill nulls, deduplicate, lowercase, normalize, encode categorical, sort
-- **Visual node graph** — drag-and-drop layout, step connections shown as edges
-- **Dry-run mode** — executes all steps, returns a 20-row preview, writes nothing
+- **Dry-run mode** — executes all steps in memory, returns a 20-row preview, writes nothing to disk
+- **Atomicity** — Polars LazyFrame execution: if any step fails, the original file is untouched
 - **Per-step statistics** — rows in / rows out / columns in / columns out for every step in every run
 - **Export formats** — CSV, Parquet, JSON
 
@@ -53,48 +52,66 @@ Generate statistically faithful artificial datasets that mirror your originals w
 | Method | Algorithm | Speed | Fidelity |
 |---|---|---|---|
 | `statistical` | Per-column distribution fitting | Very fast | Good for marginals |
-| `ctgan` | Conditional Tabular GAN | Slow (minutes) | Excellent |
-| `tvae` | Tabular Variational Autoencoder | Slow (minutes) | Excellent |
+| `ctgan` | Conditional Tabular GAN | 5–15 min on large sets | Excellent |
+| `tvae` | Tabular Variational Autoencoder | 5–15 min on large sets | Excellent |
 
-- **Column overrides** — control null rate, distribution, min/max, and class weights per column
-- **Output** lands as a new Dataset, ready for all other features
+- **Column overrides** — control null rate, distribution, min/max clipping, and class weights per column
+- **Validation** — run a Quality Scan on the output and compare all 5 dimension scores to the source
+- **Output** lands as a new Dataset, ready for Pipelines, Active Learning, and Benchmark
 
 ### Active Learning
-Train classification and regression models with as few human labels as possible. The model tells you which rows to label next.
+Train models with as few human labels as possible. The model tells you which rows to label next.
 
 - **6 sampling strategies** — Random, Least Confidence, Margin, Entropy, Coreset, Committee
 - **5 model types** — Logistic Regression, Random Forest, XGBoost, SVM, MLP
-- **Learning curve** — accuracy vs. labeled count, updated after every round
-- **Exports** — trained `.pkl` model, labeled CSV, or run predictions on the full unlabeled pool
+- **Learning curve** — accuracy vs. labeled count, updated after every round of labeling
+- **Exports** — trained `.pkl` scikit-learn pipeline, labeled CSV, or predict the full unlabeled pool
 
 ### Benchmark
-Side-by-side comparison of multiple ML models on the same dataset with a consistent evaluation protocol.
+Side-by-side ML model comparison under identical conditions — rigorous, no cherry-picking.
 
-- **4 eval protocols** — 5-fold CV, 10-fold CV, 80/20 holdout, 90/10 holdout
+- **4 evaluation protocols** — kfold_5, kfold_10, holdout_80, holdout_90
 - **3 presets** — Default, Tuned, Grid Search
-- **Results** — ranked leaderboard, confusion matrices, learning curves, feature importances
-- Supports importing a pre-trained AL model as a candidate
+- **Candidates run in parallel** — all models train simultaneously in separate background threads
+- **Results** — ranked leaderboard (crown for winner), confusion matrices, feature importances, learning curves
+- **Synthetic validation** — train one candidate on real data and one on synthetic; a gap under 5% confirms excellent fidelity
 
 ### Compliance Autopilot
 Automatic data governance — PII detection, lineage tracking, policy enforcement, anonymization, audit log, and regulatory reports.
 
-- **PII Scanner** — two-pass detection: column name keyword matching (50+ signals) + value regex sampling (11 patterns); risk levels: critical / high / medium / low / clean
-- **Data Lineage** — SVG DAG with pan/zoom showing how every dataset flows through pipelines, synthetic jobs, AL sessions, benchmarks, and marketplace
-- **Policy Engine** — 8 built-in policies (PII scan required, no PII in training, min quality score, etc.) + custom policy creation; automated violation detection
-- **Anonymization** — 3-step wizard; 7 methods: keep, suppress, redact, mask, hash, generalize, pseudonymize; produces new anonymized Dataset
-- **Audit Log** — append-only, every action across the platform recorded automatically; CSV export; 10,000-event cap with oldest-first eviction
-- **Reports** — GDPR Article 30, CCPA Inventory, HIPAA Data Inventory, General Summary, Custom; outputs self-contained HTML + JSON
+- **PII Scanner** — two-pass: column name keywords (50+ signals) + value regex (11 patterns); 6 risk levels
+- **Data Lineage DAG** — auto-built pan/zoom graph showing every dataset → pipeline → job → marketplace flow
+- **Policy Engine** — 8 built-in policies + custom policy creation; automated violation detection and tracking
+- **Anonymization wizard** — 7 methods (keep, suppress, redact, mask, hash, generalize, pseudonymize); always produces a new Dataset, source untouched
+- **Audit Log** — append-only, every platform action recorded; CSV export; 10,000-event cap
+- **Reports** — GDPR Article 30, CCPA Inventory, HIPAA Data Inventory, General Summary; self-contained HTML + JSON
 
 ### Marketplace
 Shared catalogue of datasets, pipelines, models, and benchmark configs. Entirely local — nothing is sent to any external service.
 
-- Browse, search, filter by type/category/sort
-- One-click install — deep copies the asset into your workspace
-- Publish your own assets in a 3-step wizard
-- Star ratings + text reviews
+- **4 asset types** — Dataset, Pipeline, ML Model (from Active Learning), Benchmark Config
+- **Compact 2-column card grid** — type badge, title with ✓ for official assets, 1-line description, download count
+- **Full-text search** + filter by type, category, and sort order
+- **Deep-copy install** — installed assets become full workspace records; deleting the source has no effect
+- **3-step publish wizard** — select source → fill metadata → review and publish
+- **Reviews & star ratings** — 1–5 stars + optional text comment; average updates instantly
+- **Install History** — every install tracked with timestamp and direct link to the workspace record
+
+### Platform Tour
+An interactive 9-step wizard that walks through every module the first time you open the app.
+
+- **Auto-launches** once for new users (localStorage gate); can be dismissed at any time
+- **Relaunch** from the sidebar footer ("Platform tour" button) or **Settings → General → Relaunch tour**
+- **Left panel** — vertical stepper with timeline connectors; circles show pending / active / done states
+- **Right panel** — module icon + tagline, how-it-works 2×2 grid, key capabilities 2-column grid, note callouts
+- **Final step** — clickable module cards that navigate directly to any section and close the tour
+- **Keyboard navigation** — `→` / `←` to step, `Escape` to dismiss
 
 ### Settings
-Global defaults for every module, live storage stats, and a danger zone for reset operations.
+Global defaults for every module, live storage stats with usage bars, and a danger zone for reset operations.
+
+- Theme toggle persisted to `localStorage`, applied before first paint (no flash)
+- **Relaunch tour** button in General section
 
 ---
 
@@ -104,14 +121,15 @@ Global defaults for every module, live storage stats, and a danger zone for rese
 |---|---|
 | **Frontend** | React 18, TypeScript, Vite, Tailwind CSS v4 |
 | **State / data fetching** | TanStack Query v5 (with polling for async jobs) |
+| **Routing** | React Router v6 |
 | **Backend** | FastAPI, Python 3.12+ |
-| **Auth** | JWT (python-jose + passlib bcrypt); access 30 min + refresh 7 days with rotation |
+| **Auth** | JWT (python-jose + bcrypt); access 30 min + refresh 7 days with rotation |
 | **Data processing** | Polars (fast CSV parsing, pipeline execution) |
 | **ML** | scikit-learn, XGBoost, CTGAN, SDV |
 | **Database** | PostgreSQL (Neon Postgres) via SQLAlchemy 2.0 ORM; 22 tables |
 | **File storage** | Local filesystem (`backend/data/`) |
 | **Infrastructure** | Docker + Docker Compose + Nginx |
-| **Design system** | Custom token system — dark/light themes, Inter + IBM Plex Mono |
+| **Design system** | Custom CSS token system — dark/light themes, Inter + IBM Plex Mono |
 
 ---
 
@@ -130,8 +148,13 @@ Datrix/
 │   │   │   ├── compliance.py
 │   │   │   ├── marketplace.py
 │   │   │   └── settings.py
+│   │   ├── core/
+│   │   │   ├── auth.py        # JWT creation, verification, bcrypt hashing
+│   │   │   └── config.py      # pydantic-settings, reads .env
+│   │   ├── db/
+│   │   │   └── engine.py      # SQLAlchemy engine + session factory
 │   │   ├── models/
-│   │   │   └── store.py       # All dataclasses + JSON flat-file store
+│   │   │   └── store.py       # SQLAlchemy ORM models (22 tables)
 │   │   ├── services/          # Business logic, ML executors, background jobs
 │   │   │   ├── ingestion.py
 │   │   │   ├── quality.py
@@ -147,24 +170,29 @@ Datrix/
 │   │   │   ├── report_generator.py
 │   │   │   ├── audit_logger.py
 │   │   │   └── marketplace_seeder.py
-│   │   ├── core/
-│   │   │   └── config.py      # Pydantic settings
 │   │   └── main.py            # App factory, router registration, startup hooks
+│   ├── alembic/               # Database migration scripts
 │   ├── data/                  # Runtime data (gitignored except .gitkeep)
-│   │   ├── uploads/           # Uploaded CSV files
-│   │   ├── models/            # Trained ML model .pkl files
+│   │   ├── uploads/
+│   │   ├── models/
 │   │   ├── pipeline_outputs/
 │   │   ├── synthetic_outputs/
 │   │   └── compliance_reports/
+│   ├── run.py                 # Entry point — runs migrations then starts uvicorn
 │   └── requirements.txt
 │
 ├── frontend/
 │   ├── src/
 │   │   ├── components/
 │   │   │   ├── ui/            # Button, Badge, ScoreBar, Skeleton, etc.
-│   │   │   ├── Layout.tsx
-│   │   │   └── Sidebar.tsx    # Nav + dark/light theme toggle
+│   │   │   ├── Layout.tsx     # App shell — sidebar, nav, theme, tour wiring
+│   │   │   ├── Layout.css     # App shell styles
+│   │   │   └── TourGuide.tsx  # 9-step interactive platform tour wizard
 │   │   ├── pages/
+│   │   │   ├── LandingPage.tsx   # Marketing landing page (unauthenticated)
+│   │   │   ├── auth/
+│   │   │   │   ├── AuthPage.tsx  # Login / register page
+│   │   │   │   └── AuthPage.css
 │   │   │   ├── datasets/
 │   │   │   ├── pipelines/
 │   │   │   ├── synthetic/
@@ -174,13 +202,15 @@ Datrix/
 │   │   │   ├── marketplace/
 │   │   │   ├── settings/
 │   │   │   └── docs/
+│   │   ├── contexts/
+│   │   │   └── AuthContext.tsx   # JWT token management + auth state
 │   │   ├── lib/
 │   │   │   ├── api.ts         # All API calls, typed
-│   │   │   └── utils.ts       # cn(), formatBytes, formatRelativeTime, etc.
+│   │   │   └── utils.ts       # formatBytes, formatNumber, formatRelativeTime
 │   │   ├── types/
-│   │   │   └── index.ts       # All TypeScript types matching backend models
+│   │   │   └── index.ts       # TypeScript types matching backend models
 │   │   ├── index.css          # Design system — tokens, themes, animations
-│   │   └── App.tsx            # Routes
+│   │   └── App.tsx            # Routes + ProtectedRoute
 │   ├── index.html             # Pre-paint theme script (no flash on load)
 │   └── package.json
 │
@@ -199,7 +229,7 @@ Datrix/
 
 | | Minimum | Recommended |
 |---|---|---|
-| Python | 3.10 | 3.11+ |
+| Python | 3.10 | 3.12+ |
 | Node.js | 18 | 20 |
 | RAM | 4 GB | 8 GB (CTGAN/TVAE needs headroom) |
 | Disk | 2 GB free | 5 GB+ |
@@ -258,8 +288,9 @@ Open two terminals:
 
 ```bash
 # Terminal 1 — Backend API (http://localhost:8000)
+# run.py runs Alembic migrations first, then starts uvicorn
 cd backend
-uvicorn app.main:app --reload --port 8000
+python run.py
 ```
 
 ```bash
@@ -271,7 +302,7 @@ npm run dev
 Open **http://localhost:5173** in your browser, then register an account.
 
 On first startup the backend automatically:
-- Creates all 22 PostgreSQL tables (idempotent `CREATE TABLE IF NOT EXISTS`)
+- Runs Alembic migrations (idempotent — safe to run every time)
 - Seeds the Marketplace with ~15 sample datasets, pipelines, and models
 - Seeds 8 default compliance policies
 
@@ -284,7 +315,7 @@ docker compose up --build
 
 - Frontend: `http://localhost:80`
 - Backend API: `http://localhost:8000`
-- Docs: `http://localhost:8000/docs`
+- API docs: `http://localhost:8000/docs`
 
 ### API Documentation
 
@@ -297,7 +328,7 @@ FastAPI's interactive docs are available while the backend is running:
 
 ## Design System
 
-Datrix ships with a complete design system in `frontend/src/index.css` and `DesignSpec.md`.
+Datrix ships with a complete token-driven design system in `frontend/src/index.css` and `DesignSpec.md`.
 
 - **Dark theme** (default) and **light theme** — toggle in the sidebar, persisted to `localStorage`, applied before first paint (no flash)
 - **Single accent** — one luminous blue (`#63b3ff` dark / `#2f6fe4` light), used sparingly
@@ -315,9 +346,9 @@ See [`PRODUCTION_CHECKLIST.md`](PRODUCTION_CHECKLIST.md) for the full phased bre
 | Phase | Key work | Status |
 |---|---|---|
 | **1.1 Auth** | JWT backend + frontend (register, login, refresh, logout, ProtectedRoute) | ✅ Complete |
-| **1.2 Database** | SQLAlchemy 2.0 ORM, 22 tables on Neon Postgres, store.py rewrite | ✅ ~90% |
+| **1.2 Database** | SQLAlchemy 2.0 ORM, 22 tables on Neon Postgres, Alembic migrations | ✅ Complete |
 | **1.3 Env Config** | pydantic-settings, `.env`, `VITE_API_URL` | ✅ Complete |
-| **2.1–2.5 Stability** | Error boundaries, rate limiting, thread error handling, upload validation, JSON logging | ✅ Complete |
+| **2.1–2.5 Stability** | Error boundaries, rate limiting, thread safety, upload validation, JSON logging | ✅ Complete |
 | **3.1 Docker** | Backend + frontend Dockerfiles, docker-compose, Nginx config | ✅ Complete |
 | **4.4 CI/CD** | GitHub Actions (lint + type-check + build on PR; Docker publish on tag) | ✅ Complete |
 | **1.4 File Storage** | S3/local abstraction | ⬜ Pending |
@@ -329,13 +360,16 @@ See [`PRODUCTION_CHECKLIST.md`](PRODUCTION_CHECKLIST.md) for the full phased bre
 ## Architecture Notes
 
 ### Database
-All data is stored in PostgreSQL via SQLAlchemy 2.0. The original `db.json` flat-file store has been fully replaced with 22 ORM-mapped tables. Every API route uses its own scoped `db_session()` context manager (autocommit on success, rollback on error). Tables are created idempotently on startup; Alembic is the planned migration tool for future schema changes.
+All persistent data lives in PostgreSQL via SQLAlchemy 2.0. 22 ORM-mapped tables, created idempotently on startup via Alembic. Every API route uses its own scoped `db_session()` context manager (autocommit on success, rollback on error).
 
 ### Long-running jobs
-All ML jobs (synthetic generation, AL training, benchmark runs, PII scans, anonymization) run in Python daemon threads and return a job ID immediately. The frontend polls status endpoints at 1–3 second intervals using TanStack Query's `refetchInterval`.
+All ML jobs (synthetic generation, AL training, benchmark runs, PII scans, anonymization) run in Python daemon threads and return a job ID immediately. The frontend polls status endpoints at 1–3 second intervals via TanStack Query `refetchInterval`.
 
 ### Lineage
-The data lineage graph is derived entirely from existing store relationships — no extra instrumentation. If a pipeline ran on a dataset, an edge exists. It updates in real time.
+The data lineage graph is derived entirely from existing table relationships — no extra instrumentation. If a pipeline ran on a dataset, an edge exists. It updates in real time.
+
+### Cross-component communication
+The platform tour is triggered across components without prop drilling via a custom DOM event (`datrix:open-tour`). The sidebar and Settings dispatch the event; Layout listens and owns the tour state.
 
 ---
 
@@ -348,7 +382,7 @@ This project is currently in active development. If you want to contribute:
 3. Commit with clear messages
 4. Open a pull request against `main`
 
-Before submitting: make sure `npm run build` passes (TypeScript strict mode) and the backend starts cleanly.
+Before submitting: make sure `npm run build` passes (TypeScript strict mode) and the backend starts cleanly with `python run.py`.
 
 ---
 

@@ -1,6 +1,13 @@
 import logging
+import sys
 import time
 from contextlib import asynccontextmanager
+
+# ProactorEventLoop (Windows default) has known issues with some async patterns;
+# SelectorEventLoop is more broadly compatible.
+if sys.platform == "win32":
+    import asyncio
+    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
 from fastapi import Depends, FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -19,6 +26,7 @@ from app.db.engine import create_tables
 configure_logging()
 
 _startup_log = logging.getLogger("datrix.startup")
+
 
 from app.api.auth import router as auth_router
 from app.api.datasets import router as datasets_router
@@ -65,20 +73,32 @@ def _reset_stale_jobs() -> None:
 
 
 def _run_migrations() -> None:
-    try:
-        from alembic.config import Config
-        from alembic import command
-        cfg = Config("alembic.ini")
-        command.upgrade(cfg, "head")
-        _startup_log.info("Alembic migrations applied")
-    except Exception:
-        _startup_log.exception("Alembic migration failed — falling back to create_all")
-        create_tables()
+    import subprocess
+    for attempt in range(1, 5):
+        print(f"[migrate] attempt {attempt}…", flush=True)
+        result = subprocess.run(
+            [sys.executable, "-m", "alembic", "upgrade", "head"],
+            capture_output=False,
+        )
+        if result.returncode == 0:
+            print("[migrate] done", flush=True)
+            return
+        print(f"[migrate] attempt {attempt} failed (exit {result.returncode}) — retrying in 5s…", flush=True)
+        if attempt < 4:
+            time.sleep(5)
+
+    print("[migrate] all attempts failed — falling back to create_all", flush=True)
+    create_tables()
+
+
+# Run migrations before uvicorn creates the event loop.
+# Alembic runs in a subprocess so psycopg2's Winsock/SSL state never
+# touches the main process and cannot corrupt the asyncio event loop.
+_run_migrations()
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    _run_migrations()
     initialize_seeds()
     ensure_default_policies()
     _reset_stale_jobs()

@@ -1,12 +1,18 @@
+import { useState } from 'react'
 import { AlertCircle, AlertTriangle, Info, Wrench, CheckCircle2 } from 'lucide-react'
 import { SeverityBadge } from './Badge'
-import { cn } from '@/lib/utils'
 import type { QualityIssue } from '@/types'
 
+const severityIconColor: Record<string, string> = {
+  critical: 'var(--bad)',
+  warning: 'var(--warn)',
+  info: 'var(--accent)',
+}
+
 const icons = {
-  critical: <AlertCircle className="w-4 h-4 text-danger flex-shrink-0" />,
-  warning: <AlertTriangle className="w-4 h-4 text-warning flex-shrink-0" />,
-  info: <Info className="w-4 h-4 text-brand flex-shrink-0" />,
+  critical: <AlertCircle style={{ width: '16px', height: '16px', color: 'var(--bad)', flexShrink: 0 }} />,
+  warning: <AlertTriangle style={{ width: '16px', height: '16px', color: 'var(--warn)', flexShrink: 0 }} />,
+  info: <Info style={{ width: '16px', height: '16px', color: 'var(--accent)', flexShrink: 0 }} />,
 }
 
 interface Props {
@@ -17,42 +23,80 @@ interface Props {
 
 export function IssueCard({ issue, onFix, compact }: Props) {
   const isResolved = issue.status === 'resolved'
+  const [fixHovered, setFixHovered] = useState(false)
+
+  const leftBorderStyle: React.CSSProperties =
+    !isResolved && issue.severity === 'critical'
+      ? { borderLeft: '2px solid var(--bad)' }
+      : !isResolved && issue.severity === 'warning'
+      ? { borderLeft: '2px solid var(--warn)' }
+      : {}
 
   return (
     <div
-      className={cn(
-        'flex items-start gap-3 p-3 rounded-lg border border-border bg-surface-primary transition-opacity',
-        !isResolved && issue.severity === 'critical' && 'border-l-2 border-l-danger',
-        !isResolved && issue.severity === 'warning' && 'border-l-2 border-l-warning',
-        isResolved && 'opacity-50',
-      )}
+      style={{
+        display: 'flex',
+        alignItems: 'flex-start',
+        gap: '12px',
+        padding: '12px',
+        borderRadius: 'var(--radius-md)',
+        border: '1px solid var(--border)',
+        background: 'var(--bg-card)',
+        transition: 'opacity 0.2s',
+        opacity: isResolved ? 0.5 : 1,
+        ...leftBorderStyle,
+      }}
     >
       {isResolved
-        ? <CheckCircle2 className="w-4 h-4 text-success flex-shrink-0" />
+        ? <CheckCircle2 style={{ width: '16px', height: '16px', color: 'var(--green)', flexShrink: 0 }} />
         : icons[issue.severity]
       }
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 flex-wrap">
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
           {isResolved
-            ? <span className="text-xs font-medium text-success">Fixed</span>
+            ? (
+              <span style={{ fontSize: '12px', fontWeight: 500, color: 'var(--green)' }}>
+                Fixed
+              </span>
+            )
             : <SeverityBadge severity={issue.severity} />
           }
           {issue.column_name && (
-            <span className="text-xs font-mono text-text-secondary bg-surface-tertiary px-1.5 py-0.5 rounded">
+            <span
+              style={{
+                fontSize: '12px',
+                fontFamily: 'var(--font-mono)',
+                color: 'var(--text-secondary)',
+                background: 'var(--bg-inset)',
+                padding: '2px 6px',
+                borderRadius: 'var(--radius-xs)',
+              }}
+            >
               {issue.column_name}
             </span>
           )}
         </div>
-        <p className={cn('text-sm text-text-primary mt-1', compact && 'line-clamp-1')}>
+        <p
+          style={{
+            fontSize: '14px',
+            color: 'var(--text-primary)',
+            marginTop: '4px',
+            marginBottom: 0,
+            overflow: compact ? 'hidden' : undefined,
+            display: compact ? '-webkit-box' : undefined,
+            WebkitLineClamp: compact ? 1 : undefined,
+            WebkitBoxOrient: compact ? 'vertical' : undefined,
+          } as React.CSSProperties}
+        >
           {issue.description}
         </p>
         {!compact && !isResolved && (
-          <div className="flex items-center gap-3 mt-1.5">
-            <span className="text-xs text-text-tertiary">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '6px' }}>
+            <span style={{ fontSize: '12px', color: 'var(--text-tertiary)', fontFamily: 'var(--font-mono)' }}>
               {issue.affected_pct.toFixed(1)}% affected
             </span>
             {issue.impact_score > 0 && (
-              <span className="text-xs text-success font-medium">
+              <span style={{ fontSize: '12px', color: 'var(--green)', fontWeight: 500 }}>
                 +{issue.impact_score.toFixed(1)}% est. gain
               </span>
             )}
@@ -62,9 +106,25 @@ export function IssueCard({ issue, onFix, compact }: Props) {
       {!isResolved && issue.fix_available && onFix && (
         <button
           onClick={() => onFix(issue)}
-          className="flex items-center gap-1.5 text-xs font-medium text-brand hover:text-brand-700 flex-shrink-0 px-2 py-1 rounded hover:bg-brand-50 transition-colors"
+          onMouseEnter={() => setFixHovered(true)}
+          onMouseLeave={() => setFixHovered(false)}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            fontSize: '12px',
+            fontWeight: 500,
+            color: fixHovered ? 'var(--accent-hover)' : 'var(--accent)',
+            flexShrink: 0,
+            padding: '4px 8px',
+            borderRadius: 'var(--radius-btn)',
+            background: fixHovered ? 'var(--blue-tint)' : 'transparent',
+            border: 'none',
+            cursor: 'pointer',
+            transition: 'background 0.15s, color 0.15s',
+          }}
         >
-          <Wrench className="w-3 h-3" />
+          <Wrench style={{ width: '12px', height: '12px' }} />
           Fix
         </button>
       )}

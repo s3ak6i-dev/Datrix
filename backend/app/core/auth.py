@@ -1,30 +1,28 @@
 """JWT utilities and FastAPI auth dependency."""
 import hashlib
-import uuid
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 
+import bcrypt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError, jwt
-from passlib.context import CryptContext
 
 from app.core.config import settings
 from app.db.session import db_session
 from app.db import models as M
 
-_pwd = CryptContext(schemes=["bcrypt"], deprecated="auto")
 _bearer = HTTPBearer(auto_error=False)
 
 
 # ── Password helpers ──────────────────────────────────────────────────────────
 
 def hash_password(plain: str) -> str:
-    return _pwd.hash(plain)
+    return bcrypt.hashpw(plain.encode()[:72], bcrypt.gensalt(rounds=10)).decode()
 
 
 def verify_password(plain: str, hashed: str) -> bool:
-    return _pwd.verify(plain, hashed)
+    return bcrypt.checkpw(plain.encode()[:72], hashed.encode())
 
 
 # ── Token helpers ─────────────────────────────────────────────────────────────

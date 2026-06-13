@@ -30,37 +30,69 @@ export function DatasetChangesPanel({ open, onClose, dataset, scans }: Props) {
 
   return (
     <>
-      {open && <div className="fixed inset-0 z-30" onClick={onClose} />}
+      {open && <div style={{ position: 'fixed', inset: 0, zIndex: 30 }} onClick={onClose} />}
 
       <div
-        className={`fixed top-0 right-0 h-full w-80 bg-surface-primary border-l border-border shadow-xl z-40 flex flex-col transition-transform duration-300 ease-in-out ${
-          open ? 'translate-x-0' : 'translate-x-full'
-        }`}
+        style={{
+          position: 'fixed',
+          top: 0,
+          right: 0,
+          height: '100%',
+          width: 320,
+          background: 'var(--bg-card)',
+          borderLeft: '1px solid var(--border)',
+          boxShadow: '0 20px 60px rgba(0,0,0,0.18)',
+          zIndex: 40,
+          display: 'flex',
+          flexDirection: 'column',
+          transform: open ? 'translateX(0)' : 'translateX(100%)',
+          transition: 'transform 300ms ease-in-out',
+        }}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-border flex-shrink-0">
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
           <div>
-            <h2 className="text-sm font-semibold text-text-primary">Dataset changes</h2>
-            <p className="text-xs text-text-tertiary mt-0.5 truncate max-w-[180px]">{dataset.name}</p>
+            <h2 style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', fontFamily: 'var(--font-sans)' }}>Dataset changes</h2>
+            <p style={{ fontSize: 11, color: 'var(--text-tertiary)', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 180, fontFamily: 'var(--font-sans)' }}>{dataset.name}</p>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-text-tertiary hover:text-text-primary hover:bg-surface-tertiary transition-colors"
+            style={{
+              padding: 6,
+              borderRadius: 'var(--radius-btn)',
+              color: 'var(--text-tertiary)',
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              transition: 'background 0.15s, color 0.15s',
+            }}
+            onMouseEnter={(e) => {
+              const btn = e.currentTarget as HTMLButtonElement
+              btn.style.color = 'var(--text-primary)'
+              btn.style.background = 'var(--bg-inset)'
+            }}
+            onMouseLeave={(e) => {
+              const btn = e.currentTarget as HTMLButtonElement
+              btn.style.color = 'var(--text-tertiary)'
+              btn.style.background = 'none'
+            }}
           >
-            <X className="w-4 h-4" />
+            <X style={{ width: 16, height: 16 }} />
           </button>
         </div>
 
         {/* Timeline */}
-        <div className="flex-1 overflow-y-auto px-5 py-4">
+        <div style={{ flex: 1, overflowY: 'auto', padding: '16px 20px' }}>
           {events.length === 1 ? (
-            <p className="text-xs text-text-tertiary text-center py-8">
+            <p style={{ fontSize: 11, color: 'var(--text-tertiary)', textAlign: 'center', padding: '32px 0', fontFamily: 'var(--font-sans)' }}>
               Run a quality scan to start tracking changes.
             </p>
           ) : (
-            <ol className="relative border-l border-border space-y-6 ml-2">
+            <ol style={{ position: 'relative', borderLeft: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: 24, marginLeft: 8, paddingLeft: 0, listStyle: 'none', margin: 0, paddingLeft: 0 }}>
               {events.map((event, i) => (
-                <li key={i} className="ml-5">
+                <li key={i} style={{ marginLeft: 20 }}>
                   {event.type === 'scan' ? (
                     <ScanEvent
                       scan={event.scan}
@@ -95,22 +127,45 @@ function ScanEvent({
   openCount: number
   isLatest: boolean
 }) {
+  const deltaColor =
+    scoreDelta == null ? 'var(--text-tertiary)'
+    : scoreDelta > 0 ? 'var(--green)'
+    : scoreDelta < 0 ? 'var(--bad)'
+    : 'var(--text-tertiary)'
+
   return (
     <>
-      <span className={`absolute -left-2 flex items-center justify-center w-4 h-4 rounded-full ring-2 ring-surface-primary ${
-        isLatest ? 'bg-brand' : 'bg-surface-tertiary'
-      }`}>
-        <ScanLine className={`w-2.5 h-2.5 ${isLatest ? 'text-white' : 'text-text-tertiary'}`} />
+      <span style={{
+        position: 'absolute',
+        left: -8,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        width: 16,
+        height: 16,
+        borderRadius: '50%',
+        background: isLatest ? 'var(--accent)' : 'var(--bg-inset)',
+        outline: '2px solid var(--bg-card)',
+      }}>
+        <ScanLine style={{ width: 10, height: 10, color: isLatest ? '#fff' : 'var(--text-tertiary)' }} />
       </span>
 
       <div>
-        <div className="flex items-center gap-2 mb-1">
-          <p className="text-xs font-semibold text-text-primary">Quality scan</p>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+          <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-primary)', fontFamily: 'var(--font-sans)' }}>Quality scan</p>
           {isLatest && (
-            <span className="text-[10px] font-medium text-brand bg-brand-50 px-1.5 py-0.5 rounded-full">Latest</span>
+            <span style={{
+              fontSize: 10,
+              fontWeight: 500,
+              color: 'var(--accent)',
+              background: 'var(--blue-tint)',
+              padding: '2px 6px',
+              borderRadius: 9999,
+              fontFamily: 'var(--font-sans)',
+            }}>Latest</span>
           )}
         </div>
-        <p className="text-xs text-text-tertiary mb-2">
+        <p style={{ fontSize: 11, color: 'var(--text-tertiary)', marginBottom: 8, fontFamily: 'var(--font-sans)' }}>
           {formatRelativeTime(scan.completed_at ?? scan.created_at)}
           {scan.scan_duration_ms != null && (
             <> · {scan.scan_duration_ms < 1000
@@ -119,22 +174,20 @@ function ScanEvent({
           )}
         </p>
 
-        <div className="bg-surface-secondary border border-border rounded-lg p-3 space-y-2 text-xs">
+        <div style={{ background: 'var(--bg-2)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', padding: 12, display: 'flex', flexDirection: 'column', gap: 8, fontSize: 11 }}>
           {/* Score */}
           {scan.score && (
-            <div className="flex items-center justify-between">
-              <span className="text-text-secondary">Quality score</span>
-              <div className="flex items-center gap-1.5">
-                <span className="font-semibold font-mono text-text-primary">{scan.score.overall}</span>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span style={{ color: 'var(--text-secondary)', fontFamily: 'var(--font-sans)' }}>Quality score</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span style={{ fontWeight: 600, fontFamily: 'var(--font-mono)', color: 'var(--text-primary)' }}>{scan.score.overall}</span>
                 {scoreDelta !== null && (
-                  <span className={`flex items-center gap-0.5 font-medium ${
-                    scoreDelta > 0 ? 'text-success' : scoreDelta < 0 ? 'text-danger' : 'text-text-tertiary'
-                  }`}>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 2, fontWeight: 500, color: deltaColor, fontFamily: 'var(--font-sans)' }}>
                     {scoreDelta > 0
-                      ? <TrendingUp className="w-3 h-3" />
+                      ? <TrendingUp style={{ width: 12, height: 12 }} />
                       : scoreDelta < 0
-                      ? <TrendingDown className="w-3 h-3" />
-                      : <Minus className="w-3 h-3" />}
+                      ? <TrendingDown style={{ width: 12, height: 12 }} />
+                      : <Minus style={{ width: 12, height: 12 }} />}
                     {scoreDelta > 0 ? `+${scoreDelta}` : scoreDelta}
                   </span>
                 )}
@@ -143,31 +196,31 @@ function ScanEvent({
           )}
 
           {/* Issues */}
-          <div className="flex items-center justify-between">
-            <span className="text-text-secondary">Issues found</span>
-            <span className="font-mono text-text-primary">{scan.issues.length}</span>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span style={{ color: 'var(--text-secondary)', fontFamily: 'var(--font-sans)' }}>Issues found</span>
+            <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--text-primary)' }}>{scan.issues.length}</span>
           </div>
 
           {resolved > 0 && (
-            <div className="flex items-center justify-between">
-              <span className="flex items-center gap-1 text-success">
-                <Wrench className="w-3 h-3" />
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'var(--green)', fontFamily: 'var(--font-sans)' }}>
+                <Wrench style={{ width: 12, height: 12 }} />
                 Fixed
               </span>
-              <span className="font-mono text-success font-medium">{resolved}</span>
+              <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--green)', fontWeight: 500 }}>{resolved}</span>
             </div>
           )}
 
           {openCount > 0 && (
-            <div className="flex items-center justify-between">
-              <span className="text-text-secondary">Still open</span>
-              <span className="font-mono text-warning">{openCount}</span>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span style={{ color: 'var(--text-secondary)', fontFamily: 'var(--font-sans)' }}>Still open</span>
+              <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--warn)' }}>{openCount}</span>
             </div>
           )}
 
           {/* Dimension breakdown */}
           {scan.score && (
-            <div className="pt-2 border-t border-border space-y-1.5">
+            <div style={{ paddingTop: 8, borderTop: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: 6 }}>
               {[
                 ['Completeness', scan.score.completeness],
                 ['Consistency', scan.score.consistency],
@@ -175,15 +228,14 @@ function ScanEvent({
                 ['Distribution', scan.score.distribution],
                 ['Label quality', scan.score.label_quality],
               ].map(([label, val]) => (
-                <div key={label as string} className="flex items-center gap-2">
-                  <span className="text-text-tertiary w-24 shrink-0">{label}</span>
-                  <div className="flex-1 h-1 bg-border rounded-full overflow-hidden">
+                <div key={label as string} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ color: 'var(--text-tertiary)', width: 96, flexShrink: 0, fontFamily: 'var(--font-sans)' }}>{label}</span>
+                  <div style={{ flex: 1, height: 4, background: 'var(--border)', borderRadius: 9999, overflow: 'hidden' }}>
                     <div
-                      className="h-full rounded-full bg-brand/60"
-                      style={{ width: `${val}%` }}
+                      style={{ height: '100%', borderRadius: 9999, background: 'var(--accent)', opacity: 0.6, width: `${val}%` }}
                     />
                   </div>
-                  <span className="font-mono text-text-secondary w-7 text-right">{val}</span>
+                  <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--text-secondary)', width: 28, textAlign: 'right' }}>{val}</span>
                 </div>
               ))}
             </div>
@@ -197,11 +249,22 @@ function ScanEvent({
 function UploadEvent({ date }: { date: string }) {
   return (
     <>
-      <span className="absolute -left-2 flex items-center justify-center w-4 h-4 rounded-full bg-surface-tertiary ring-2 ring-surface-primary">
-        <Upload className="w-2.5 h-2.5 text-text-tertiary" />
+      <span style={{
+        position: 'absolute',
+        left: -8,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        width: 16,
+        height: 16,
+        borderRadius: '50%',
+        background: 'var(--bg-inset)',
+        outline: '2px solid var(--bg-card)',
+      }}>
+        <Upload style={{ width: 10, height: 10, color: 'var(--text-tertiary)' }} />
       </span>
-      <p className="text-xs font-semibold text-text-primary">Dataset uploaded</p>
-      <p className="text-xs text-text-tertiary mt-0.5">{formatRelativeTime(date)}</p>
+      <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-primary)', fontFamily: 'var(--font-sans)' }}>Dataset uploaded</p>
+      <p style={{ fontSize: 11, color: 'var(--text-tertiary)', marginTop: 2, fontFamily: 'var(--font-sans)' }}>{formatRelativeTime(date)}</p>
     </>
   )
 }

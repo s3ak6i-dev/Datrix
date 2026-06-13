@@ -1,8 +1,7 @@
-import { useState, useCallback } from 'react'
+import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Search, Star, Download, Eye, Package, Database, GitBranch, Brain, BarChart3, X, Plus, ChevronRight, Check, ExternalLink, Upload, Tag, Trash2, RefreshCw } from 'lucide-react'
+import { Search, Star, Download, Eye, Package, Database, GitBranch, Brain, BarChart3, X, Plus, ChevronRight, Check, ExternalLink, Upload, Trash2, RefreshCw } from 'lucide-react'
 import { api } from '@/lib/api'
-import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/Button'
 import type {
   MarketplaceAsset, MarketplaceAssetType, MarketplaceCategory,
@@ -19,10 +18,10 @@ const ASSET_TYPE_LABELS: Record<MarketplaceAssetType, string> = {
 }
 
 const ASSET_TYPE_ICONS: Record<MarketplaceAssetType, React.ReactNode> = {
-  dataset: <Database className="w-4 h-4" />,
-  pipeline: <GitBranch className="w-4 h-4" />,
-  model: <Brain className="w-4 h-4" />,
-  benchmark_config: <BarChart3 className="w-4 h-4" />,
+  dataset: <Database style={{ width: 16, height: 16 }} />,
+  pipeline: <GitBranch style={{ width: 16, height: 16 }} />,
+  model: <Brain style={{ width: 16, height: 16 }} />,
+  benchmark_config: <BarChart3 style={{ width: 16, height: 16 }} />,
 }
 
 const CATEGORY_LABELS: Record<MarketplaceCategory, string> = {
@@ -51,38 +50,45 @@ const VALID_LICENSES: MarketplaceLicense[] = ['mit', 'cc_by', 'cc_by_nc', 'apach
 
 // ── Helpers ───────────────────────────────────────────────────────────
 
-function fmtBytes(n: number) {
-  if (n === 0) return '—'
-  if (n < 1024) return `${n} B`
-  if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`
-  return `${(n / 1024 / 1024).toFixed(1)} MB`
-}
-
 function fmtCount(n: number) {
   if (n >= 1000) return `${(n / 1000).toFixed(1)}k`
   return String(n)
 }
 
 function Stars({ rating, size = 'sm' }: { rating: number; size?: 'sm' | 'md' }) {
-  const cls = size === 'sm' ? 'w-3 h-3' : 'w-4 h-4'
+  const sz = size === 'sm' ? 12 : 16
   return (
-    <span className="flex gap-0.5">
+    <span style={{ display: 'inline-flex', gap: 2 }}>
       {[1, 2, 3, 4, 5].map(i => (
-        <Star key={i} className={cn(cls, i <= Math.round(rating) ? 'text-yellow-400 fill-yellow-400' : 'text-border')} />
+        <Star
+          key={i}
+          style={{
+            width: sz, height: sz,
+            color: i <= Math.round(rating) ? '#facc15' : 'var(--border)',
+            fill: i <= Math.round(rating) ? '#facc15' : 'none',
+          }}
+        />
       ))}
     </span>
   )
 }
 
+const TYPE_BADGE_COLORS: Record<MarketplaceAssetType, { bg: string; color: string }> = {
+  dataset:          { bg: 'rgba(59,130,246,0.12)',  color: '#60a5fa' },
+  pipeline:         { bg: 'rgba(168,85,247,0.12)',  color: '#c084fc' },
+  model:            { bg: 'rgba(34,197,94,0.12)',   color: 'var(--green)' },
+  benchmark_config: { bg: 'rgba(249,115,22,0.12)',  color: 'var(--warn)' },
+}
+
 function TypeBadge({ type }: { type: MarketplaceAssetType }) {
-  const colors: Record<MarketplaceAssetType, string> = {
-    dataset: 'bg-blue-500/10 text-blue-400',
-    pipeline: 'bg-purple-500/10 text-purple-400',
-    model: 'bg-green-500/10 text-green-400',
-    benchmark_config: 'bg-orange-500/10 text-orange-400',
-  }
+  const { bg, color } = TYPE_BADGE_COLORS[type]
   return (
-    <span className={cn('inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium', colors[type])}>
+    <span style={{
+      display: 'inline-flex', alignItems: 'center', gap: 4,
+      padding: '2px 8px', borderRadius: 'var(--radius-btn)',
+      background: bg, color, fontSize: 12, fontWeight: 500,
+      fontFamily: 'var(--font-sans)',
+    }}>
       {ASSET_TYPE_ICONS[type]}
       {ASSET_TYPE_LABELS[type]}
     </span>
@@ -92,45 +98,45 @@ function TypeBadge({ type }: { type: MarketplaceAssetType }) {
 // ── Asset Card ────────────────────────────────────────────────────────
 
 function AssetCard({ asset, onClick }: { asset: MarketplaceAsset; onClick: () => void }) {
+  const [hovered, setHovered] = useState(false)
   return (
     <button
       onClick={onClick}
-      className="w-full text-left bg-surface-secondary border border-border rounded-xl p-4 hover:border-brand/50 hover:bg-surface-tertiary transition-all group"
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        width: '100%', textAlign: 'left',
+        background: hovered ? 'var(--bg-3)' : 'var(--bg-card)',
+        border: `1px solid ${hovered ? 'var(--accent)' : 'var(--border)'}`,
+        borderRadius: 'var(--radius-card)',
+        padding: '14px 16px', cursor: 'pointer',
+        transition: 'border-color 0.15s, background 0.15s',
+        display: 'flex', flexDirection: 'column', gap: 6,
+        fontFamily: 'var(--font-sans)',
+      }}
     >
-      <div className="flex items-start justify-between gap-2 mb-2">
-        <TypeBadge type={asset.asset_type} />
+      <TypeBadge type={asset.asset_type} />
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
+        <h3 style={{
+          fontWeight: 600, color: hovered ? 'var(--accent)' : 'var(--text-primary)',
+          fontSize: 13, lineHeight: 1.4, margin: 0, flex: 1,
+          transition: 'color 0.15s',
+          display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
+        }}>
+          {asset.title}
+        </h3>
         {asset.is_seeded && (
-          <span className="text-xs text-text-tertiary bg-surface-primary border border-border rounded px-1.5 py-0.5">Official</span>
+          <Check style={{ width: 12, height: 12, color: 'var(--green)', flexShrink: 0, marginBottom: 1 }} />
         )}
       </div>
-      <h3 className="font-semibold text-text-primary text-sm leading-snug mb-1 group-hover:text-brand transition-colors line-clamp-2">
-        {asset.title}
-      </h3>
-      <p className="text-xs text-text-tertiary line-clamp-2 mb-3">{asset.description}</p>
-      <div className="flex items-center justify-between text-xs text-text-tertiary">
-        <span className="flex items-center gap-1">
-          {asset.rating_count > 0 ? (
-            <>
-              <Stars rating={asset.rating_avg} />
-              <span>{asset.rating_avg.toFixed(1)}</span>
-            </>
-          ) : (
-            <span>No ratings</span>
-          )}
-        </span>
-        <span className="flex items-center gap-2">
-          <span className="flex items-center gap-1"><Download className="w-3 h-3" />{fmtCount(asset.download_count)}</span>
-          <span className="flex items-center gap-1"><Eye className="w-3 h-3" />{fmtCount(asset.view_count)}</span>
-        </span>
+      <p style={{
+        fontSize: 12, color: 'var(--text-tertiary)', margin: 0, lineHeight: 1.5,
+        display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden',
+      }}>{asset.description}</p>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: 'var(--text-tertiary)', marginTop: 2 }}>
+        <Download style={{ width: 11, height: 11 }} />
+        <span>{fmtCount(asset.download_count)}</span>
       </div>
-      {asset.tags.length > 0 && (
-        <div className="flex flex-wrap gap-1 mt-2">
-          {asset.tags.slice(0, 3).map(t => (
-            <span key={t} className="text-xs bg-surface-primary border border-border rounded px-1.5 py-0.5 text-text-tertiary">{t}</span>
-          ))}
-          {asset.tags.length > 3 && <span className="text-xs text-text-tertiary">+{asset.tags.length - 3}</span>}
-        </div>
-      )}
     </button>
   )
 }
@@ -150,36 +156,51 @@ function ReviewForm({ assetId, onDone }: { assetId: string; onDone: () => void }
       onDone()
     },
   })
+
+  const inputStyle: React.CSSProperties = {
+    width: '100%', background: 'var(--bg-inset)', border: '1px solid var(--border)',
+    borderRadius: 'var(--radius-btn)', padding: '8px 12px', color: 'var(--text-primary)',
+    fontSize: 14, outline: 'none', fontFamily: 'var(--font-sans)', boxSizing: 'border-box',
+  }
+
   return (
-    <div className="space-y-3 border border-border rounded-lg p-4 bg-surface-secondary">
-      <p className="text-sm font-medium text-text-primary">Write a Review</p>
+    <div style={{
+      display: 'flex', flexDirection: 'column', gap: 12,
+      border: '1px solid var(--border)', borderRadius: 'var(--radius-md)',
+      padding: 16, background: 'var(--bg-card)',
+    }}>
+      <p style={{ fontSize: 14, fontWeight: 500, color: 'var(--text-primary)' }}>Write a Review</p>
       <input
-        className="w-full bg-surface-primary border border-border rounded-lg px-3 py-2 text-sm text-text-primary placeholder:text-text-tertiary focus:outline-none focus:border-brand"
+        style={inputStyle}
         placeholder="Your name"
         value={name}
         onChange={e => setName(e.target.value)}
       />
-      <div className="flex gap-1">
+      <div style={{ display: 'flex', gap: 4 }}>
         {[1,2,3,4,5].map(i => (
-          <button key={i} onClick={() => setRating(i)}>
-            <Star className={cn('w-5 h-5', i <= rating ? 'text-yellow-400 fill-yellow-400' : 'text-border hover:text-yellow-300')} />
+          <button key={i} onClick={() => setRating(i)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+            <Star style={{
+              width: 20, height: 20,
+              color: i <= rating ? '#facc15' : 'var(--border)',
+              fill: i <= rating ? '#facc15' : 'none',
+            }} />
           </button>
         ))}
       </div>
       <textarea
-        className="w-full bg-surface-primary border border-border rounded-lg px-3 py-2 text-sm text-text-primary placeholder:text-text-tertiary focus:outline-none focus:border-brand resize-none"
+        style={{ ...inputStyle, resize: 'none' }}
         placeholder="Share your experience (optional)"
         rows={3}
         value={comment}
         onChange={e => setComment(e.target.value)}
       />
-      <div className="flex gap-2">
+      <div style={{ display: 'flex', gap: 8 }}>
         <Button size="sm" onClick={() => mut.mutate()} disabled={!name.trim() || mut.isPending}>
           {mut.isPending ? 'Submitting…' : 'Submit'}
         </Button>
-        <Button size="sm" variant="outline" onClick={onDone}>Cancel</Button>
+        <Button size="sm" variant="ghost" onClick={onDone}>Cancel</Button>
       </div>
-      {mut.isError && <p className="text-xs text-danger">{(mut.error as Error).message}</p>}
+      {mut.isError && <p style={{ fontSize: 12, color: 'var(--bad)' }}>{(mut.error as Error).message}</p>}
     </div>
   )
 }
@@ -215,47 +236,60 @@ function AssetDetailDrawer({ asset: initial, onClose }: { asset: MarketplaceAsse
   const preview = asset.preview as Record<string, unknown>
 
   return (
-    <div className="fixed inset-0 z-50 flex">
-      <button className="flex-1 bg-black/50" onClick={onClose} />
-      <div className="w-[520px] bg-surface-primary border-l border-border flex flex-col overflow-hidden">
+    <div style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex' }}>
+      <button style={{ flex: 1, background: 'rgba(0,0,0,0.5)', border: 'none', cursor: 'pointer' }} onClick={onClose} />
+      <div style={{
+        width: 520, background: 'var(--bg)', borderLeft: '1px solid var(--border)',
+        display: 'flex', flexDirection: 'column', overflow: 'hidden',
+        fontFamily: 'var(--font-sans)',
+      }}>
         {/* Header */}
-        <div className="flex items-start justify-between p-5 border-b border-border">
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-2">
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', padding: 20, borderBottom: '1px solid var(--border)' }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
               <TypeBadge type={asset.asset_type} />
               {asset.is_seeded && (
-                <span className="text-xs text-text-tertiary bg-surface-secondary border border-border rounded px-1.5 py-0.5">Official</span>
+                <span style={{
+                  fontSize: 11, color: 'var(--text-tertiary)',
+                  background: 'var(--bg-card)', border: '1px solid var(--border)',
+                  borderRadius: 'var(--radius-btn)', padding: '2px 6px',
+                }}>Official</span>
               )}
             </div>
-            <h2 className="font-bold text-text-primary text-lg leading-snug">{asset.title}</h2>
-            <p className="text-sm text-text-tertiary mt-1">by {asset.author_name} · v{asset.version} · {LICENSE_LABELS[asset.license]}</p>
+            <h2 style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: 18, lineHeight: 1.3 }}>{asset.title}</h2>
+            <p style={{ fontSize: 13, color: 'var(--text-tertiary)', marginTop: 4 }}>by {asset.author_name} · v{asset.version} · {LICENSE_LABELS[asset.license]}</p>
           </div>
-          <button onClick={onClose} className="text-text-tertiary hover:text-text-primary p-1 ml-3 flex-shrink-0">
-            <X className="w-5 h-5" />
+          <button onClick={onClose} style={{ color: 'var(--text-tertiary)', background: 'none', border: 'none', cursor: 'pointer', padding: 4, flexShrink: 0, marginLeft: 12 }}>
+            <X style={{ width: 20, height: 20 }} />
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto">
+        <div style={{ flex: 1, overflowY: 'auto' }}>
           {/* Stats row */}
-          <div className="grid grid-cols-4 gap-px bg-border m-5 rounded-lg overflow-hidden">
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 1, background: 'var(--border)', margin: 20, borderRadius: 'var(--radius-md)', overflow: 'hidden' }}>
             {[
               { label: 'Downloads', val: fmtCount(asset.download_count) },
               { label: 'Views', val: fmtCount(asset.view_count) },
               { label: 'Rating', val: asset.rating_count > 0 ? asset.rating_avg.toFixed(1) : '—' },
               { label: 'Reviews', val: String(asset.rating_count) },
             ].map(s => (
-              <div key={s.label} className="bg-surface-secondary px-3 py-2.5 text-center">
-                <div className="text-lg font-bold text-text-primary">{s.val}</div>
-                <div className="text-xs text-text-tertiary">{s.label}</div>
+              <div key={s.label} style={{ background: 'var(--bg-card)', padding: '10px 12px', textAlign: 'center' }}>
+                <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-primary)' }}>{s.val}</div>
+                <div style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>{s.label}</div>
               </div>
             ))}
           </div>
 
-          <div className="px-5 space-y-5 pb-5">
+          <div style={{ padding: '0 20px 20px', display: 'flex', flexDirection: 'column', gap: 20 }}>
             {/* Install button */}
             {installed ? (
-              <div className="flex items-center gap-2 bg-success/10 text-success text-sm p-3 rounded-lg border border-success/20">
-                <Check className="w-4 h-4 flex-shrink-0" />
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: 8,
+                background: 'var(--green-dim)', color: 'var(--green)',
+                fontSize: 14, padding: 12, borderRadius: 'var(--radius-md)',
+                border: '1px solid var(--green)',
+              }}>
+                <Check style={{ width: 16, height: 16, flexShrink: 0 }} />
                 <span>{installed}</span>
               </div>
             ) : (
@@ -265,52 +299,52 @@ function AssetDetailDrawer({ asset: initial, onClose }: { asset: MarketplaceAsse
                 className="w-full"
               >
                 {installMut.isPending ? (
-                  <><RefreshCw className="w-4 h-4 animate-spin mr-2" />Installing…</>
+                  <><RefreshCw style={{ width: 16, height: 16, marginRight: 8 }} className="animate-spin" />Installing…</>
                 ) : (
-                  <><Download className="w-4 h-4 mr-2" />Install to Workspace</>
+                  <><Download style={{ width: 16, height: 16, marginRight: 8 }} />Install to Workspace</>
                 )}
               </Button>
             )}
             {installMut.isError && (
-              <p className="text-xs text-danger">{(installMut.error as Error).message}</p>
+              <p style={{ fontSize: 12, color: 'var(--bad)' }}>{(installMut.error as Error).message}</p>
             )}
 
             {/* Description */}
             <div>
-              <h3 className="text-sm font-semibold text-text-primary mb-2">About</h3>
-              <p className="text-sm text-text-secondary leading-relaxed">
+              <h3 style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 8 }}>About</h3>
+              <p style={{ fontSize: 14, color: 'var(--text-secondary)', lineHeight: 1.6 }}>
                 {asset.long_description || asset.description}
               </p>
             </div>
 
             {/* Preview */}
-            {asset.asset_type === 'dataset' && preview.schema && (
+            {asset.asset_type === 'dataset' && !!preview.schema && (
               <div>
-                <h3 className="text-sm font-semibold text-text-primary mb-2">Preview</h3>
-                <div className="text-xs text-text-tertiary mb-2">
+                <h3 style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 8 }}>Preview</h3>
+                <div style={{ fontSize: 12, color: 'var(--text-tertiary)', marginBottom: 8 }}>
                   {(preview.row_count as number)?.toLocaleString()} rows · {(preview.column_count as number)} columns
                 </div>
-                <div className="overflow-x-auto rounded-lg border border-border">
-                  <table className="w-full text-xs">
+                <div style={{ overflowX: 'auto', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)' }}>
+                  <table style={{ width: '100%', fontSize: 12, borderCollapse: 'collapse' }}>
                     <thead>
-                      <tr className="bg-surface-secondary border-b border-border">
+                      <tr style={{ background: 'var(--bg-card)', borderBottom: '1px solid var(--border)' }}>
                         {(preview.schema as {name:string;dtype:string}[]).slice(0, 6).map(col => (
-                          <th key={col.name} className="px-2 py-1.5 text-left text-text-tertiary font-medium whitespace-nowrap">
+                          <th key={col.name} style={{ padding: '6px 8px', textAlign: 'left', color: 'var(--text-tertiary)', fontWeight: 500, whiteSpace: 'nowrap' }}>
                             {col.name}
-                            <span className="ml-1 text-text-tertiary opacity-60">{col.dtype}</span>
+                            <span style={{ marginLeft: 4, color: 'var(--text-tertiary)', opacity: 0.6 }}>{col.dtype}</span>
                           </th>
                         ))}
                         {(preview.schema as unknown[]).length > 6 && (
-                          <th className="px-2 py-1.5 text-text-tertiary">+{(preview.schema as unknown[]).length - 6} more</th>
+                          <th style={{ padding: '6px 8px', color: 'var(--text-tertiary)' }}>+{(preview.schema as unknown[]).length - 6} more</th>
                         )}
                       </tr>
                     </thead>
                     <tbody>
                       {(preview.sample_rows as Record<string, unknown>[] | undefined)?.map((row, i) => (
-                        <tr key={i} className={cn('border-b border-border last:border-0', i % 2 === 0 ? 'bg-surface-primary' : 'bg-surface-secondary')}>
+                        <tr key={i} style={{ borderBottom: '1px solid var(--border)', background: i % 2 === 0 ? 'var(--bg)' : 'var(--bg-card)' }}>
                           {(preview.schema as {name:string}[]).slice(0, 6).map(col => (
-                            <td key={col.name} className="px-2 py-1.5 text-text-secondary whitespace-nowrap max-w-[100px] overflow-hidden text-ellipsis">
-                              {row[col.name] === null || row[col.name] === undefined ? <span className="text-text-tertiary">null</span> : String(row[col.name])}
+                            <td key={col.name} style={{ padding: '6px 8px', color: 'var(--text-secondary)', whiteSpace: 'nowrap', maxWidth: 100, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                              {row[col.name] === null || row[col.name] === undefined ? <span style={{ color: 'var(--text-tertiary)' }}>null</span> : String(row[col.name])}
                             </td>
                           ))}
                         </tr>
@@ -321,24 +355,28 @@ function AssetDetailDrawer({ asset: initial, onClose }: { asset: MarketplaceAsse
               </div>
             )}
 
-            {asset.asset_type === 'pipeline' && preview.steps && (
+            {asset.asset_type === 'pipeline' && !!preview.steps && (
               <div>
-                <h3 className="text-sm font-semibold text-text-primary mb-2">Pipeline Steps</h3>
-                <div className="space-y-1">
+                <h3 style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 8 }}>Pipeline Steps</h3>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                   {(preview.steps as {type: string}[]).map((s, i) => (
-                    <div key={i} className="flex items-center gap-2 text-sm">
-                      <span className="w-5 h-5 rounded-full bg-brand/10 text-brand text-xs flex items-center justify-center flex-shrink-0">{i+1}</span>
-                      <span className="text-text-secondary">{s.type}</span>
+                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14 }}>
+                      <span style={{
+                        width: 20, height: 20, borderRadius: '50%',
+                        background: 'var(--blue-tint)', color: 'var(--accent)',
+                        fontSize: 11, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                      }}>{i+1}</span>
+                      <span style={{ color: 'var(--text-secondary)' }}>{s.type}</span>
                     </div>
                   ))}
                 </div>
               </div>
             )}
 
-            {asset.asset_type === 'model' && preview.model_type && (
+            {asset.asset_type === 'model' && !!preview.model_type && (
               <div>
-                <h3 className="text-sm font-semibold text-text-primary mb-2">Model Info</h3>
-                <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                <h3 style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 8 }}>Model Info</h3>
+                <dl style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px 16px', fontSize: 14 }}>
                   {[
                     ['Model type', String(preview.model_type)],
                     ['Task', String(preview.task_type)],
@@ -346,17 +384,17 @@ function AssetDetailDrawer({ asset: initial, onClose }: { asset: MarketplaceAsse
                     ['Labeled rows', String(preview.labeled_count)],
                   ].map(([k, v]) => (
                     <div key={k}>
-                      <dt className="text-text-tertiary text-xs">{k}</dt>
-                      <dd className="text-text-primary font-medium">{v}</dd>
+                      <dt style={{ color: 'var(--text-tertiary)', fontSize: 12 }}>{k}</dt>
+                      <dd style={{ color: 'var(--text-primary)', fontWeight: 500 }}>{v}</dd>
                     </div>
                   ))}
                 </dl>
-                {preview.metrics && (
-                  <div className="mt-3 space-y-1">
+                {!!preview.metrics && (
+                  <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 4 }}>
                     {Object.entries(preview.metrics as Record<string, number>).map(([k, v]) => (
-                      <div key={k} className="flex items-center justify-between text-xs">
-                        <span className="text-text-tertiary capitalize">{k.replace(/_/g, ' ')}</span>
-                        <span className="text-text-primary font-medium">{(v * 100).toFixed(1)}%</span>
+                      <div key={k} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 12 }}>
+                        <span style={{ color: 'var(--text-tertiary)', textTransform: 'capitalize' }}>{k.replace(/_/g, ' ')}</span>
+                        <span style={{ color: 'var(--text-primary)', fontWeight: 500 }}>{(v * 100).toFixed(1)}%</span>
                       </div>
                     ))}
                   </div>
@@ -364,15 +402,19 @@ function AssetDetailDrawer({ asset: initial, onClose }: { asset: MarketplaceAsse
               </div>
             )}
 
-            {asset.asset_type === 'benchmark_config' && preview.candidates && (
+            {asset.asset_type === 'benchmark_config' && !!preview.candidates && (
               <div>
-                <h3 className="text-sm font-semibold text-text-primary mb-2">Benchmark Config</h3>
-                <p className="text-xs text-text-tertiary mb-2">{String(preview.eval_protocol)} · {String(preview.task_type)}</p>
-                <div className="space-y-1">
+                <h3 style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 8 }}>Benchmark Config</h3>
+                <p style={{ fontSize: 12, color: 'var(--text-tertiary)', marginBottom: 8 }}>{String(preview.eval_protocol)} · {String(preview.task_type)}</p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                   {(preview.candidates as {label:string;model_type:string;preset:string}[]).map((c, i) => (
-                    <div key={i} className="flex items-center gap-2 text-xs bg-surface-secondary border border-border rounded px-2 py-1.5">
-                      <span className="text-text-primary font-medium flex-1">{c.label || c.model_type}</span>
-                      <span className="text-text-tertiary">{c.preset}</span>
+                    <div key={i} style={{
+                      display: 'flex', alignItems: 'center', gap: 8, fontSize: 12,
+                      background: 'var(--bg-card)', border: '1px solid var(--border)',
+                      borderRadius: 'var(--radius-btn)', padding: '6px 8px',
+                    }}>
+                      <span style={{ color: 'var(--text-primary)', fontWeight: 500, flex: 1 }}>{c.label || c.model_type}</span>
+                      <span style={{ color: 'var(--text-tertiary)' }}>{c.preset}</span>
                     </div>
                   ))}
                 </div>
@@ -382,10 +424,13 @@ function AssetDetailDrawer({ asset: initial, onClose }: { asset: MarketplaceAsse
             {/* Tags */}
             {asset.tags.length > 0 && (
               <div>
-                <h3 className="text-sm font-semibold text-text-primary mb-2">Tags</h3>
-                <div className="flex flex-wrap gap-1.5">
+                <h3 style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 8 }}>Tags</h3>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                   {asset.tags.map(t => (
-                    <span key={t} className="text-xs bg-surface-secondary border border-border rounded-full px-2.5 py-1 text-text-secondary">{t}</span>
+                    <span key={t} style={{
+                      fontSize: 12, background: 'var(--bg-card)', border: '1px solid var(--border)',
+                      borderRadius: 'var(--radius-pill)', padding: '4px 10px', color: 'var(--text-secondary)',
+                    }}>{t}</span>
                   ))}
                 </div>
               </div>
@@ -393,14 +438,14 @@ function AssetDetailDrawer({ asset: initial, onClose }: { asset: MarketplaceAsse
 
             {/* Reviews */}
             <div>
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="text-sm font-semibold text-text-primary">
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                <h3 style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)' }}>
                   Reviews {reviews.length > 0 && `(${reviews.length})`}
                 </h3>
                 {!showReviewForm && (
                   <button
                     onClick={() => setShowReviewForm(true)}
-                    className="text-xs text-brand hover:underline"
+                    style={{ fontSize: 12, color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}
                   >
                     + Write review
                   </button>
@@ -410,17 +455,20 @@ function AssetDetailDrawer({ asset: initial, onClose }: { asset: MarketplaceAsse
                 <ReviewForm assetId={initial.id} onDone={() => setShowReviewForm(false)} />
               )}
               {reviews.length === 0 && !showReviewForm ? (
-                <p className="text-sm text-text-tertiary">No reviews yet. Be the first!</p>
+                <p style={{ fontSize: 14, color: 'var(--text-tertiary)' }}>No reviews yet. Be the first!</p>
               ) : (
-                <div className="space-y-3">
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                   {reviews.map(r => (
-                    <div key={r.id} className="bg-surface-secondary border border-border rounded-lg p-3">
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-sm font-medium text-text-primary">{r.author_name}</span>
+                    <div key={r.id} style={{
+                      background: 'var(--bg-card)', border: '1px solid var(--border)',
+                      borderRadius: 'var(--radius-md)', padding: 12,
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                        <span style={{ fontSize: 14, fontWeight: 500, color: 'var(--text-primary)' }}>{r.author_name}</span>
                         <Stars rating={r.rating} />
                       </div>
-                      {r.comment && <p className="text-sm text-text-secondary">{r.comment}</p>}
-                      <p className="text-xs text-text-tertiary mt-1">
+                      {r.comment && <p style={{ fontSize: 14, color: 'var(--text-secondary)' }}>{r.comment}</p>}
+                      <p style={{ fontSize: 12, color: 'var(--text-tertiary)', marginTop: 4 }}>
                         {new Date(r.created_at).toLocaleDateString()}
                       </p>
                     </div>
@@ -479,41 +527,67 @@ function PublishWizard({ onClose }: { onClose: () => void }) {
     },
   })
 
+  const inputStyle: React.CSSProperties = {
+    width: '100%', background: 'var(--bg-inset)', border: '1px solid var(--border)',
+    borderRadius: 'var(--radius-btn)', padding: '8px 12px', color: 'var(--text-primary)',
+    fontSize: 14, outline: 'none', fontFamily: 'var(--font-sans)', boxSizing: 'border-box',
+  }
+  const labelStyle: React.CSSProperties = {
+    display: 'block', fontSize: 12, fontWeight: 500, color: 'var(--text-tertiary)', marginBottom: 4,
+  }
+
   if (done) return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="bg-surface-primary border border-border rounded-xl p-8 w-[420px] text-center">
-        <div className="w-12 h-12 rounded-full bg-success/10 flex items-center justify-center mx-auto mb-4">
-          <Check className="w-6 h-6 text-success" />
+    <div style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.5)' }}>
+      <div style={{
+        background: 'var(--bg)', border: '1px solid var(--border)',
+        borderRadius: 'var(--radius-card)', padding: 32, width: 420, textAlign: 'center',
+        fontFamily: 'var(--font-sans)',
+      }}>
+        <div style={{
+          width: 48, height: 48, borderRadius: '50%', background: 'var(--green-dim)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px',
+        }}>
+          <Check style={{ width: 24, height: 24, color: 'var(--green)' }} />
         </div>
-        <h2 className="text-lg font-bold text-text-primary mb-2">Published!</h2>
-        <p className="text-sm text-text-secondary mb-6">Your asset is now live in the marketplace.</p>
+        <h2 style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 8 }}>Published!</h2>
+        <p style={{ fontSize: 14, color: 'var(--text-secondary)', marginBottom: 24 }}>Your asset is now live in the marketplace.</p>
         <Button onClick={onClose}>Done</Button>
       </div>
     </div>
   )
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="bg-surface-primary border border-border rounded-xl w-[520px] max-h-[90vh] flex flex-col">
+    <div style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.5)' }}>
+      <div style={{
+        background: 'var(--bg)', border: '1px solid var(--border)',
+        borderRadius: 'var(--radius-card)', width: 520, maxHeight: '90vh',
+        display: 'flex', flexDirection: 'column', fontFamily: 'var(--font-sans)',
+      }}>
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-border">
-          <h2 className="font-bold text-text-primary">Publish to Marketplace</h2>
-          <button onClick={onClose} className="text-text-tertiary hover:text-text-primary">
-            <X className="w-5 h-5" />
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 24px', borderBottom: '1px solid var(--border)' }}>
+          <h2 style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: 15 }}>Publish to Marketplace</h2>
+          <button onClick={onClose} style={{ color: 'var(--text-tertiary)', background: 'none', border: 'none', cursor: 'pointer' }}>
+            <X style={{ width: 20, height: 20 }} />
           </button>
         </div>
 
         {/* Step indicator */}
-        <div className="flex items-center gap-2 px-6 py-3 border-b border-border">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 24px', borderBottom: '1px solid var(--border)' }}>
           {['Choose asset', 'Metadata', 'Review'].map((label, i) => (
-            <div key={label} className="flex items-center gap-2">
-              {i > 0 && <ChevronRight className="w-3 h-3 text-text-tertiary" />}
-              <div className={cn('flex items-center gap-1.5 text-xs', step === i + 1 ? 'text-brand font-medium' : step > i + 1 ? 'text-text-secondary' : 'text-text-tertiary')}>
-                <span className={cn('w-5 h-5 rounded-full text-xs flex items-center justify-center border',
-                  step === i + 1 ? 'bg-brand text-white border-brand' :
-                  step > i + 1 ? 'bg-success/20 text-success border-success/30' : 'border-border'
-                )}>
-                  {step > i + 1 ? <Check className="w-3 h-3" /> : i + 1}
+            <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              {i > 0 && <ChevronRight style={{ width: 12, height: 12, color: 'var(--text-tertiary)' }} />}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12,
+                color: step === i + 1 ? 'var(--accent)' : step > i + 1 ? 'var(--text-secondary)' : 'var(--text-tertiary)',
+                fontWeight: step === i + 1 ? 500 : 400,
+              }}>
+                <span style={{
+                  width: 20, height: 20, borderRadius: '50%', fontSize: 11,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  border: `1px solid ${step === i + 1 ? 'var(--accent)' : step > i + 1 ? 'var(--green)' : 'var(--border)'}`,
+                  background: step === i + 1 ? 'var(--accent)' : step > i + 1 ? 'var(--green-dim)' : 'transparent',
+                  color: step === i + 1 ? 'white' : step > i + 1 ? 'var(--green)' : 'inherit',
+                }}>
+                  {step > i + 1 ? <Check style={{ width: 12, height: 12 }} /> : i + 1}
                 </span>
                 {label}
               </div>
@@ -521,19 +595,24 @@ function PublishWizard({ onClose }: { onClose: () => void }) {
           ))}
         </div>
 
-        <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
+        <div style={{ flex: 1, overflowY: 'auto', padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 20 }}>
           {step === 1 && (
             <>
               <div>
-                <label className="block text-sm font-medium text-text-primary mb-2">What are you publishing?</label>
-                <div className="grid grid-cols-2 gap-2">
+                <label style={{ display: 'block', fontSize: 14, fontWeight: 500, color: 'var(--text-primary)', marginBottom: 8 }}>What are you publishing?</label>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
                   {(['dataset', 'pipeline', 'model', 'benchmark_config'] as MarketplaceAssetType[]).map(t => (
                     <button
                       key={t}
                       onClick={() => { setAssetType(t); setSourceId('') }}
-                      className={cn('flex items-center gap-2 p-3 rounded-lg border text-sm text-left',
-                        assetType === t ? 'border-brand bg-brand/5 text-brand' : 'border-border text-text-secondary hover:border-border hover:bg-surface-secondary'
-                      )}
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: 8, padding: 12,
+                        borderRadius: 'var(--radius-md)',
+                        border: `1px solid ${assetType === t ? 'var(--accent)' : 'var(--border)'}`,
+                        background: assetType === t ? 'var(--blue-tint)' : 'transparent',
+                        color: assetType === t ? 'var(--accent)' : 'var(--text-secondary)',
+                        fontSize: 14, textAlign: 'left', cursor: 'pointer', fontFamily: 'var(--font-sans)',
+                      }}
                     >
                       {ASSET_TYPE_ICONS[t]}
                       {ASSET_TYPE_LABELS[t]}
@@ -543,18 +622,22 @@ function PublishWizard({ onClose }: { onClose: () => void }) {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-text-primary mb-2">
+                <label style={{ display: 'block', fontSize: 14, fontWeight: 500, color: 'var(--text-primary)', marginBottom: 8 }}>
                   Select {ASSET_TYPE_LABELS[assetType]}
-                  {assetType === 'model' && <span className="text-text-tertiary font-normal"> (completed sessions only)</span>}
-                  {assetType === 'benchmark_config' && <span className="text-text-tertiary font-normal"> (completed jobs only)</span>}
+                  {assetType === 'model' && <span style={{ color: 'var(--text-tertiary)', fontWeight: 400 }}> (completed sessions only)</span>}
+                  {assetType === 'benchmark_config' && <span style={{ color: 'var(--text-tertiary)', fontWeight: 400 }}> (completed jobs only)</span>}
                 </label>
                 {sources.length === 0 ? (
-                  <div className="text-sm text-text-tertiary bg-surface-secondary border border-border rounded-lg p-4 text-center">
+                  <div style={{
+                    fontSize: 14, color: 'var(--text-tertiary)', background: 'var(--bg-card)',
+                    border: '1px solid var(--border)', borderRadius: 'var(--radius-md)',
+                    padding: 16, textAlign: 'center',
+                  }}>
                     No {ASSET_TYPE_LABELS[assetType].toLowerCase()}s available to publish
                   </div>
                 ) : (
                   <select
-                    className="w-full bg-surface-secondary border border-border rounded-lg px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-brand"
+                    style={{ ...inputStyle }}
                     value={sourceId}
                     onChange={e => setSourceId(e.target.value)}
                   >
@@ -571,116 +654,84 @@ function PublishWizard({ onClose }: { onClose: () => void }) {
           {step === 2 && (
             <>
               <div>
-                <label className="block text-xs font-medium text-text-tertiary mb-1">Title *</label>
-                <input
-                  className="w-full bg-surface-secondary border border-border rounded-lg px-3 py-2 text-sm text-text-primary placeholder:text-text-tertiary focus:outline-none focus:border-brand"
-                  placeholder="Give your asset a clear title"
-                  value={title}
-                  onChange={e => setTitle(e.target.value)}
-                />
+                <label style={labelStyle}>Title *</label>
+                <input style={inputStyle} placeholder="Give your asset a clear title" value={title} onChange={e => setTitle(e.target.value)} />
               </div>
               <div>
-                <label className="block text-xs font-medium text-text-tertiary mb-1">Short description *</label>
-                <input
-                  className="w-full bg-surface-secondary border border-border rounded-lg px-3 py-2 text-sm text-text-primary placeholder:text-text-tertiary focus:outline-none focus:border-brand"
-                  placeholder="One sentence description"
-                  value={description}
-                  onChange={e => setDescription(e.target.value)}
-                />
+                <label style={labelStyle}>Short description *</label>
+                <input style={inputStyle} placeholder="One sentence description" value={description} onChange={e => setDescription(e.target.value)} />
               </div>
               <div>
-                <label className="block text-xs font-medium text-text-tertiary mb-1">Full description</label>
-                <textarea
-                  className="w-full bg-surface-secondary border border-border rounded-lg px-3 py-2 text-sm text-text-primary placeholder:text-text-tertiary focus:outline-none focus:border-brand resize-none"
-                  placeholder="Detailed description, use cases, methodology…"
-                  rows={4}
-                  value={longDesc}
-                  onChange={e => setLongDesc(e.target.value)}
-                />
+                <label style={labelStyle}>Full description</label>
+                <textarea style={{ ...inputStyle, resize: 'none' }} placeholder="Detailed description, use cases, methodology…" rows={4} value={longDesc} onChange={e => setLongDesc(e.target.value)} />
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                 <div>
-                  <label className="block text-xs font-medium text-text-tertiary mb-1">Category</label>
-                  <select
-                    className="w-full bg-surface-secondary border border-border rounded-lg px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-brand"
-                    value={category}
-                    onChange={e => setCategory(e.target.value as MarketplaceCategory)}
-                  >
+                  <label style={labelStyle}>Category</label>
+                  <select style={inputStyle} value={category} onChange={e => setCategory(e.target.value as MarketplaceCategory)}>
                     {VALID_CATEGORIES.map(c => (
                       <option key={c} value={c}>{CATEGORY_LABELS[c]}</option>
                     ))}
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-text-tertiary mb-1">License</label>
-                  <select
-                    className="w-full bg-surface-secondary border border-border rounded-lg px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-brand"
-                    value={license}
-                    onChange={e => setLicense(e.target.value as MarketplaceLicense)}
-                  >
+                  <label style={labelStyle}>License</label>
+                  <select style={inputStyle} value={license} onChange={e => setLicense(e.target.value as MarketplaceLicense)}>
                     {VALID_LICENSES.map(l => (
                       <option key={l} value={l}>{LICENSE_LABELS[l]}</option>
                     ))}
                   </select>
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                 <div>
-                  <label className="block text-xs font-medium text-text-tertiary mb-1">Version</label>
-                  <input
-                    className="w-full bg-surface-secondary border border-border rounded-lg px-3 py-2 text-sm text-text-primary placeholder:text-text-tertiary focus:outline-none focus:border-brand"
-                    placeholder="1.0.0"
-                    value={version}
-                    onChange={e => setVersion(e.target.value)}
-                  />
+                  <label style={labelStyle}>Version</label>
+                  <input style={inputStyle} placeholder="1.0.0" value={version} onChange={e => setVersion(e.target.value)} />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-text-tertiary mb-1">Author name</label>
-                  <input
-                    className="w-full bg-surface-secondary border border-border rounded-lg px-3 py-2 text-sm text-text-primary placeholder:text-text-tertiary focus:outline-none focus:border-brand"
-                    placeholder="Your name"
-                    value={authorName}
-                    onChange={e => setAuthorName(e.target.value)}
-                  />
+                  <label style={labelStyle}>Author name</label>
+                  <input style={inputStyle} placeholder="Your name" value={authorName} onChange={e => setAuthorName(e.target.value)} />
                 </div>
               </div>
               <div>
-                <label className="block text-xs font-medium text-text-tertiary mb-1">
-                  Tags <span className="font-normal">(comma-separated)</span>
-                </label>
-                <input
-                  className="w-full bg-surface-secondary border border-border rounded-lg px-3 py-2 text-sm text-text-primary placeholder:text-text-tertiary focus:outline-none focus:border-brand"
-                  placeholder="classification, tabular, real-world"
-                  value={tags}
-                  onChange={e => setTags(e.target.value)}
-                />
+                <label style={labelStyle}>Tags <span style={{ fontWeight: 400 }}>(comma-separated)</span></label>
+                <input style={inputStyle} placeholder="classification, tabular, real-world" value={tags} onChange={e => setTags(e.target.value)} />
               </div>
             </>
           )}
 
           {step === 3 && (
-            <div className="space-y-4">
-              <div className="bg-surface-secondary border border-border rounded-xl p-4 space-y-3">
-                <div className="flex items-center gap-2">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              <div style={{
+                background: 'var(--bg-card)', border: '1px solid var(--border)',
+                borderRadius: 'var(--radius-card)', padding: 16, display: 'flex', flexDirection: 'column', gap: 12,
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <TypeBadge type={assetType} />
                 </div>
-                <h3 className="font-semibold text-text-primary">{title}</h3>
-                <p className="text-sm text-text-secondary">{description}</p>
-                <div className="grid grid-cols-3 gap-2 text-xs">
-                  <div><span className="text-text-tertiary">Category: </span><span className="text-text-primary">{CATEGORY_LABELS[category]}</span></div>
-                  <div><span className="text-text-tertiary">License: </span><span className="text-text-primary">{LICENSE_LABELS[license]}</span></div>
-                  <div><span className="text-text-tertiary">Version: </span><span className="text-text-primary">{version}</span></div>
+                <h3 style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: 15 }}>{title}</h3>
+                <p style={{ fontSize: 14, color: 'var(--text-secondary)' }}>{description}</p>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8, fontSize: 12 }}>
+                  <div><span style={{ color: 'var(--text-tertiary)' }}>Category: </span><span style={{ color: 'var(--text-primary)' }}>{CATEGORY_LABELS[category]}</span></div>
+                  <div><span style={{ color: 'var(--text-tertiary)' }}>License: </span><span style={{ color: 'var(--text-primary)' }}>{LICENSE_LABELS[license]}</span></div>
+                  <div><span style={{ color: 'var(--text-tertiary)' }}>Version: </span><span style={{ color: 'var(--text-primary)' }}>{version}</span></div>
                 </div>
                 {tags && (
-                  <div className="flex flex-wrap gap-1">
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
                     {tags.split(',').map(t => t.trim()).filter(Boolean).map(t => (
-                      <span key={t} className="text-xs bg-surface-primary border border-border rounded-full px-2 py-0.5 text-text-secondary">{t}</span>
+                      <span key={t} style={{
+                        fontSize: 12, background: 'var(--bg)', border: '1px solid var(--border)',
+                        borderRadius: 'var(--radius-pill)', padding: '2px 8px', color: 'var(--text-secondary)',
+                      }}>{t}</span>
                     ))}
                   </div>
                 )}
               </div>
               {publishMut.isError && (
-                <p className="text-sm text-danger bg-danger/10 border border-danger/20 rounded-lg p-3">
+                <p style={{
+                  fontSize: 14, color: 'var(--bad)', background: 'var(--bad-dim)',
+                  border: '1px solid var(--bad)', borderRadius: 'var(--radius-md)', padding: 12,
+                }}>
                   {(publishMut.error as Error).message}
                 </p>
               )}
@@ -689,8 +740,8 @@ function PublishWizard({ onClose }: { onClose: () => void }) {
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between px-6 py-4 border-t border-border">
-          <Button variant="outline" onClick={step === 1 ? onClose : () => setStep(s => s - 1)}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 24px', borderTop: '1px solid var(--border)' }}>
+          <Button variant="ghost" onClick={step === 1 ? onClose : () => setStep(s => s - 1)}>
             {step === 1 ? 'Cancel' : 'Back'}
           </Button>
           {step < 3 ? (
@@ -701,7 +752,7 @@ function PublishWizard({ onClose }: { onClose: () => void }) {
                 step === 2 ? !title.trim() || !description.trim() : false
               }
             >
-              Next <ChevronRight className="w-4 h-4 ml-1" />
+              Next <ChevronRight style={{ width: 16, height: 16, marginLeft: 4 }} />
             </Button>
           ) : (
             <Button onClick={() => publishMut.mutate()} disabled={publishMut.isPending}>
@@ -780,61 +831,72 @@ export default function MarketplacePage() {
     { id: 'installs', label: 'Install History' },
   ]
 
+  const sidebarBtnStyle = (active: boolean): React.CSSProperties => ({
+    width: '100%', textAlign: 'left', fontSize: 13, padding: '6px 8px',
+    borderRadius: 'var(--radius-btn)', border: 'none', cursor: 'pointer',
+    background: active ? 'var(--blue-tint)' : 'transparent',
+    color: active ? 'var(--accent)' : 'var(--text-secondary)',
+    fontFamily: 'var(--font-sans)', display: 'flex', alignItems: 'center', gap: 8,
+  })
+
+  const selectStyle: React.CSSProperties = {
+    background: 'var(--bg-inset)', border: '1px solid var(--border)',
+    borderRadius: 'var(--radius-btn)', padding: '8px 12px', fontSize: 14,
+    color: 'var(--text-primary)', outline: 'none', fontFamily: 'var(--font-sans)',
+  }
+
   return (
-    <div className="flex flex-col h-full">
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', fontFamily: 'var(--font-sans)' }}>
       {/* Page header */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-border flex-shrink-0">
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 24px', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
         <div>
-          <h1 className="text-xl font-bold text-text-primary">Marketplace</h1>
+          <h1 style={{ fontSize: 22, fontWeight: 300, letterSpacing: '-0.02em', color: 'var(--text-primary)' }}>Marketplace</h1>
           {stats && (
-            <p className="text-sm text-text-tertiary mt-0.5">
+            <p style={{ fontSize: 13, color: 'var(--text-tertiary)', marginTop: 2 }}>
               {stats.total_assets.toLocaleString()} assets · {stats.total_downloads.toLocaleString()} downloads
             </p>
           )}
         </div>
         <Button onClick={() => setShowPublish(true)}>
-          <Upload className="w-4 h-4 mr-2" />
+          <Upload style={{ width: 16, height: 16, marginRight: 8 }} />
           Publish Asset
         </Button>
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 px-6 pt-3 border-b border-border flex-shrink-0">
+      <div style={{ display: 'flex', gap: 4, padding: '12px 24px 0', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
         {tabs.map(t => (
           <button
             key={t.id}
             onClick={() => setTab(t.id)}
-            className={cn('px-4 py-2 text-sm font-medium border-b-2 transition-colors',
-              tab === t.id ? 'border-brand text-brand' : 'border-transparent text-text-tertiary hover:text-text-secondary'
-            )}
+            style={{
+              padding: '8px 16px', fontSize: 14, fontWeight: 500, border: 'none',
+              borderBottom: `2px solid ${tab === t.id ? 'var(--accent)' : 'transparent'}`,
+              color: tab === t.id ? 'var(--accent)' : 'var(--text-tertiary)',
+              background: 'transparent', cursor: 'pointer', fontFamily: 'var(--font-sans)',
+              transition: 'color 0.15s, border-color 0.15s',
+            }}
           >
             {t.label}
           </button>
         ))}
       </div>
 
-      <div className="flex-1 overflow-hidden flex">
+      <div style={{ flex: 1, overflow: 'hidden', display: 'flex' }}>
         {/* Browse tab */}
         {tab === 'browse' && (
           <>
             {/* Filter sidebar */}
-            <div className="w-52 flex-shrink-0 border-r border-border overflow-y-auto p-4 space-y-5">
+            <div style={{ width: 208, flexShrink: 0, borderRight: '1px solid var(--border)', overflowY: 'auto', padding: 16, display: 'flex', flexDirection: 'column', gap: 20 }}>
               <div>
-                <p className="text-xs font-semibold text-text-tertiary uppercase tracking-wider mb-2">Type</p>
-                <div className="space-y-1">
-                  <button
-                    onClick={() => setFilterType('')}
-                    className={cn('w-full text-left text-sm px-2 py-1.5 rounded', !filterType ? 'text-brand bg-brand/5' : 'text-text-secondary hover:bg-surface-secondary')}
-                  >
-                    All types
-                  </button>
+                <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-tertiary)', fontWeight: 400, marginBottom: 8 }}>Type</p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                  <button onClick={() => setFilterType('')} style={sidebarBtnStyle(!filterType)}>All types</button>
                   {(['dataset', 'pipeline', 'model', 'benchmark_config'] as MarketplaceAssetType[]).map(t => (
                     <button
                       key={t}
                       onClick={() => setFilterType(t === filterType ? '' : t)}
-                      className={cn('w-full text-left text-sm px-2 py-1.5 rounded flex items-center gap-2',
-                        filterType === t ? 'text-brand bg-brand/5' : 'text-text-secondary hover:bg-surface-secondary'
-                      )}
+                      style={sidebarBtnStyle(filterType === t)}
                     >
                       {ASSET_TYPE_ICONS[t]}
                       {ASSET_TYPE_LABELS[t]}
@@ -843,21 +905,14 @@ export default function MarketplacePage() {
                 </div>
               </div>
               <div>
-                <p className="text-xs font-semibold text-text-tertiary uppercase tracking-wider mb-2">Category</p>
-                <div className="space-y-1">
-                  <button
-                    onClick={() => setFilterCat('')}
-                    className={cn('w-full text-left text-sm px-2 py-1.5 rounded', !filterCat ? 'text-brand bg-brand/5' : 'text-text-secondary hover:bg-surface-secondary')}
-                  >
-                    All categories
-                  </button>
+                <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-tertiary)', fontWeight: 400, marginBottom: 8 }}>Category</p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                  <button onClick={() => setFilterCat('')} style={sidebarBtnStyle(!filterCat)}>All categories</button>
                   {VALID_CATEGORIES.map(c => (
                     <button
                       key={c}
                       onClick={() => setFilterCat(c === filterCat ? '' : c)}
-                      className={cn('w-full text-left text-sm px-2 py-1.5 rounded',
-                        filterCat === c ? 'text-brand bg-brand/5' : 'text-text-secondary hover:bg-surface-secondary'
-                      )}
+                      style={sidebarBtnStyle(filterCat === c)}
                     >
                       {CATEGORY_LABELS[c]}
                     </button>
@@ -867,20 +922,25 @@ export default function MarketplacePage() {
             </div>
 
             {/* Main browse area */}
-            <div className="flex-1 overflow-y-auto p-6">
+            <div style={{ flex: 1, overflowY: 'auto', padding: 24 }}>
               {/* Search + sort */}
-              <div className="flex gap-3 mb-5">
-                <div className="flex-1 relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-tertiary" />
+              <div style={{ display: 'flex', gap: 12, marginBottom: 20 }}>
+                <div style={{ flex: 1, position: 'relative' }}>
+                  <Search style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', width: 16, height: 16, color: 'var(--text-tertiary)' }} />
                   <input
-                    className="w-full bg-surface-secondary border border-border rounded-lg pl-9 pr-3 py-2 text-sm text-text-primary placeholder:text-text-tertiary focus:outline-none focus:border-brand"
+                    style={{
+                      width: '100%', background: 'var(--bg-inset)', border: '1px solid var(--border)',
+                      borderRadius: 'var(--radius-btn)', padding: '8px 12px 8px 36px',
+                      color: 'var(--text-primary)', fontSize: 14, outline: 'none',
+                      fontFamily: 'var(--font-sans)', boxSizing: 'border-box',
+                    }}
                     placeholder="Search assets…"
                     value={q}
                     onChange={e => setQ(e.target.value)}
                   />
                 </div>
                 <select
-                  className="bg-surface-secondary border border-border rounded-lg px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-brand"
+                  style={selectStyle}
                   value={sort}
                   onChange={e => setSort(e.target.value as MarketplaceSort)}
                 >
@@ -891,17 +951,17 @@ export default function MarketplacePage() {
               </div>
 
               {browseLoading ? (
-                <div className="flex items-center justify-center py-20 text-text-tertiary text-sm">Loading…</div>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '80px 0', color: 'var(--text-tertiary)', fontSize: 14 }}>Loading…</div>
               ) : browseList.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-20 text-center">
-                  <Package className="w-10 h-10 text-text-tertiary mb-3" />
-                  <p className="text-text-primary font-medium">No assets found</p>
-                  <p className="text-sm text-text-tertiary mt-1">Try adjusting your filters</p>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '80px 0', textAlign: 'center' }}>
+                  <Package style={{ width: 40, height: 40, color: 'var(--text-tertiary)', marginBottom: 12 }} />
+                  <p style={{ color: 'var(--text-primary)', fontWeight: 500 }}>No assets found</p>
+                  <p style={{ fontSize: 14, color: 'var(--text-tertiary)', marginTop: 4 }}>Try adjusting your filters</p>
                 </div>
               ) : (
                 <>
-                  <p className="text-xs text-text-tertiary mb-4">{browseList.length} asset{browseList.length !== 1 ? 's' : ''}</p>
-                  <div className="grid grid-cols-2 xl:grid-cols-3 gap-4">
+                  <p style={{ fontSize: 12, color: 'var(--text-tertiary)', marginBottom: 16 }}>{browseList.length} asset{browseList.length !== 1 ? 's' : ''}</p>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12 }}>
                     {browseList.map(a => (
                       <AssetCard key={a.id} asset={a} onClick={() => setSelectedAsset(a)} />
                     ))}
@@ -914,12 +974,12 @@ export default function MarketplacePage() {
 
         {/* Featured tab */}
         {tab === 'featured' && (
-          <div className="flex-1 overflow-y-auto p-6">
-            <p className="text-sm text-text-tertiary mb-5">Hand-picked assets from the community</p>
+          <div style={{ flex: 1, overflowY: 'auto', padding: 24 }}>
+            <p style={{ fontSize: 14, color: 'var(--text-tertiary)', marginBottom: 20 }}>Hand-picked assets from the community</p>
             {featLoading ? (
-              <div className="text-sm text-text-tertiary text-center py-20">Loading…</div>
+              <div style={{ fontSize: 14, color: 'var(--text-tertiary)', textAlign: 'center', padding: '80px 0' }}>Loading…</div>
             ) : (
-              <div className="grid grid-cols-2 xl:grid-cols-3 gap-4">
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12 }}>
                 {featured.map(a => (
                   <AssetCard key={a.id} asset={a} onClick={() => setSelectedAsset(a)} />
                 ))}
@@ -930,46 +990,52 @@ export default function MarketplacePage() {
 
         {/* My Listings tab */}
         {tab === 'my-listings' && (
-          <div className="flex-1 overflow-y-auto p-6">
+          <div style={{ flex: 1, overflowY: 'auto', padding: 24 }}>
             {myListings.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-20 text-center">
-                <Upload className="w-10 h-10 text-text-tertiary mb-3" />
-                <p className="text-text-primary font-medium">Nothing published yet</p>
-                <p className="text-sm text-text-tertiary mt-1">Share your datasets, pipelines, and models with the community</p>
-                <Button className="mt-4" onClick={() => setShowPublish(true)}>
-                  <Plus className="w-4 h-4 mr-2" />Publish your first asset
-                </Button>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '80px 0', textAlign: 'center' }}>
+                <Upload style={{ width: 40, height: 40, color: 'var(--text-tertiary)', marginBottom: 12 }} />
+                <p style={{ color: 'var(--text-primary)', fontWeight: 500 }}>Nothing published yet</p>
+                <p style={{ fontSize: 14, color: 'var(--text-tertiary)', marginTop: 4 }}>Share your datasets, pipelines, and models with the community</p>
+                <div style={{ marginTop: 16 }}>
+                  <Button onClick={() => setShowPublish(true)}>
+                    <Plus style={{ width: 16, height: 16, marginRight: 8 }} />Publish your first asset
+                  </Button>
+                </div>
               </div>
             ) : (
-              <div className="space-y-3">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                 {myListings.map(a => (
-                  <div key={a.id} className="flex items-center gap-4 bg-surface-secondary border border-border rounded-xl p-4">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
+                  <div key={a.id} style={{
+                    display: 'flex', alignItems: 'center', gap: 16,
+                    background: 'var(--bg-card)', border: '1px solid var(--border)',
+                    borderRadius: 'var(--radius-card)', padding: 16,
+                  }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
                         <TypeBadge type={a.asset_type} />
-                        <span className="text-xs text-text-tertiary">v{a.version}</span>
+                        <span style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>v{a.version}</span>
                       </div>
-                      <h3 className="font-semibold text-text-primary text-sm">{a.title}</h3>
-                      <p className="text-xs text-text-tertiary mt-0.5 line-clamp-1">{a.description}</p>
+                      <h3 style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: 13 }}>{a.title}</h3>
+                      <p style={{ fontSize: 12, color: 'var(--text-tertiary)', marginTop: 2, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>{a.description}</p>
                     </div>
-                    <div className="flex items-center gap-4 text-sm text-text-tertiary flex-shrink-0">
-                      <span className="flex items-center gap-1"><Download className="w-3.5 h-3.5" />{a.download_count}</span>
-                      <span className="flex items-center gap-1"><Eye className="w-3.5 h-3.5" />{a.view_count}</span>
-                      {a.rating_count > 0 && <span className="flex items-center gap-1"><Star className="w-3.5 h-3.5 text-yellow-400" />{a.rating_avg.toFixed(1)}</span>}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 16, fontSize: 13, color: 'var(--text-tertiary)', flexShrink: 0 }}>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><Download style={{ width: 14, height: 14 }} />{a.download_count}</span>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><Eye style={{ width: 14, height: 14 }} />{a.view_count}</span>
+                      {a.rating_count > 0 && <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><Star style={{ width: 14, height: 14, color: '#facc15', fill: '#facc15' }} />{a.rating_avg.toFixed(1)}</span>}
                     </div>
-                    <div className="flex gap-2">
-                      <Button variant="outline" size="sm" onClick={() => setSelectedAsset(a)}>
-                        <ExternalLink className="w-3.5 h-3.5" />
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <Button variant="ghost" size="sm" onClick={() => setSelectedAsset(a)}>
+                        <ExternalLink style={{ width: 14, height: 14 }} />
                       </Button>
                       <Button
-                        variant="outline"
+                        variant="ghost"
                         size="sm"
                         onClick={() => {
                           if (confirm(`Delete "${a.title}" from the marketplace?`)) deleteMut.mutate(a.id)
                         }}
-                        className="text-danger border-danger/30 hover:bg-danger/10"
+                        style={{ color: 'var(--bad)', borderColor: 'var(--bad)' }}
                       >
-                        <Trash2 className="w-3.5 h-3.5" />
+                        <Trash2 style={{ width: 14, height: 14 }} />
                       </Button>
                     </div>
                   </div>
@@ -981,30 +1047,39 @@ export default function MarketplacePage() {
 
         {/* Install History tab */}
         {tab === 'installs' && (
-          <div className="flex-1 overflow-y-auto p-6">
+          <div style={{ flex: 1, overflowY: 'auto', padding: 24 }}>
             {installs.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-20 text-center">
-                <Download className="w-10 h-10 text-text-tertiary mb-3" />
-                <p className="text-text-primary font-medium">No installs yet</p>
-                <p className="text-sm text-text-tertiary mt-1">Browse the marketplace and install assets to your workspace</p>
-                <Button className="mt-4" onClick={() => setTab('browse')}>Browse marketplace</Button>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '80px 0', textAlign: 'center' }}>
+                <Download style={{ width: 40, height: 40, color: 'var(--text-tertiary)', marginBottom: 12 }} />
+                <p style={{ color: 'var(--text-primary)', fontWeight: 500 }}>No installs yet</p>
+                <p style={{ fontSize: 14, color: 'var(--text-tertiary)', marginTop: 4 }}>Browse the marketplace and install assets to your workspace</p>
+                <div style={{ marginTop: 16 }}>
+                  <Button onClick={() => setTab('browse')}>Browse marketplace</Button>
+                </div>
               </div>
             ) : (
-              <div className="space-y-2">
-                <p className="text-xs text-text-tertiary mb-4">{installs.length} total install{installs.length !== 1 ? 's' : ''}</p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <p style={{ fontSize: 12, color: 'var(--text-tertiary)', marginBottom: 16 }}>{installs.length} total install{installs.length !== 1 ? 's' : ''}</p>
                 {installs.map(i => (
-                  <div key={i.id} className="flex items-center gap-4 bg-surface-secondary border border-border rounded-xl p-4">
-                    <div className="w-8 h-8 rounded-lg bg-success/10 flex items-center justify-center flex-shrink-0">
-                      <Check className="w-4 h-4 text-success" />
+                  <div key={i.id} style={{
+                    display: 'flex', alignItems: 'center', gap: 16,
+                    background: 'var(--bg-card)', border: '1px solid var(--border)',
+                    borderRadius: 'var(--radius-card)', padding: 16,
+                  }}>
+                    <div style={{
+                      width: 32, height: 32, borderRadius: 'var(--radius-md)',
+                      background: 'var(--green-dim)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                    }}>
+                      <Check style={{ width: 16, height: 16, color: 'var(--green)' }} />
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-text-primary text-sm">{i.asset_title}</p>
-                      <div className="flex items-center gap-2 mt-0.5">
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <p style={{ fontWeight: 500, color: 'var(--text-primary)', fontSize: 14 }}>{i.asset_title}</p>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 2 }}>
                         <TypeBadge type={i.asset_type as MarketplaceAssetType} />
-                        <span className="text-xs text-text-tertiary">ID: {i.resulting_id.slice(0, 8)}…</span>
+                        <span style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>ID: {i.resulting_id.slice(0, 8)}…</span>
                       </div>
                     </div>
-                    <span className="text-xs text-text-tertiary flex-shrink-0">
+                    <span style={{ fontSize: 12, color: 'var(--text-tertiary)', flexShrink: 0 }}>
                       {new Date(i.installed_at).toLocaleDateString()}
                     </span>
                   </div>

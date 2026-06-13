@@ -1,27 +1,39 @@
-import { cn } from '@/lib/utils'
-
 interface Props {
   className?: string
+  style?: React.CSSProperties
 }
 
-export function Skeleton({ className }: Props) {
+export function Skeleton({ className, style }: Props) {
   return (
     <div
-      className={cn(
-        'rounded-md bg-surface-tertiary animate-pulse',
-        className,
-      )}
+      className={className}
+      style={{
+        borderRadius: 'var(--radius-md)',
+        background: 'var(--bg-3)',
+        animation: 'pulse 2s cubic-bezier(0.4,0,0.6,1) infinite',
+        ...style,
+      }}
     />
   )
 }
 
 export function DatasetRowSkeleton() {
   return (
-    <div className="flex items-center gap-4 p-4 rounded-xl border border-border bg-surface-primary">
-      <Skeleton className="w-10 h-10 rounded-full flex-shrink-0" />
-      <div className="flex-1 space-y-2">
-        <Skeleton className="h-4 w-48" />
-        <Skeleton className="h-3 w-72" />
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: '16px',
+        padding: '16px',
+        borderRadius: 'var(--radius-card)',
+        border: '1px solid var(--border)',
+        background: 'var(--bg-card)',
+      }}
+    >
+      <Skeleton style={{ width: '40px', height: '40px', borderRadius: '9999px', flexShrink: 0 }} />
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        <Skeleton style={{ height: '16px', width: '192px' }} />
+        <Skeleton style={{ height: '12px', width: '288px' }} />
       </div>
     </div>
   )
@@ -29,11 +41,21 @@ export function DatasetRowSkeleton() {
 
 export function StatRowSkeleton() {
   return (
-    <div className="grid grid-cols-5 gap-4 p-5 bg-surface-primary border border-border rounded-xl">
+    <div
+      style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(5, 1fr)',
+        gap: '16px',
+        padding: '20px',
+        background: 'var(--bg-card)',
+        border: '1px solid var(--border)',
+        borderRadius: 'var(--radius-card)',
+      }}
+    >
       {Array.from({ length: 5 }).map((_, i) => (
-        <div key={i} className="space-y-2">
-          <Skeleton className="h-7 w-16" />
-          <Skeleton className="h-3 w-12" />
+        <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <Skeleton style={{ height: '28px', width: '64px' }} />
+          <Skeleton style={{ height: '12px', width: '48px' }} />
         </div>
       ))}
     </div>
@@ -42,11 +64,21 @@ export function StatRowSkeleton() {
 
 export function IssueCardSkeleton() {
   return (
-    <div className="flex items-start gap-3 p-3 rounded-lg border border-border bg-surface-primary">
-      <Skeleton className="w-4 h-4 rounded-full flex-shrink-0 mt-0.5" />
-      <div className="flex-1 space-y-2">
-        <Skeleton className="h-4 w-20" />
-        <Skeleton className="h-3 w-full" />
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'flex-start',
+        gap: '12px',
+        padding: '12px',
+        borderRadius: 'var(--radius-md)',
+        border: '1px solid var(--border)',
+        background: 'var(--bg-card)',
+      }}
+    >
+      <Skeleton style={{ width: '16px', height: '16px', borderRadius: '9999px', flexShrink: 0, marginTop: '2px' }} />
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        <Skeleton style={{ height: '16px', width: '80px' }} />
+        <Skeleton style={{ height: '12px', width: '100%' }} />
       </div>
     </div>
   )

@@ -16,7 +16,9 @@ target_metadata = Base.metadata
 
 
 def _get_url() -> str:
-    url = settings.DATABASE_URL
+    # Use the unpooled endpoint for migrations (Neon pooler rejects DDL startup params).
+    # Unpooled URL is identical to the pooler URL minus the "-pooler" hostname segment.
+    url = settings.DATABASE_URL.replace("-pooler.", ".")
     if url.startswith("postgresql://"):
         url = url.replace("postgresql://", "postgresql+psycopg2://", 1)
     return url

@@ -42,10 +42,12 @@ export function PipelineList() {
   }
 
   return (
-    <div className="p-6 max-w-5xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-semibold text-text-primary">Pipelines</h1>
-        <div className="flex items-center gap-2">
+    <div style={{ padding: '24px', maxWidth: '1100px', margin: '0 auto' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
+        <h1 style={{ fontSize: '24px', fontWeight: 300, letterSpacing: '-0.02em', color: 'var(--text-primary)', margin: 0 }}>
+          Pipelines
+        </h1>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           {creating && (
             <input
               autoFocus
@@ -56,7 +58,17 @@ export function PipelineList() {
                 if (e.key === 'Escape') { setCreating(false); setNewName('') }
               }}
               placeholder="Pipeline name…"
-              className="px-3 py-1.5 text-sm border border-brand rounded-lg focus:outline-none focus:ring-2 focus:ring-brand/30 w-52"
+              style={{
+                background: 'var(--bg-inset)',
+                border: '1px solid var(--border-accent)',
+                borderRadius: 'var(--radius-btn)',
+                padding: '6px 12px',
+                color: 'var(--text-primary)',
+                fontSize: '14px',
+                outline: 'none',
+                width: '208px',
+                fontFamily: 'var(--font-sans)',
+              }}
             />
           )}
           <Button onClick={handleCreate} loading={createMutation.isPending}>
@@ -72,18 +84,36 @@ export function PipelineList() {
       </div>
 
       {isLoading ? (
-        <div className="space-y-2">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-20 rounded-xl border border-border bg-surface-primary animate-pulse" />
+            <div
+              key={i}
+              style={{
+                height: '80px',
+                borderRadius: 'var(--radius-card)',
+                border: '1px solid var(--border)',
+                background: 'var(--bg-card)',
+                opacity: 0.6,
+              }}
+            />
           ))}
         </div>
       ) : pipelines.length === 0 ? (
-        <div className="py-24 text-center">
-          <div className="w-14 h-14 rounded-full bg-surface-tertiary flex items-center justify-center mb-4 mx-auto">
-            <GitBranch className="w-6 h-6 text-text-tertiary" />
+        <div style={{ padding: '96px 0', textAlign: 'center' }}>
+          <div style={{
+            width: '56px',
+            height: '56px',
+            borderRadius: '50%',
+            background: 'var(--bg-2)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            margin: '0 auto 16px',
+          }}>
+            <GitBranch style={{ width: '24px', height: '24px', color: 'var(--text-tertiary)' }} />
           </div>
-          <p className="text-base font-medium text-text-primary mb-1">No pipelines yet</p>
-          <p className="text-sm text-text-secondary mb-4 max-w-xs mx-auto">
+          <p style={{ fontSize: '16px', fontWeight: 500, color: 'var(--text-primary)', margin: '0 0 4px' }}>No pipelines yet</p>
+          <p style={{ fontSize: '14px', color: 'var(--text-secondary)', margin: '0 auto 16px', maxWidth: '280px' }}>
             Build a reusable transformation pipeline for any dataset
           </p>
           <Button onClick={handleCreate}>
@@ -92,7 +122,7 @@ export function PipelineList() {
           </Button>
         </div>
       ) : (
-        <div className="space-y-2">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
           {pipelines.map((p) => (
             <PipelineRow
               key={p.id}
@@ -116,21 +146,48 @@ function PipelineRow({
   onClick: () => void
   onDelete: () => void
 }) {
+  const [hovered, setHovered] = useState(false)
+  const [deleteHovered, setDeleteHovered] = useState(false)
+
   return (
     <div
       onClick={onClick}
-      className="flex items-center gap-4 p-4 rounded-xl border border-border bg-surface-primary hover:border-brand/30 hover:shadow-sm cursor-pointer transition-all group"
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => { setHovered(false); setDeleteHovered(false) }}
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: '16px',
+        padding: '16px',
+        borderRadius: 'var(--radius-card)',
+        border: `1px solid ${hovered ? 'var(--border-accent)' : 'var(--border)'}`,
+        background: 'var(--bg-card)',
+        cursor: 'pointer',
+        transition: 'border-color 0.15s, box-shadow 0.15s',
+        boxShadow: hovered ? 'var(--shadow-card)' : 'none',
+      }}
     >
-      <div className="w-10 h-10 rounded-lg bg-brand-50 flex items-center justify-center flex-shrink-0">
-        <GitBranch className="w-5 h-5 text-brand" />
+      <div style={{
+        width: '40px',
+        height: '40px',
+        borderRadius: 'var(--radius-md)',
+        background: 'var(--blue-tint)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexShrink: 0,
+      }}>
+        <GitBranch style={{ width: '20px', height: '20px', color: 'var(--accent)' }} />
       </div>
 
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-text-primary truncate">{pipeline.name}</p>
-        <div className="flex items-center gap-3 mt-0.5 text-xs text-text-tertiary">
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <p style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-primary)', margin: '0 0 2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {pipeline.name}
+        </p>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '12px', color: 'var(--text-tertiary)' }}>
           <span>{pipeline.steps.length} step{pipeline.steps.length !== 1 ? 's' : ''}</span>
-          <span className="flex items-center gap-1">
-            <Clock className="w-3 h-3" />
+          <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <Clock style={{ width: '12px', height: '12px' }} />
             {formatRelativeTime(pipeline.updated_at)}
           </span>
         </div>
@@ -138,12 +195,23 @@ function PipelineRow({
 
       <button
         onClick={(e) => { e.stopPropagation(); onDelete() }}
-        className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg text-text-tertiary hover:text-danger hover:bg-danger-50 transition-all"
+        onMouseEnter={() => setDeleteHovered(true)}
+        onMouseLeave={() => setDeleteHovered(false)}
+        style={{
+          opacity: hovered ? 1 : 0,
+          padding: '6px',
+          borderRadius: 'var(--radius-btn)',
+          border: 'none',
+          background: deleteHovered ? 'var(--bad-dim)' : 'transparent',
+          color: deleteHovered ? 'var(--bad)' : 'var(--text-tertiary)',
+          cursor: 'pointer',
+          transition: 'opacity 0.15s, color 0.15s, background 0.15s',
+        }}
       >
-        <Trash2 className="w-4 h-4" />
+        <Trash2 style={{ width: '16px', height: '16px' }} />
       </button>
 
-      <ChevronRight className="w-4 h-4 text-text-tertiary flex-shrink-0" />
+      <ChevronRight style={{ width: '16px', height: '16px', color: 'var(--text-tertiary)', flexShrink: 0 }} />
     </div>
   )
 }

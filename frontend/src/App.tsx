@@ -5,7 +5,8 @@ import { AuthProvider } from './contexts/AuthContext'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { Layout } from './components/Layout'
-import LoginPage from './pages/auth/LoginPage'
+import LandingPage from './pages/LandingPage'
+import AuthPage from './pages/auth/AuthPage'
 import { DatasetList } from './pages/datasets/DatasetList'
 import { DatasetDetail } from './pages/datasets/DatasetDetail'
 import { PipelineList } from './pages/pipelines/PipelineList'
@@ -31,7 +32,8 @@ export default function App() {
         <AuthProvider>
           <Routes>
             {/* Public */}
-            <Route path="/login" element={<LoginPage />} />
+            <Route path="/" element={<LandingPage />} />
+            <Route path="/login" element={<AuthPage />} />
 
             {/* Protected — every route inside Layout requires auth */}
             <Route
@@ -43,7 +45,6 @@ export default function App() {
                 </ProtectedRoute>
               }
             >
-              <Route index element={<Navigate to="/datasets" replace />} />
               <Route path="/datasets" element={<DatasetList />} />
               <Route path="/datasets/:id" element={<DatasetDetail />} />
               <Route path="/pipelines" element={<PipelineList />} />

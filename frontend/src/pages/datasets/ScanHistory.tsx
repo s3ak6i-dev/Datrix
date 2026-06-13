@@ -47,9 +47,9 @@ function scanToChartPoint(s: QualityScan, i: number) {
 }
 
 function StatusIcon({ status }: { status: string }) {
-  if (status === 'complete') return <CheckCircle2 className="w-4 h-4 text-success" />
-  if (status === 'failed') return <XCircle className="w-4 h-4 text-danger" />
-  return <Clock className="w-4 h-4 text-text-tertiary" />
+  if (status === 'complete') return <CheckCircle2 style={{ width: 16, height: 16, color: 'var(--green)' }} />
+  if (status === 'failed') return <XCircle style={{ width: 16, height: 16, color: 'var(--bad)' }} />
+  return <Clock style={{ width: 16, height: 16, color: 'var(--text-tertiary)' }} />
 }
 
 export function ScanHistory({ datasetId }: Props) {
@@ -60,15 +60,15 @@ export function ScanHistory({ datasetId }: Props) {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-16">
-        <Loader2 className="w-5 h-5 animate-spin text-text-tertiary" />
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '64px 0' }}>
+        <Loader2 style={{ width: 20, height: 20, color: 'var(--text-tertiary)', animation: 'spin 1s linear infinite' }} />
       </div>
     )
   }
 
   if (scans.length === 0) {
     return (
-      <div className="text-center py-16 text-text-secondary text-sm">
+      <div style={{ textAlign: 'center', padding: '64px 0', color: 'var(--text-secondary)', fontSize: 13, fontFamily: 'var(--font-sans)' }}>
         No scan history yet. Run another scan to start tracking quality over time.
       </div>
     )
@@ -83,28 +83,29 @@ export function ScanHistory({ datasetId }: Props) {
     ? latest.score.overall - previous.score.overall
     : null
 
+  const deltaColor =
+    delta == null ? 'var(--text-tertiary)'
+    : delta > 0 ? 'var(--green)'
+    : delta < 0 ? 'var(--bad)'
+    : 'var(--text-primary)'
+
   return (
-    <div className="space-y-5">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
       {/* Summary cards */}
-      <div className="grid grid-cols-3 gap-4">
-        <div className="p-4 bg-surface-primary border border-border rounded-xl">
-          <p className="text-xs text-text-tertiary uppercase tracking-wide mb-1">Total scans</p>
-          <p className="text-2xl font-semibold font-mono text-text-primary">{scans.length}</p>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
+        <div style={{ padding: 16, background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 'var(--radius-card)' }}>
+          <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-tertiary)', fontWeight: 400, marginBottom: 4 }}>Total scans</p>
+          <p style={{ fontSize: 24, fontWeight: 600, fontFamily: 'var(--font-mono)', color: 'var(--text-primary)' }}>{scans.length}</p>
         </div>
-        <div className="p-4 bg-surface-primary border border-border rounded-xl">
-          <p className="text-xs text-text-tertiary uppercase tracking-wide mb-1">Latest score</p>
-          <p className="text-2xl font-semibold font-mono text-text-primary">
+        <div style={{ padding: 16, background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 'var(--radius-card)' }}>
+          <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-tertiary)', fontWeight: 400, marginBottom: 4 }}>Latest score</p>
+          <p style={{ fontSize: 24, fontWeight: 600, fontFamily: 'var(--font-mono)', color: 'var(--text-primary)' }}>
             {latest?.score?.overall ?? '—'}
           </p>
         </div>
-        <div className="p-4 bg-surface-primary border border-border rounded-xl">
-          <p className="text-xs text-text-tertiary uppercase tracking-wide mb-1">Score change</p>
-          <p className={`text-2xl font-semibold font-mono ${
-            delta == null ? 'text-text-tertiary'
-            : delta > 0 ? 'text-success'
-            : delta < 0 ? 'text-danger'
-            : 'text-text-primary'
-          }`}>
+        <div style={{ padding: 16, background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 'var(--radius-card)' }}>
+          <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-tertiary)', fontWeight: 400, marginBottom: 4 }}>Score change</p>
+          <p style={{ fontSize: 24, fontWeight: 600, fontFamily: 'var(--font-mono)', color: deltaColor }}>
             {delta == null ? '—' : delta > 0 ? `+${delta.toFixed(1)}` : delta.toFixed(1)}
           </p>
         </div>
@@ -112,38 +113,39 @@ export function ScanHistory({ datasetId }: Props) {
 
       {/* Trend chart */}
       {hasMultiple ? (
-        <div className="p-5 bg-surface-primary border border-border rounded-xl">
-          <h3 className="text-sm font-medium text-text-primary mb-4">Quality score over time</h3>
+        <div style={{ padding: 20, background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 'var(--radius-card)' }}>
+          <h3 style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-primary)', marginBottom: 16, fontFamily: 'var(--font-sans)' }}>Quality score over time</h3>
           <ResponsiveContainer width="100%" height={220}>
             <LineChart data={chartData} margin={{ top: 4, right: 8, bottom: 0, left: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
               <XAxis
                 dataKey="name"
-                tick={{ fontSize: 11, fill: '#9CA3AF' }}
+                tick={{ fontSize: 11, fill: 'var(--text-tertiary)' }}
                 axisLine={false}
                 tickLine={false}
               />
               <YAxis
                 domain={[0, 100]}
-                tick={{ fontSize: 11, fill: '#9CA3AF' }}
+                tick={{ fontSize: 11, fill: 'var(--text-tertiary)' }}
                 axisLine={false}
                 tickLine={false}
                 width={28}
               />
               <Tooltip
                 contentStyle={{
-                  border: '1px solid #E5E7EB',
+                  border: '1px solid var(--border)',
                   borderRadius: 8,
                   fontSize: 12,
-                  background: '#fff',
+                  background: 'var(--bg-card)',
+                  color: 'var(--text-primary)',
                 }}
-                formatter={(value: number, name: string) => [
-                  `${value?.toFixed(1)}`,
-                  DIM_LABELS[name] ?? name,
-                ]}
+                formatter={(value: unknown, name: unknown) => [
+                  `${(value as number)?.toFixed(1)}`,
+                  DIM_LABELS[name as string] ?? (name as string),
+                ] as [string, string]}
               />
-              <ReferenceLine y={80} stroke="#059669" strokeDasharray="4 2" strokeOpacity={0.4} />
-              <ReferenceLine y={60} stroke="#D97706" strokeDasharray="4 2" strokeOpacity={0.4} />
+              <ReferenceLine y={80} stroke="var(--green)" strokeDasharray="4 2" strokeOpacity={0.4} />
+              <ReferenceLine y={60} stroke="var(--warn)" strokeDasharray="4 2" strokeOpacity={0.4} />
               {Object.keys(DIM_COLORS).map((dim) => (
                 <Line
                   key={dim}
@@ -158,35 +160,35 @@ export function ScanHistory({ datasetId }: Props) {
               ))}
             </LineChart>
           </ResponsiveContainer>
-          <div className="flex flex-wrap gap-3 mt-3">
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginTop: 12 }}>
             {Object.entries(DIM_COLORS).map(([dim, color]) => (
-              <span key={dim} className="flex items-center gap-1.5 text-xs text-text-secondary">
-                <span className="w-3 h-0.5 rounded-full inline-block" style={{ background: color }} />
+              <span key={dim} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: 'var(--text-secondary)', fontFamily: 'var(--font-sans)' }}>
+                <span style={{ width: 12, height: 2, borderRadius: 9999, display: 'inline-block', background: color }} />
                 {DIM_LABELS[dim]}
               </span>
             ))}
           </div>
         </div>
       ) : (
-        <div className="p-4 bg-surface-secondary border border-border rounded-xl text-sm text-text-secondary text-center">
+        <div style={{ padding: 16, background: 'var(--bg-2)', border: '1px solid var(--border)', borderRadius: 'var(--radius-card)', fontSize: 13, color: 'var(--text-secondary)', textAlign: 'center', fontFamily: 'var(--font-sans)' }}>
           Run at least 2 scans to see the quality trend chart.
         </div>
       )}
 
       {/* Scan log */}
-      <div className="bg-surface-primary border border-border rounded-xl overflow-hidden">
-        <div className="px-4 py-3 border-b border-border bg-surface-tertiary">
-          <h3 className="text-xs font-medium text-text-secondary uppercase tracking-wide">Scan log</h3>
+      <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 'var(--radius-card)', overflow: 'hidden' }}>
+        <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border)', background: 'var(--bg-inset)' }}>
+          <h3 style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-secondary)', fontWeight: 400 }}>Scan log</h3>
         </div>
-        <div className="divide-y divide-border">
+        <div>
           {[...scans].reverse().map((scan, i) => (
-            <div key={scan.id} className="flex items-center gap-4 px-4 py-3">
+            <div key={scan.id} style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '12px 16px', borderBottom: '1px solid var(--border)' }}>
               <StatusIcon status={scan.status} />
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-text-primary">
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <p style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-primary)', fontFamily: 'var(--font-sans)' }}>
                   Scan #{scans.length - i}
                 </p>
-                <p className="text-xs text-text-tertiary mt-0.5">
+                <p style={{ fontSize: 11, color: 'var(--text-tertiary)', marginTop: 2, fontFamily: 'var(--font-sans)' }}>
                   {scan.completed_at
                     ? formatRelativeTime(scan.completed_at)
                     : formatRelativeTime(scan.created_at)}
@@ -198,15 +200,15 @@ export function ScanHistory({ datasetId }: Props) {
                 </p>
               </div>
               {scan.score && (
-                <div className="text-right">
-                  <p className="text-sm font-mono font-semibold text-text-primary">
+                <div style={{ textAlign: 'right' }}>
+                  <p style={{ fontSize: 13, fontFamily: 'var(--font-mono)', fontWeight: 600, color: 'var(--text-primary)' }}>
                     {scan.score.overall}
                   </p>
-                  <p className="text-xs text-text-tertiary">{scan.issues.length} issues</p>
+                  <p style={{ fontSize: 11, color: 'var(--text-tertiary)', fontFamily: 'var(--font-sans)' }}>{scan.issues.length} issues</p>
                 </div>
               )}
               {scan.status === 'failed' && (
-                <span className="text-xs text-danger">Failed</span>
+                <span style={{ fontSize: 11, color: 'var(--bad)', fontFamily: 'var(--font-sans)' }}>Failed</span>
               )}
             </div>
           ))}

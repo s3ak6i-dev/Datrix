@@ -1,10 +1,9 @@
 import { useState, useRef, useEffect } from 'react'
-import { cn } from '@/lib/utils'
 import {
   Database, GitBranch, Sparkles, Brain, BarChart3, ShieldCheck,
   ShoppingBag, Settings, ChevronRight, ChevronDown, Search,
-  Terminal, AlertTriangle, CheckCircle, Info, Lightbulb,
-  BookOpen, Zap, Code2, User, X,
+  Terminal, AlertTriangle, Info, Lightbulb,
+  BookOpen, X,
 } from 'lucide-react'
 
 // ── Types ─────────────────────────────────────────────────────────────
@@ -20,7 +19,7 @@ interface Section {
 
 const NAV: Section[] = [
   {
-    id: 'overview', label: 'Overview', icon: <BookOpen className="w-3.5 h-3.5" />,
+    id: 'overview', label: 'Overview', icon: <BookOpen style={{ width: 14, height: 14 }} />,
     children: [
       { id: 'overview-what', label: 'What is Datrix?' },
       { id: 'overview-architecture', label: 'Architecture' },
@@ -28,7 +27,7 @@ const NAV: Section[] = [
     ],
   },
   {
-    id: 'setup', label: 'Setup & Running', icon: <Terminal className="w-3.5 h-3.5" />,
+    id: 'setup', label: 'Setup & Running', icon: <Terminal style={{ width: 14, height: 14 }} />,
     children: [
       { id: 'setup-requirements', label: 'Requirements' },
       { id: 'setup-install', label: 'Installation' },
@@ -37,7 +36,7 @@ const NAV: Section[] = [
     ],
   },
   {
-    id: 'datasets', label: 'Datasets', icon: <Database className="w-3.5 h-3.5" />,
+    id: 'datasets', label: 'Datasets', icon: <Database style={{ width: 14, height: 14 }} />,
     children: [
       { id: 'datasets-upload', label: 'Uploading Data' },
       { id: 'datasets-scan', label: 'Quality Scans' },
@@ -46,7 +45,7 @@ const NAV: Section[] = [
     ],
   },
   {
-    id: 'pipelines', label: 'Pipelines', icon: <GitBranch className="w-3.5 h-3.5" />,
+    id: 'pipelines', label: 'Pipelines', icon: <GitBranch style={{ width: 14, height: 14 }} />,
     children: [
       { id: 'pipelines-create', label: 'Creating a Pipeline' },
       { id: 'pipelines-steps', label: 'Step Reference' },
@@ -55,7 +54,7 @@ const NAV: Section[] = [
     ],
   },
   {
-    id: 'synthetic', label: 'Synthetic Data', icon: <Sparkles className="w-3.5 h-3.5" />,
+    id: 'synthetic', label: 'Synthetic Data', icon: <Sparkles style={{ width: 14, height: 14 }} />,
     children: [
       { id: 'synthetic-overview', label: 'How It Works' },
       { id: 'synthetic-methods', label: 'Generation Methods' },
@@ -64,7 +63,7 @@ const NAV: Section[] = [
     ],
   },
   {
-    id: 'al', label: 'Active Learning', icon: <Brain className="w-3.5 h-3.5" />,
+    id: 'al', label: 'Active Learning', icon: <Brain style={{ width: 14, height: 14 }} />,
     children: [
       { id: 'al-concept', label: 'What is Active Learning?' },
       { id: 'al-session', label: 'Creating a Session' },
@@ -74,7 +73,7 @@ const NAV: Section[] = [
     ],
   },
   {
-    id: 'benchmark', label: 'Benchmark', icon: <BarChart3 className="w-3.5 h-3.5" />,
+    id: 'benchmark', label: 'Benchmark', icon: <BarChart3 style={{ width: 14, height: 14 }} />,
     children: [
       { id: 'benchmark-overview', label: 'How It Works' },
       { id: 'benchmark-create', label: 'Creating a Job' },
@@ -83,7 +82,7 @@ const NAV: Section[] = [
     ],
   },
   {
-    id: 'compliance', label: 'Compliance Autopilot', icon: <ShieldCheck className="w-3.5 h-3.5" />,
+    id: 'compliance', label: 'Compliance Autopilot', icon: <ShieldCheck style={{ width: 14, height: 14 }} />,
     children: [
       { id: 'compliance-overview', label: 'Overview' },
       { id: 'compliance-dashboard', label: 'Dashboard' },
@@ -96,7 +95,7 @@ const NAV: Section[] = [
     ],
   },
   {
-    id: 'marketplace', label: 'Marketplace', icon: <ShoppingBag className="w-3.5 h-3.5" />,
+    id: 'marketplace', label: 'Marketplace', icon: <ShoppingBag style={{ width: 14, height: 14 }} />,
     children: [
       { id: 'marketplace-browse', label: 'Browsing & Installing' },
       { id: 'marketplace-publish', label: 'Publishing Assets' },
@@ -104,7 +103,7 @@ const NAV: Section[] = [
     ],
   },
   {
-    id: 'settings', label: 'Settings', icon: <Settings className="w-3.5 h-3.5" />,
+    id: 'settings', label: 'Settings', icon: <Settings style={{ width: 14, height: 14 }} />,
     children: [
       { id: 'settings-general', label: 'General' },
       { id: 'settings-storage', label: 'Storage' },
@@ -118,72 +117,103 @@ const NAV: Section[] = [
 
 function Note({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex gap-3 bg-blue-500/8 border border-blue-500/20 rounded-xl p-4 my-4">
-      <Info className="w-4 h-4 text-blue-400 flex-shrink-0 mt-0.5" />
-      <div className="text-sm text-blue-200/90 leading-relaxed">{children}</div>
+    <div style={{
+      display: 'flex', gap: 12,
+      background: 'var(--blue-tint)', border: '1px solid var(--border-accent)',
+      borderRadius: 'var(--radius-card)', padding: 16, margin: '16px 0',
+    }}>
+      <Info style={{ width: 16, height: 16, color: 'var(--accent)', flexShrink: 0, marginTop: 2 }} />
+      <div style={{ fontSize: 14, color: 'var(--text-secondary)', lineHeight: 1.6 }}>{children}</div>
     </div>
   )
 }
 
 function Tip({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex gap-3 bg-green-500/8 border border-green-500/20 rounded-xl p-4 my-4">
-      <Lightbulb className="w-4 h-4 text-green-400 flex-shrink-0 mt-0.5" />
-      <div className="text-sm text-green-200/90 leading-relaxed">{children}</div>
+    <div style={{
+      display: 'flex', gap: 12,
+      background: 'var(--green-dim)', border: '1px solid var(--green)',
+      borderRadius: 'var(--radius-card)', padding: 16, margin: '16px 0',
+    }}>
+      <Lightbulb style={{ width: 16, height: 16, color: 'var(--green)', flexShrink: 0, marginTop: 2 }} />
+      <div style={{ fontSize: 14, color: 'var(--text-secondary)', lineHeight: 1.6 }}>{children}</div>
     </div>
   )
 }
 
 function Warn({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex gap-3 bg-yellow-500/8 border border-yellow-500/20 rounded-xl p-4 my-4">
-      <AlertTriangle className="w-4 h-4 text-yellow-400 flex-shrink-0 mt-0.5" />
-      <div className="text-sm text-yellow-200/90 leading-relaxed">{children}</div>
+    <div style={{
+      display: 'flex', gap: 12,
+      background: 'var(--warn-dim)', border: '1px solid var(--warn)',
+      borderRadius: 'var(--radius-card)', padding: 16, margin: '16px 0',
+    }}>
+      <AlertTriangle style={{ width: 16, height: 16, color: 'var(--warn)', flexShrink: 0, marginTop: 2 }} />
+      <div style={{ fontSize: 14, color: 'var(--text-secondary)', lineHeight: 1.6 }}>{children}</div>
     </div>
   )
 }
 
-function Kbd({ children }: { children: React.ReactNode }) {
-  return <code className="inline-flex items-center px-1.5 py-0.5 rounded bg-surface-tertiary border border-border text-xs font-mono text-text-primary">{children}</code>
-}
-
 function Code({ children }: { children: React.ReactNode }) {
-  return <code className="px-1.5 py-0.5 rounded bg-surface-tertiary border border-border text-xs font-mono text-brand">{children}</code>
+  return (
+    <code style={{
+      padding: '2px 6px', borderRadius: 'var(--radius-btn)',
+      background: 'var(--bg-inset)', border: '1px solid var(--border)',
+      fontSize: 12, fontFamily: 'var(--font-mono)', color: 'var(--accent)',
+    }}>{children}</code>
+  )
 }
 
 function CodeBlock({ lang, children }: { lang?: string; children: string }) {
   return (
-    <div className="my-4 rounded-xl overflow-hidden border border-border">
+    <div style={{ margin: '16px 0', borderRadius: 'var(--radius-card)', overflow: 'hidden', border: '1px solid var(--border)' }}>
       {lang && (
-        <div className="bg-surface-tertiary px-4 py-1.5 text-xs font-mono text-text-tertiary border-b border-border">{lang}</div>
+        <div style={{
+          background: 'var(--bg-inset)', padding: '6px 16px', fontSize: 12,
+          fontFamily: 'var(--font-mono)', color: 'var(--text-tertiary)',
+          borderBottom: '1px solid var(--border)',
+        }}>{lang}</div>
       )}
-      <pre className="bg-surface-secondary px-4 py-4 text-xs font-mono text-text-primary overflow-x-auto leading-relaxed whitespace-pre">{children}</pre>
+      <pre style={{
+        background: 'var(--bg-card)', padding: 16, fontSize: 12,
+        fontFamily: 'var(--font-mono)', color: 'var(--text-primary)',
+        overflowX: 'auto', lineHeight: 1.6, whiteSpace: 'pre', margin: 0,
+      }}>{children}</pre>
     </div>
   )
 }
 
 function H1({ id, children }: { id: string; children: React.ReactNode }) {
-  return <h1 id={id} className="text-2xl font-bold text-text-primary mt-2 mb-4 scroll-mt-6">{children}</h1>
+  return (
+    <h1 id={id} style={{
+      fontSize: 24, fontWeight: 700, color: 'var(--text-primary)',
+      marginTop: 8, marginBottom: 16, scrollMarginTop: 24,
+      fontFamily: 'var(--font-sans)',
+    }}>{children}</h1>
+  )
 }
 
 function H2({ id, children }: { id: string; children: React.ReactNode }) {
-  return <h2 id={id} className="text-lg font-semibold text-text-primary mt-10 mb-3 pb-2 border-b border-border scroll-mt-6">{children}</h2>
-}
-
-function H3({ id, children }: { id: string; children: React.ReactNode }) {
-  return <h3 id={id} className="text-base font-semibold text-text-primary mt-6 mb-2 scroll-mt-6">{children}</h3>
+  return (
+    <h2 id={id} style={{
+      fontSize: 17, fontWeight: 600, color: 'var(--text-primary)',
+      marginTop: 40, marginBottom: 12, paddingBottom: 8,
+      borderBottom: '1px solid var(--border)', scrollMarginTop: 24,
+      fontFamily: 'var(--font-sans)',
+    }}>{children}</h2>
+  )
 }
 
 function P({ children }: { children: React.ReactNode }) {
-  return <p className="text-sm text-text-secondary leading-relaxed mb-3">{children}</p>
+  return <p style={{ fontSize: 14, color: 'var(--text-secondary)', lineHeight: 1.7, marginBottom: 12, fontFamily: 'var(--font-sans)' }}>{children}</p>
 }
 
 function UL({ children }: { children: React.ReactNode }) {
-  return <ul className="list-disc list-outside ml-5 space-y-1.5 mb-4 text-sm text-text-secondary leading-relaxed">{children}</ul>
+  return <ul style={{ listStyleType: 'disc', listStylePosition: 'outside', marginLeft: 20, marginBottom: 16, display: 'flex', flexDirection: 'column', gap: 6, fontSize: 14, color: 'var(--text-secondary)', lineHeight: 1.6, fontFamily: 'var(--font-sans)' }}>{children}</ul>
 }
 
 function OL({ children }: { children: React.ReactNode }) {
-  return <ol className="list-decimal list-outside ml-5 space-y-1.5 mb-4 text-sm text-text-secondary leading-relaxed">{children}</ol>
+  return <ol style={{ listStyleType: 'decimal', listStylePosition: 'outside', marginLeft: 20, marginBottom: 16, display: 'flex', flexDirection: 'column', gap: 6, fontSize: 14, color: 'var(--text-secondary)', lineHeight: 1.6, fontFamily: 'var(--font-sans)' }}>{children}</ol>
 }
 
 function LI({ children }: { children: React.ReactNode }) {
@@ -192,17 +222,21 @@ function LI({ children }: { children: React.ReactNode }) {
 
 function Table({ headers, rows }: { headers: string[]; rows: (string | React.ReactNode)[][] }) {
   return (
-    <div className="my-4 border border-border rounded-xl overflow-hidden">
-      <table className="w-full text-xs">
+    <div style={{ margin: '16px 0', border: '1px solid var(--border)', borderRadius: 'var(--radius-card)', overflow: 'hidden' }}>
+      <table style={{ width: '100%', fontSize: 12, borderCollapse: 'collapse', fontFamily: 'var(--font-sans)' }}>
         <thead>
-          <tr className="bg-surface-tertiary border-b border-border">
-            {headers.map(h => <th key={h} className="px-4 py-2.5 text-left font-semibold text-text-secondary">{h}</th>)}
+          <tr style={{ background: 'var(--bg-inset)', borderBottom: '1px solid var(--border)' }}>
+            {headers.map(h => (
+              <th key={h} style={{ padding: '10px 16px', textAlign: 'left', fontWeight: 600, color: 'var(--text-secondary)' }}>{h}</th>
+            ))}
           </tr>
         </thead>
         <tbody>
           {rows.map((row, i) => (
-            <tr key={i} className={cn('border-b border-border last:border-0', i % 2 === 0 ? 'bg-surface-primary' : 'bg-surface-secondary')}>
-              {row.map((cell, j) => <td key={j} className="px-4 py-2.5 text-text-secondary">{cell}</td>)}
+            <tr key={i} style={{ borderBottom: i < rows.length - 1 ? '1px solid var(--border)' : 'none', background: i % 2 === 0 ? 'var(--bg)' : 'var(--bg-card)' }}>
+              {row.map((cell, j) => (
+                <td key={j} style={{ padding: '10px 16px', color: 'var(--text-secondary)' }}>{cell}</td>
+              ))}
             </tr>
           ))}
         </tbody>
@@ -212,14 +246,14 @@ function Table({ headers, rows }: { headers: string[]; rows: (string | React.Rea
 }
 
 function Divider() {
-  return <div className="my-8 border-t border-border" />
+  return <div style={{ margin: '32px 0', borderTop: '1px solid var(--border)' }} />
 }
 
 // ── Content ────────────────────────────────────────────────────────────
 
 function DocContent() {
   return (
-    <div className="max-w-3xl">
+    <div style={{ maxWidth: 768 }}>
 
       {/* ── OVERVIEW ── */}
       <H1 id="overview">Overview</H1>
@@ -1134,7 +1168,7 @@ npm run dev`}</CodeBlock>
         <LI>Marketplace installs</LI>
       </UL>
 
-      <div className="pb-16" />
+      <div style={{ paddingBottom: 64 }} />
     </div>
   )
 }
@@ -1152,30 +1186,50 @@ function NavTree({ items, activeId, onSelect }: {
     setOpen(s => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n })
 
   return (
-    <div className="space-y-0.5">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
       {items.map(item => {
         const isOpen = open.has(item.id)
         return (
           <div key={item.id}>
             <button
               onClick={() => { if (item.children) toggle(item.id); else onSelect(item.id) }}
-              className={cn('w-full flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm text-left transition-colors',
-                activeId === item.id ? 'bg-brand/5 text-brand font-medium' : 'text-text-secondary hover:text-text-primary hover:bg-surface-secondary'
-              )}>
-              {item.icon && <span className="flex-shrink-0">{item.icon}</span>}
-              <span className="flex-1">{item.label}</span>
+              style={{
+                width: '100%', display: 'flex', alignItems: 'center', gap: 8,
+                padding: '6px 12px', borderRadius: 'var(--radius-md)', fontSize: 13,
+                textAlign: 'left', border: 'none', cursor: 'pointer',
+                background: activeId === item.id ? 'var(--blue-tint)' : 'transparent',
+                color: activeId === item.id ? 'var(--accent)' : 'var(--text-secondary)',
+                fontWeight: activeId === item.id ? 500 : 400,
+                fontFamily: 'var(--font-sans)',
+                transition: 'background 0.12s, color 0.12s',
+              }}
+            >
+              {item.icon && <span style={{ flexShrink: 0 }}>{item.icon}</span>}
+              <span style={{ flex: 1 }}>{item.label}</span>
               {item.children && (
-                isOpen ? <ChevronDown className="w-3.5 h-3.5 flex-shrink-0" /> : <ChevronRight className="w-3.5 h-3.5 flex-shrink-0" />
+                isOpen
+                  ? <ChevronDown style={{ width: 14, height: 14, flexShrink: 0 }} />
+                  : <ChevronRight style={{ width: 14, height: 14, flexShrink: 0 }} />
               )}
             </button>
             {item.children && isOpen && (
-              <div className="ml-4 mt-0.5 space-y-0.5">
+              <div style={{ marginLeft: 16, marginTop: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
                 {item.children.map(child => (
-                  <button key={child.id} onClick={() => onSelect(child.id)}
-                    className={cn('w-full flex items-center gap-2 px-3 py-1 rounded-lg text-xs text-left transition-colors',
-                      activeId === child.id ? 'bg-brand/5 text-brand font-medium' : 'text-text-tertiary hover:text-text-secondary hover:bg-surface-secondary'
-                    )}>
-                    <span className="w-1 h-1 rounded-full bg-current flex-shrink-0 ml-0.5" />
+                  <button
+                    key={child.id}
+                    onClick={() => onSelect(child.id)}
+                    style={{
+                      width: '100%', display: 'flex', alignItems: 'center', gap: 8,
+                      padding: '4px 12px', borderRadius: 'var(--radius-md)', fontSize: 12,
+                      textAlign: 'left', border: 'none', cursor: 'pointer',
+                      background: activeId === child.id ? 'var(--blue-tint)' : 'transparent',
+                      color: activeId === child.id ? 'var(--accent)' : 'var(--text-tertiary)',
+                      fontWeight: activeId === child.id ? 500 : 400,
+                      fontFamily: 'var(--font-sans)',
+                      transition: 'background 0.12s, color 0.12s',
+                    }}
+                  >
+                    <span style={{ width: 4, height: 4, borderRadius: '50%', background: 'currentColor', flexShrink: 0, marginLeft: 2 }} />
                     {child.label}
                   </button>
                 ))}
@@ -1237,7 +1291,7 @@ export default function DocsPage() {
 
   // Flatten all sections for search
   const allSections = NAV.flatMap(s => [
-    { id: s.id, label: s.label, parent: null },
+    { id: s.id, label: s.label, parent: null as string | null },
     ...(s.children?.map(c => ({ id: c.id, label: c.label, parent: s.label })) ?? []),
   ])
 
@@ -1249,69 +1303,118 @@ export default function DocsPage() {
     : []
 
   return (
-    <div className="flex h-full overflow-hidden relative">
+    <div style={{ display: 'flex', height: '100%', overflow: 'hidden', position: 'relative', fontFamily: 'var(--font-sans)' }}>
       {/* Left nav */}
-      <aside className="w-56 flex-shrink-0 border-r border-border overflow-y-auto py-4 px-2">
-        <div className="px-2 mb-3">
+      <aside style={{ width: 224, flexShrink: 0, borderRight: '1px solid var(--border)', overflowY: 'auto', padding: '16px 8px' }}>
+        <div style={{ padding: '0 8px', marginBottom: 12 }}>
           <button
             onClick={() => { setShowSearch(true); setTimeout(() => searchRef.current?.focus(), 50) }}
-            className="w-full flex items-center gap-2 bg-surface-secondary border border-border rounded-lg px-3 py-1.5 text-xs text-text-tertiary hover:text-text-secondary transition-colors">
-            <Search className="w-3.5 h-3.5" />
-            <span className="flex-1 text-left">Search docs…</span>
-            <kbd className="text-[10px] bg-surface-primary border border-border rounded px-1">/</kbd>
+            style={{
+              width: '100%', display: 'flex', alignItems: 'center', gap: 8,
+              background: 'var(--bg-card)', border: '1px solid var(--border)',
+              borderRadius: 'var(--radius-md)', padding: '6px 12px',
+              fontSize: 12, color: 'var(--text-tertiary)', cursor: 'pointer',
+              fontFamily: 'var(--font-sans)', transition: 'color 0.12s',
+            }}
+          >
+            <Search style={{ width: 14, height: 14 }} />
+            <span style={{ flex: 1, textAlign: 'left' }}>Search docs…</span>
+            <kbd style={{
+              fontSize: 10, background: 'var(--bg)', border: '1px solid var(--border)',
+              borderRadius: 'var(--radius-btn)', padding: '0 4px',
+              fontFamily: 'var(--font-mono)',
+            }}>/</kbd>
           </button>
         </div>
         <NavTree items={NAV} activeId={activeId} onSelect={scrollTo} />
       </aside>
 
       {/* Main content */}
-      <div ref={contentRef} className="flex-1 overflow-y-auto">
-        <div className="px-10 pt-8">
+      <div ref={contentRef} style={{ flex: 1, overflowY: 'auto' }}>
+        <div style={{ padding: '32px 40px' }}>
           <DocContent />
         </div>
       </div>
 
       {/* Search modal */}
       {showSearch && (
-        <div className="absolute inset-0 z-50 flex items-start justify-center pt-24 bg-black/50 backdrop-blur-sm"
-          onClick={() => setShowSearch(false)}>
-          <div className="bg-surface-primary border border-border rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden"
-            onClick={e => e.stopPropagation()}>
-            <div className="flex items-center gap-3 px-4 py-3 border-b border-border">
-              <Search className="w-4 h-4 text-text-tertiary flex-shrink-0" />
+        <div
+          style={{ position: 'absolute', inset: 0, zIndex: 50, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', paddingTop: 96, background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)' }}
+          onClick={() => setShowSearch(false)}
+        >
+          <div
+            style={{
+              background: 'var(--bg)', border: '1px solid var(--border)',
+              borderRadius: 'var(--radius-card)', width: '100%', maxWidth: 512,
+              boxShadow: '0 24px 64px rgba(0,0,0,0.5)', overflow: 'hidden',
+            }}
+            onClick={e => e.stopPropagation()}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', borderBottom: '1px solid var(--border)' }}>
+              <Search style={{ width: 16, height: 16, color: 'var(--text-tertiary)', flexShrink: 0 }} />
               <input
                 ref={searchRef}
-                className="flex-1 bg-transparent text-sm text-text-primary placeholder:text-text-tertiary focus:outline-none"
+                style={{
+                  flex: 1, background: 'transparent', border: 'none', outline: 'none',
+                  fontSize: 14, color: 'var(--text-primary)', fontFamily: 'var(--font-sans)',
+                }}
                 placeholder="Search documentation…"
                 value={search}
                 onChange={e => setSearch(e.target.value)}
               />
-              <button onClick={() => setShowSearch(false)} className="text-text-tertiary hover:text-text-primary">
-                <X className="w-4 h-4" />
+              <button onClick={() => setShowSearch(false)} style={{ color: 'var(--text-tertiary)', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
+                <X style={{ width: 16, height: 16 }} />
               </button>
             </div>
             {search.trim() === '' ? (
-              <div className="p-4 space-y-1">
+              <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 4 }}>
                 {NAV.map(s => (
-                  <button key={s.id} onClick={() => { scrollTo(s.id); setShowSearch(false); setSearch('') }}
-                    className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-text-secondary hover:bg-surface-secondary hover:text-text-primary text-left transition-colors">
+                  <button
+                    key={s.id}
+                    onClick={() => { scrollTo(s.id); setShowSearch(false); setSearch('') }}
+                    style={{
+                      width: '100%', display: 'flex', alignItems: 'center', gap: 10,
+                      padding: '8px 12px', borderRadius: 'var(--radius-md)', fontSize: 13,
+                      color: 'var(--text-secondary)', background: 'transparent', border: 'none',
+                      cursor: 'pointer', textAlign: 'left', fontFamily: 'var(--font-sans)',
+                      transition: 'background 0.12s, color 0.12s',
+                    }}
+                    onMouseEnter={e => {
+                      (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-card)'
+                      ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--text-primary)'
+                    }}
+                    onMouseLeave={e => {
+                      (e.currentTarget as HTMLButtonElement).style.background = 'transparent'
+                      ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--text-secondary)'
+                    }}
+                  >
                     {s.icon}
                     {s.label}
                   </button>
                 ))}
               </div>
             ) : searchResults.length === 0 ? (
-              <div className="p-6 text-center text-sm text-text-tertiary">No results for "{search}"</div>
+              <div style={{ padding: 24, textAlign: 'center', fontSize: 14, color: 'var(--text-tertiary)' }}>No results for "{search}"</div>
             ) : (
-              <div className="p-2 max-h-80 overflow-y-auto">
+              <div style={{ padding: 8, maxHeight: 320, overflowY: 'auto' }}>
                 {searchResults.map(r => (
-                  <button key={r.id} onClick={() => { scrollTo(r.id); setShowSearch(false); setSearch('') }}
-                    className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-left hover:bg-surface-secondary transition-colors">
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm text-text-primary">{r.label}</p>
-                      {r.parent && <p className="text-xs text-text-tertiary">{r.parent}</p>}
+                  <button
+                    key={r.id}
+                    onClick={() => { scrollTo(r.id); setShowSearch(false); setSearch('') }}
+                    style={{
+                      width: '100%', display: 'flex', alignItems: 'center', gap: 8,
+                      padding: '8px 12px', borderRadius: 'var(--radius-md)', border: 'none',
+                      cursor: 'pointer', textAlign: 'left', background: 'transparent',
+                      fontFamily: 'var(--font-sans)', transition: 'background 0.12s',
+                    }}
+                    onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-card)' }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent' }}
+                  >
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <p style={{ fontSize: 13, color: 'var(--text-primary)' }}>{r.label}</p>
+                      {r.parent && <p style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>{r.parent}</p>}
                     </div>
-                    <ChevronRight className="w-3.5 h-3.5 text-text-tertiary flex-shrink-0" />
+                    <ChevronRight style={{ width: 14, height: 14, color: 'var(--text-tertiary)', flexShrink: 0 }} />
                   </button>
                 ))}
               </div>

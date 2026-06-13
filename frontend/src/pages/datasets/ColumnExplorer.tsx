@@ -22,92 +22,115 @@ export function ColumnExplorer({ datasetId }: { datasetId: string }) {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <Loader2 className="w-5 h-5 animate-spin text-text-tertiary" />
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '48px 0' }}>
+        <Loader2 style={{ width: 20, height: 20, color: 'var(--text-tertiary)', animation: 'spin 1s linear infinite' }} />
       </div>
     )
   }
 
   return (
-    <div className="flex gap-4">
+    <div style={{ display: 'flex', gap: 16 }}>
       {/* Column table */}
-      <div className="flex-1 min-w-0">
-        <div className="mb-3">
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ marginBottom: 12 }}>
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search columns…"
-            className="w-full px-3 py-2 text-sm border border-border rounded-lg bg-surface-primary placeholder:text-text-tertiary focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand"
+            style={{
+              width: '100%',
+              background: 'var(--bg-inset)',
+              border: '1px solid var(--border)',
+              borderRadius: 'var(--radius-btn)',
+              padding: '8px 12px',
+              color: 'var(--text-primary)',
+              fontSize: 14,
+              outline: 'none',
+              fontFamily: 'var(--font-sans)',
+              boxSizing: 'border-box',
+            }}
           />
         </div>
-        <div className="rounded-xl border border-border overflow-hidden">
-          <table className="w-full text-sm">
+        <div style={{ borderRadius: 'var(--radius-card)', border: '1px solid var(--border)', overflow: 'hidden' }}>
+          <table style={{ width: '100%', fontSize: 13, borderCollapse: 'collapse' }}>
             <thead>
-              <tr className="bg-surface-tertiary border-b border-border">
-                <th className="px-4 py-2.5 text-left text-xs font-medium text-text-secondary uppercase tracking-wide">
+              <tr style={{ background: 'var(--bg-inset)', borderBottom: '1px solid var(--border)' }}>
+                <th style={{ padding: '10px 16px', textAlign: 'left', fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-secondary)', fontWeight: 400 }}>
                   Column
                 </th>
-                <th className="px-4 py-2.5 text-left text-xs font-medium text-text-secondary uppercase tracking-wide">
+                <th style={{ padding: '10px 16px', textAlign: 'left', fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-secondary)', fontWeight: 400 }}>
                   Type
                 </th>
-                <th className="px-4 py-2.5 text-right text-xs font-medium text-text-secondary uppercase tracking-wide">
+                <th style={{ padding: '10px 16px', textAlign: 'right', fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-secondary)', fontWeight: 400 }}>
                   Nulls
                 </th>
-                <th className="px-4 py-2.5 text-center text-xs font-medium text-text-secondary uppercase tracking-wide">
+                <th style={{ padding: '10px 16px', textAlign: 'center', fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-secondary)', fontWeight: 400 }}>
                   Quality
                 </th>
-                <th className="px-4 py-2.5 text-left text-xs font-medium text-text-secondary uppercase tracking-wide">
+                <th style={{ padding: '10px 16px', textAlign: 'left', fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-secondary)', fontWeight: 400 }}>
                   Issues
                 </th>
-                <th className="w-8" />
+                <th style={{ width: 32 }} />
               </tr>
             </thead>
-            <tbody className="divide-y divide-border bg-surface-primary">
-              {filtered.map((col) => (
-                <tr
-                  key={col.name}
-                  onClick={() => setSelected(selected?.name === col.name ? null : col)}
-                  className={`cursor-pointer transition-colors hover:bg-surface-tertiary ${
-                    selected?.name === col.name ? 'bg-brand-50' : ''
-                  }`}
-                >
-                  <td className="px-4 py-3 font-mono text-xs font-medium text-text-primary">
-                    {col.name}
-                  </td>
-                  <td className="px-4 py-3 text-xs text-text-secondary">{col.dtype}</td>
-                  <td className="px-4 py-3 text-right text-xs font-mono text-text-secondary">
-                    {col.null_pct.toFixed(1)}%
-                  </td>
-                  <td className="px-4 py-3 text-center">
-                    <div className="flex justify-center">
-                      <QualityBadge score={col.quality_score} size="sm" />
-                    </div>
-                  </td>
-                  <td className="px-4 py-3">
-                    {col.issues.length > 0 ? (
-                      <div className="flex gap-1 flex-wrap">
-                        {col.issues.slice(0, 2).map((issue) => (
-                          <SeverityBadge key={issue.id} severity={issue.severity} />
-                        ))}
-                        {col.issues.length > 2 && (
-                          <span className="text-xs text-text-tertiary">
-                            +{col.issues.length - 2}
-                          </span>
-                        )}
+            <tbody>
+              {filtered.map((col) => {
+                const isSelected = selected?.name === col.name
+                return (
+                  <tr
+                    key={col.name}
+                    onClick={() => setSelected(isSelected ? null : col)}
+                    style={{
+                      cursor: 'pointer',
+                      background: isSelected ? 'var(--blue-tint)' : 'var(--bg-card)',
+                      borderBottom: '1px solid var(--border)',
+                      transition: 'background 0.15s',
+                    }}
+                    onMouseEnter={(e) => { if (!isSelected) (e.currentTarget as HTMLTableRowElement).style.background = 'var(--bg-inset)' }}
+                    onMouseLeave={(e) => { if (!isSelected) (e.currentTarget as HTMLTableRowElement).style.background = 'var(--bg-card)' }}
+                  >
+                    <td style={{ padding: '12px 16px', fontFamily: 'var(--font-mono)', fontSize: 11, fontWeight: 500, color: 'var(--text-primary)' }}>
+                      {col.name}
+                    </td>
+                    <td style={{ padding: '12px 16px', fontSize: 11, color: 'var(--text-secondary)', fontFamily: 'var(--font-sans)' }}>{col.dtype}</td>
+                    <td style={{ padding: '12px 16px', textAlign: 'right', fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-secondary)' }}>
+                      {col.null_pct.toFixed(1)}%
+                    </td>
+                    <td style={{ padding: '12px 16px', textAlign: 'center' }}>
+                      <div style={{ display: 'flex', justifyContent: 'center' }}>
+                        <QualityBadge score={col.quality_score} size="sm" />
                       </div>
-                    ) : (
-                      <span className="text-xs text-text-tertiary">—</span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3">
-                    <ChevronRight
-                      className={`w-3.5 h-3.5 text-text-tertiary transition-transform ${
-                        selected?.name === col.name ? 'rotate-90' : ''
-                      }`}
-                    />
-                  </td>
-                </tr>
-              ))}
+                    </td>
+                    <td style={{ padding: '12px 16px' }}>
+                      {col.issues.length > 0 ? (
+                        <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                          {col.issues.slice(0, 2).map((issue) => (
+                            <SeverityBadge key={issue.id} severity={issue.severity} />
+                          ))}
+                          {col.issues.length > 2 && (
+                            <span style={{ fontSize: 11, color: 'var(--text-tertiary)', fontFamily: 'var(--font-sans)' }}>
+                              +{col.issues.length - 2}
+                            </span>
+                          )}
+                        </div>
+                      ) : (
+                        <span style={{ fontSize: 11, color: 'var(--text-tertiary)', fontFamily: 'var(--font-sans)' }}>—</span>
+                      )}
+                    </td>
+                    <td style={{ padding: '12px 16px' }}>
+                      <ChevronRight
+                        style={{
+                          width: 14,
+                          height: 14,
+                          color: 'var(--text-tertiary)',
+                          transition: 'transform 0.15s',
+                          transform: isSelected ? 'rotate(90deg)' : 'rotate(0deg)',
+                        }}
+                      />
+                    </td>
+                  </tr>
+                )
+              })}
             </tbody>
           </table>
         </div>
@@ -115,30 +138,42 @@ export function ColumnExplorer({ datasetId }: { datasetId: string }) {
 
       {/* Column detail panel */}
       {selected && (
-        <div className="w-72 flex-shrink-0 p-4 bg-surface-primary border border-border rounded-xl self-start sticky top-6">
-          <div className="flex items-start justify-between mb-3">
+        <div style={{
+          width: 288,
+          flexShrink: 0,
+          padding: 16,
+          background: 'var(--bg-card)',
+          border: '1px solid var(--border)',
+          borderRadius: 'var(--radius-card)',
+          alignSelf: 'flex-start',
+          position: 'sticky',
+          top: 24,
+        }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 12 }}>
             <div>
-              <p className="font-mono text-sm font-medium text-text-primary">{selected.name}</p>
-              <p className="text-xs text-text-tertiary mt-0.5">{selected.dtype}</p>
+              <p style={{ fontFamily: 'var(--font-mono)', fontSize: 13, fontWeight: 500, color: 'var(--text-primary)' }}>{selected.name}</p>
+              <p style={{ fontSize: 11, color: 'var(--text-tertiary)', marginTop: 2, fontFamily: 'var(--font-sans)' }}>{selected.dtype}</p>
             </div>
             <button
               onClick={() => setSelected(null)}
-              className="text-text-tertiary hover:text-text-primary transition-colors"
+              style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary)', padding: 0, display: 'flex', alignItems: 'center' }}
+              onMouseEnter={(e) => (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-primary)'}
+              onMouseLeave={(e) => (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-tertiary)'}
             >
-              <X className="w-4 h-4" />
+              <X style={{ width: 16, height: 16 }} />
             </button>
           </div>
 
-          <div className="flex items-center gap-3 mb-4 pb-4 border-b border-border">
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16, paddingBottom: 16, borderBottom: '1px solid var(--border)' }}>
             <QualityBadge score={selected.quality_score} size="lg" showLabel />
-            <div className="text-xs text-text-secondary space-y-1">
+            <div style={{ fontSize: 11, color: 'var(--text-secondary)', display: 'flex', flexDirection: 'column', gap: 4, fontFamily: 'var(--font-sans)' }}>
               <p>
-                <span className="text-text-tertiary">Nulls:</span>{' '}
+                <span style={{ color: 'var(--text-tertiary)' }}>Nulls:</span>{' '}
                 {selected.null_pct.toFixed(1)}%
               </p>
               {selected.unique_count != null && (
                 <p>
-                  <span className="text-text-tertiary">Unique:</span>{' '}
+                  <span style={{ color: 'var(--text-tertiary)' }}>Unique:</span>{' '}
                   {formatNumber(selected.unique_count)}
                 </p>
               )}
@@ -147,21 +182,20 @@ export function ColumnExplorer({ datasetId }: { datasetId: string }) {
 
           {/* Distribution */}
           {selected.distribution.length > 0 && (
-            <div className="mb-4">
-              <p className="text-xs font-medium text-text-secondary mb-2 uppercase tracking-wide">
+            <div style={{ marginBottom: 16 }}>
+              <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-secondary)', fontWeight: 400, marginBottom: 8 }}>
                 Distribution
               </p>
-              <div className="space-y-1.5">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                 {selected.distribution.slice(0, 8).map((d) => (
-                  <div key={d.label} className="flex items-center gap-2">
-                    <span className="w-20 text-xs text-text-secondary truncate">{d.label}</span>
-                    <div className="flex-1 h-1.5 bg-surface-tertiary rounded-full overflow-hidden">
+                  <div key={d.label} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ width: 80, fontSize: 11, color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: 'var(--font-sans)' }}>{d.label}</span>
+                    <div style={{ flex: 1, height: 6, background: 'var(--bg-inset)', borderRadius: 9999, overflow: 'hidden' }}>
                       <div
-                        className="h-full bg-brand rounded-full"
-                        style={{ width: `${d.pct}%` }}
+                        style={{ height: '100%', background: 'var(--accent)', borderRadius: 9999, width: `${d.pct}%` }}
                       />
                     </div>
-                    <span className="text-xs font-mono text-text-tertiary w-10 text-right">
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-tertiary)', width: 40, textAlign: 'right' }}>
                       {d.pct.toFixed(1)}%
                     </span>
                   </div>
@@ -173,14 +207,14 @@ export function ColumnExplorer({ datasetId }: { datasetId: string }) {
           {/* Stats */}
           {Object.keys(selected.stats).length > 0 && (
             <div>
-              <p className="text-xs font-medium text-text-secondary mb-2 uppercase tracking-wide">
+              <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-secondary)', fontWeight: 400, marginBottom: 8 }}>
                 Statistics
               </p>
-              <div className="space-y-1">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                 {Object.entries(selected.stats).map(([k, v]) => (
-                  <div key={k} className="flex justify-between text-xs">
-                    <span className="text-text-tertiary">{k}</span>
-                    <span className="font-mono text-text-primary">{String(v)}</span>
+                  <div key={k} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11 }}>
+                    <span style={{ color: 'var(--text-tertiary)', fontFamily: 'var(--font-sans)' }}>{k}</span>
+                    <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--text-primary)' }}>{String(v)}</span>
                   </div>
                 ))}
               </div>

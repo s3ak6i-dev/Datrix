@@ -24,6 +24,15 @@ const AuthContext = createContext<AuthContextValue | null>(null)
 
 const BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
 
+function parseJwt(token: string): { sub: string; email: string } | null {
+  try {
+    const b64 = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')
+    return JSON.parse(atob(b64))
+  } catch {
+    return null
+  }
+}
+
 function saveTokens(tokens: TokenPair) {
   localStorage.setItem('datrix_access', tokens.access_token)
   localStorage.setItem('datrix_refresh', tokens.refresh_token)
@@ -101,8 +110,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       body: JSON.stringify({ email, password }),
     })
     saveTokens(tokens)
-    const me = await fetchMe(tokens.access_token)
-    setUser(me)
+    const payload = parseJwt(tokens.access_token)
+    setUser(payload ? { id: payload.sub, email: payload.email, created_at: new Date().toISOString() } : null)
   }
 
   const register = async (email: string, password: string) => {
@@ -111,8 +120,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       body: JSON.stringify({ email, password }),
     })
     saveTokens(tokens)
-    const me = await fetchMe(tokens.access_token)
-    setUser(me)
+    const payload = parseJwt(tokens.access_token)
+    setUser(payload ? { id: payload.sub, email: payload.email, created_at: new Date().toISOString() } : null)
   }
 
   const logout = async () => {

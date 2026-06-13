@@ -1,32 +1,75 @@
-import { cn } from '@/lib/utils'
-
 interface Props {
   label: string
   score: number
   className?: string
 }
 
+function scoreTokens(score: number): { fill: string; text: string } {
+  if (score >= 80) return { fill: 'var(--green)', text: 'var(--green)' }
+  if (score >= 60) return { fill: 'var(--warn)', text: 'var(--warn)' }
+  return { fill: 'var(--bad)', text: 'var(--bad)' }
+}
+
 export function ScoreBar({ label, score, className }: Props) {
-  const color =
-    score >= 80 ? 'bg-success' : score >= 60 ? 'bg-warning' : 'bg-danger'
-  const textColor =
-    score >= 80 ? 'text-success' : score >= 60 ? 'text-warning' : 'text-danger'
-  const qualLabel =
-    score >= 80 ? 'Good' : score >= 60 ? 'Fair' : 'Needs work'
+  const tokens = scoreTokens(score)
+  const qualLabel = score >= 80 ? 'Good' : score >= 60 ? 'Fair' : 'Needs work'
 
   return (
-    <div className={cn('flex items-center gap-3', className)}>
-      <span className="w-28 text-sm text-text-secondary flex-shrink-0">{label}</span>
-      <span className={cn('w-8 text-sm font-mono font-medium flex-shrink-0', textColor)}>
+    <div
+      className={className}
+      style={{ display: 'flex', alignItems: 'center', gap: '12px' }}
+    >
+      <span
+        style={{
+          width: '112px',
+          fontSize: '14px',
+          color: 'var(--text-secondary)',
+          flexShrink: 0,
+        }}
+      >
+        {label}
+      </span>
+      <span
+        style={{
+          width: '32px',
+          fontSize: '14px',
+          fontFamily: 'var(--font-mono)',
+          fontWeight: 500,
+          flexShrink: 0,
+          color: tokens.text,
+        }}
+      >
         {Math.round(score)}
       </span>
-      <div className="flex-1 h-1.5 bg-surface-tertiary rounded-full overflow-hidden">
+      <div
+        style={{
+          flex: 1,
+          height: '6px',
+          background: 'var(--bg-3)',
+          borderRadius: 'var(--radius-pill)',
+          overflow: 'hidden',
+        }}
+      >
         <div
-          className={cn('h-full rounded-full transition-all duration-500', color)}
-          style={{ width: `${score}%` }}
+          style={{
+            height: '100%',
+            borderRadius: 'var(--radius-pill)',
+            background: tokens.fill,
+            width: `${score}%`,
+            transition: 'width 0.5s ease',
+          }}
         />
       </div>
-      <span className={cn('w-20 text-xs flex-shrink-0', textColor)}>{qualLabel}</span>
+      <span
+        style={{
+          width: '80px',
+          fontSize: '12px',
+          flexShrink: 0,
+          color: tokens.text,
+        }}
+      >
+        {qualLabel}
+      </span>
     </div>
   )
 }

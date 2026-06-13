@@ -7,7 +7,6 @@ import {
 import { api } from '@/lib/api'
 import { SeverityBadge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
-import { cn } from '@/lib/utils'
 import type { QualityIssue, CleaningFix } from '@/types'
 
 interface Props {
@@ -127,41 +126,46 @@ export function CleaningWizard({ datasetId, issues, initialIssue, onComplete }: 
   // ── Empty state ───────────────────────────────────────────────────
   if (issues.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-16 text-center">
-        <CheckCircle2 className="w-10 h-10 text-success mb-3" />
-        <p className="text-base font-semibold text-text-primary">No open issues</p>
-        <p className="text-sm text-text-secondary mt-1">Dataset has no open issues</p>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '64px 0', textAlign: 'center' }}>
+        <CheckCircle2 style={{ width: 40, height: 40, color: 'var(--green)', marginBottom: 12 }} />
+        <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)', fontFamily: 'var(--font-sans)' }}>No open issues</p>
+        <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 4, fontFamily: 'var(--font-sans)' }}>Dataset has no open issues</p>
       </div>
     )
   }
 
   // ── Main layout ───────────────────────────────────────────────────
   return (
-    <div className="grid grid-cols-5 gap-5">
+    <div style={{ display: 'grid', gridTemplateColumns: '2fr 3fr', gap: 20 }}>
 
       {/* ── Left: issue list ──────────────────────────────────────── */}
-      <div className="col-span-2 flex flex-col gap-3">
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
 
         {/* Progress (auto issues only) */}
         {autoFixable.length > 0 && (
-          <div className="bg-surface-primary border border-border rounded-xl p-4">
-            <div className="flex items-baseline justify-between mb-2">
-              <span className="text-sm font-medium text-text-primary">
+          <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 'var(--radius-card)', padding: 16 }}>
+            <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 8 }}>
+              <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-primary)', fontFamily: 'var(--font-sans)' }}>
                 {resolved.size} / {autoFixable.length} auto-fixes applied
               </span>
-              <span className="text-xs text-success font-medium">
+              <span style={{ fontSize: 11, color: 'var(--green)', fontWeight: 500, fontFamily: 'var(--font-sans)' }}>
                 +{resolvedGain.toFixed(1)} / +{totalGain.toFixed(1)} pts
               </span>
             </div>
-            <div className="h-2 bg-surface-tertiary rounded-full overflow-hidden">
+            <div style={{ height: 8, background: 'var(--bg-inset)', borderRadius: 9999, overflow: 'hidden' }}>
               <div
-                className="h-full bg-success rounded-full transition-all duration-500"
-                style={{ width: `${progress * 100}%` }}
+                style={{
+                  height: '100%',
+                  background: 'var(--green)',
+                  borderRadius: 9999,
+                  width: `${progress * 100}%`,
+                  transition: 'width 500ms ease',
+                }}
               />
             </div>
             {allAutoResolved && manualIssues.length > 0 && (
-              <p className="text-xs text-success mt-2 flex items-center gap-1">
-                <CheckCircle2 className="w-3 h-3" />
+              <p style={{ fontSize: 11, color: 'var(--green)', marginTop: 8, display: 'flex', alignItems: 'center', gap: 4, fontFamily: 'var(--font-sans)' }}>
+                <CheckCircle2 style={{ width: 12, height: 12 }} />
                 All auto-fixes done — review manual issues below
               </p>
             )}
@@ -171,22 +175,22 @@ export function CleaningWizard({ datasetId, issues, initialIssue, onComplete }: 
         {/* Fix all (only when unresolved auto issues remain) */}
         {unresolvedAuto.length > 1 && (
           <Button
-            className="w-full"
+            style={{ width: '100%' }}
             loading={applyAllMutation.isPending}
             onClick={() => applyAllMutation.mutate()}
           >
-            <Zap className="w-4 h-4" />
+            <Zap style={{ width: 16, height: 16 }} />
             Fix all {unresolvedAuto.length} auto-fixable
           </Button>
         )}
 
         {/* Issue list */}
-        <div className="bg-surface-primary border border-border rounded-xl overflow-hidden">
+        <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 'var(--radius-card)', overflow: 'hidden' }}>
 
-          {/* Auto-fixable section */}
+          {/* Auto-fixable section header */}
           {autoFixable.length > 0 && manualIssues.length > 0 && (
-            <div className="px-4 py-2 bg-surface-tertiary border-b border-border">
-              <p className="text-xs font-medium text-text-tertiary uppercase tracking-wide">
+            <div style={{ padding: '8px 16px', background: 'var(--bg-inset)', borderBottom: '1px solid var(--border)' }}>
+              <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-tertiary)', fontWeight: 400 }}>
                 Auto-fixable ({autoFixable.length})
               </p>
             </div>
@@ -199,44 +203,60 @@ export function CleaningWizard({ datasetId, issues, initialIssue, onComplete }: 
               <button
                 key={issue.id}
                 onClick={() => { setSelectedId(issue.id); setPreview(null) }}
-                className={cn(
-                  'w-full flex items-start gap-3 px-4 py-3 text-left border-b border-border last:border-0 transition-colors',
-                  isActive && !isResolved && 'bg-brand-50',
-                  isResolved ? 'opacity-50 cursor-default' : 'hover:bg-surface-tertiary cursor-pointer',
-                )}
+                style={{
+                  width: '100%',
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: 12,
+                  padding: '12px 16px',
+                  textAlign: 'left',
+                  borderBottom: '1px solid var(--border)',
+                  background: isActive && !isResolved ? 'var(--blue-tint)' : isResolved ? 'transparent' : 'transparent',
+                  opacity: isResolved ? 0.5 : 1,
+                  cursor: isResolved ? 'default' : 'pointer',
+                  transition: 'background 0.15s',
+                  fontFamily: 'var(--font-sans)',
+                  border: 'none',
+                  borderBottom: '1px solid var(--border)',
+                }}
+                onMouseEnter={(e) => { if (!isResolved && !isActive) (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-inset)' }}
+                onMouseLeave={(e) => { if (!isResolved && !isActive) (e.currentTarget as HTMLButtonElement).style.background = 'transparent' }}
               >
-                <div className="flex-shrink-0 mt-0.5">
+                <div style={{ flexShrink: 0, marginTop: 2 }}>
                   {isResolved ? (
-                    <CheckCircle2 className="w-4 h-4 text-success" />
+                    <CheckCircle2 style={{ width: 16, height: 16, color: 'var(--green)' }} />
                   ) : (
-                    <div className={cn(
-                      'w-4 h-4 rounded-full border-2',
-                      isActive ? 'border-brand bg-brand' : 'border-border',
-                    )} />
+                    <div style={{
+                      width: 16,
+                      height: 16,
+                      borderRadius: '50%',
+                      border: isActive ? '2px solid var(--accent)' : '2px solid var(--border)',
+                      background: isActive ? 'var(--accent)' : 'transparent',
+                    }} />
                   )}
                 </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-1.5 mb-0.5">
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
                     <SeverityBadge severity={issue.severity} />
                     {issue.column_name && (
-                      <span className="text-xs font-mono text-text-tertiary truncate">
+                      <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-tertiary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {issue.column_name}
                       </span>
                     )}
                   </div>
-                  <p className="text-xs text-text-secondary line-clamp-2">{issue.description}</p>
+                  <p style={{ fontSize: 11, color: 'var(--text-secondary)', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', fontFamily: 'var(--font-sans)' }}>{issue.description}</p>
                 </div>
                 {isActive && !isResolved && (
-                  <ChevronRight className="w-4 h-4 text-brand flex-shrink-0 mt-1" />
+                  <ChevronRight style={{ width: 16, height: 16, color: 'var(--accent)', flexShrink: 0, marginTop: 4 }} />
                 )}
               </button>
             )
           })}
 
-          {/* Manual review section */}
+          {/* Manual review section header */}
           {manualIssues.length > 0 && (
-            <div className="px-4 py-2 bg-surface-tertiary border-b border-border border-t">
-              <p className="text-xs font-medium text-text-tertiary uppercase tracking-wide">
+            <div style={{ padding: '8px 16px', background: 'var(--bg-inset)', borderBottom: '1px solid var(--border)', borderTop: '1px solid var(--border)' }}>
+              <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-tertiary)', fontWeight: 400 }}>
                 Manual review ({manualIssues.length})
               </p>
             </div>
@@ -248,27 +268,37 @@ export function CleaningWizard({ datasetId, issues, initialIssue, onComplete }: 
               <button
                 key={issue.id}
                 onClick={() => setSelectedId(issue.id)}
-                className={cn(
-                  'w-full flex items-start gap-3 px-4 py-3 text-left border-b border-border last:border-0 transition-colors cursor-pointer',
-                  isActive ? 'bg-warning-50' : 'hover:bg-surface-tertiary',
-                )}
+                style={{
+                  width: '100%',
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: 12,
+                  padding: '12px 16px',
+                  textAlign: 'left',
+                  borderBottom: '1px solid var(--border)',
+                  background: isActive ? 'var(--warn-dim)' : 'transparent',
+                  cursor: 'pointer',
+                  transition: 'background 0.15s',
+                  fontFamily: 'var(--font-sans)',
+                  border: 'none',
+                  borderBottom: '1px solid var(--border)',
+                }}
+                onMouseEnter={(e) => { if (!isActive) (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-inset)' }}
+                onMouseLeave={(e) => { if (!isActive) (e.currentTarget as HTMLButtonElement).style.background = 'transparent' }}
               >
-                <HelpCircle className={cn(
-                  'w-4 h-4 flex-shrink-0 mt-0.5',
-                  isActive ? 'text-warning' : 'text-text-tertiary',
-                )} />
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-1.5 mb-0.5">
+                <HelpCircle style={{ width: 16, height: 16, flexShrink: 0, marginTop: 2, color: isActive ? 'var(--warn)' : 'var(--text-tertiary)' }} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
                     <SeverityBadge severity={issue.severity} />
                     {issue.column_name && (
-                      <span className="text-xs font-mono text-text-tertiary truncate">
+                      <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-tertiary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {issue.column_name}
                       </span>
                     )}
                   </div>
-                  <p className="text-xs text-text-secondary line-clamp-2">{issue.description}</p>
+                  <p style={{ fontSize: 11, color: 'var(--text-secondary)', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', fontFamily: 'var(--font-sans)' }}>{issue.description}</p>
                 </div>
-                {isActive && <ChevronRight className="w-4 h-4 text-warning flex-shrink-0 mt-1" />}
+                {isActive && <ChevronRight style={{ width: 16, height: 16, color: 'var(--warn)', flexShrink: 0, marginTop: 4 }} />}
               </button>
             )
           })}
@@ -283,7 +313,7 @@ export function CleaningWizard({ datasetId, issues, initialIssue, onComplete }: 
       </div>
 
       {/* ── Right: detail / guidance panel ───────────────────────── */}
-      <div className="col-span-3">
+      <div>
         {isManualSelected && selectedIssue ? (
           <ManualGuidancePanel
             issue={selectedIssue}
@@ -314,7 +344,7 @@ export function CleaningWizard({ datasetId, issues, initialIssue, onComplete }: 
             }}
           />
         ) : (
-          <div className="flex items-center justify-center h-48 text-text-tertiary text-sm">
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 192, color: 'var(--text-tertiary)', fontSize: 13, fontFamily: 'var(--font-sans)' }}>
             Select an issue on the left.
           </div>
         )}
@@ -343,78 +373,78 @@ function AutoFixPanel({
   previewPending, applyPending, onPreview, onApply, onSkip,
 }: AutoFixPanelProps) {
   return (
-    <div className="bg-surface-primary border border-border rounded-xl overflow-hidden">
-      <div className="px-5 py-4 border-b border-border bg-surface-tertiary flex items-center justify-between">
+    <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 'var(--radius-card)', overflow: 'hidden' }}>
+      <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)', background: 'var(--bg-inset)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div>
-          <p className="text-xs text-text-tertiary uppercase tracking-wide font-medium mb-0.5">
+          <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-tertiary)', fontWeight: 400, marginBottom: 2 }}>
             Issue {issueIndex + 1} of {totalAuto}
           </p>
-          <div className="flex items-center gap-2">
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <SeverityBadge severity={issue.severity} />
             {issue.column_name && (
-              <span className="font-mono text-sm text-text-primary">{issue.column_name}</span>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--text-primary)' }}>{issue.column_name}</span>
             )}
           </div>
         </div>
         {issue.impact_score > 0 && (
-          <div className="text-right">
-            <p className="text-xs text-text-tertiary">Est. accuracy gain</p>
-            <p className="text-base font-semibold text-success">+{issue.impact_score.toFixed(1)}%</p>
+          <div style={{ textAlign: 'right' }}>
+            <p style={{ fontSize: 11, color: 'var(--text-tertiary)', fontFamily: 'var(--font-sans)' }}>Est. accuracy gain</p>
+            <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--green)', fontFamily: 'var(--font-sans)' }}>+{issue.impact_score.toFixed(1)}%</p>
           </div>
         )}
       </div>
 
-      <div className="px-5 py-4 space-y-4">
+      <div style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 16 }}>
         <div>
-          <p className="text-sm font-medium text-text-primary mb-1">What's wrong</p>
-          <p className="text-sm text-text-secondary">{issue.description}</p>
-          <div className="flex items-center gap-4 mt-2 text-xs text-text-tertiary">
+          <p style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-primary)', marginBottom: 4, fontFamily: 'var(--font-sans)' }}>What's wrong</p>
+          <p style={{ fontSize: 13, color: 'var(--text-secondary)', fontFamily: 'var(--font-sans)' }}>{issue.description}</p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginTop: 8, fontSize: 11, color: 'var(--text-tertiary)', fontFamily: 'var(--font-sans)' }}>
             <span>{issue.affected_pct.toFixed(1)}% of rows affected</span>
             <span>{issue.affected_count.toLocaleString()} rows</span>
           </div>
         </div>
 
-        <div className="p-3 rounded-lg bg-surface-secondary border border-border">
-          <p className="text-xs font-medium text-text-secondary uppercase tracking-wide mb-1">
+        <div style={{ padding: 12, borderRadius: 'var(--radius-md)', background: 'var(--bg-2)', border: '1px solid var(--border)' }}>
+          <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-secondary)', fontWeight: 400, marginBottom: 4 }}>
             Proposed fix
           </p>
-          <p className="text-sm text-text-primary">
+          <p style={{ fontSize: 13, color: 'var(--text-primary)', fontFamily: 'var(--font-sans)' }}>
             {FIX_METHOD_LABEL[issue.issue_type] ?? issue.fix_type ?? 'Automated fix'}
           </p>
         </div>
 
         {preview && (
-          <div className="p-3 rounded-lg bg-brand-50 border border-brand/20 space-y-1">
-            <p className="text-xs font-medium text-brand uppercase tracking-wide">Preview</p>
-            <div className="flex gap-6 text-sm">
-              <span className="text-text-secondary">
-                Method: <span className="text-text-primary font-mono">{preview.method}</span>
+          <div style={{ padding: 12, borderRadius: 'var(--radius-md)', background: 'var(--blue-tint)', border: '1px solid var(--border-accent)', display: 'flex', flexDirection: 'column', gap: 4 }}>
+            <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--accent)', fontWeight: 400 }}>Preview</p>
+            <div style={{ display: 'flex', gap: 24, fontSize: 13, fontFamily: 'var(--font-sans)' }}>
+              <span style={{ color: 'var(--text-secondary)' }}>
+                Method: <span style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-mono)' }}>{preview.method}</span>
               </span>
-              <span className="text-text-secondary">
-                Rows: <span className="text-text-primary font-medium">
+              <span style={{ color: 'var(--text-secondary)' }}>
+                Rows: <span style={{ color: 'var(--text-primary)', fontWeight: 500 }}>
                   {preview.rows_affected.toLocaleString()}
                 </span>
               </span>
             </div>
-            <p className="text-xs text-brand/70 flex items-center gap-1">
-              <RotateCcw className="w-3 h-3" />
+            <p style={{ fontSize: 11, color: 'var(--accent)', display: 'flex', alignItems: 'center', gap: 4, fontFamily: 'var(--font-sans)' }}>
+              <RotateCcw style={{ width: 12, height: 12 }} />
               Every change is fully reversible
             </p>
           </div>
         )}
 
         {error && (
-          <div className="flex items-center gap-2 p-3 rounded-lg bg-danger-50 border border-danger/20 text-sm text-danger">
-            <AlertCircle className="w-4 h-4 flex-shrink-0" />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: 12, borderRadius: 'var(--radius-md)', background: 'var(--bad-dim)', border: '1px solid var(--bad)', fontSize: 13, color: 'var(--bad)', fontFamily: 'var(--font-sans)' }}>
+            <AlertCircle style={{ width: 16, height: 16, flexShrink: 0 }} />
             {error}
           </div>
         )}
       </div>
 
-      <div className="px-5 py-4 border-t border-border flex items-center gap-2">
+      <div style={{ padding: '16px 20px', borderTop: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 8 }}>
         {!preview && (
           <Button variant="secondary" size="sm" loading={previewPending} onClick={onPreview}>
-            <Eye className="w-3.5 h-3.5" />
+            <Eye style={{ width: 14, height: 14 }} />
             Preview
           </Button>
         )}
@@ -442,28 +472,28 @@ function ManualGuidancePanel({ issue, applyingMethod, error, onApply }: ManualGu
   const guidance = MANUAL_GUIDANCE[issue.issue_type]
 
   return (
-    <div className="bg-surface-primary border border-border rounded-xl overflow-hidden">
-      <div className="px-5 py-4 border-b border-border bg-surface-tertiary flex items-center justify-between">
+    <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 'var(--radius-card)', overflow: 'hidden' }}>
+      <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)', background: 'var(--bg-inset)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div>
-          <p className="text-xs text-text-tertiary uppercase tracking-wide font-medium mb-0.5">
+          <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-tertiary)', fontWeight: 400, marginBottom: 2 }}>
             Manual review required
           </p>
-          <div className="flex items-center gap-2">
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <SeverityBadge severity={issue.severity} />
             {issue.column_name && (
-              <span className="font-mono text-sm text-text-primary">{issue.column_name}</span>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--text-primary)' }}>{issue.column_name}</span>
             )}
           </div>
         </div>
-        <HelpCircle className="w-5 h-5 text-warning" />
+        <HelpCircle style={{ width: 20, height: 20, color: 'var(--warn)' }} />
       </div>
 
-      <div className="px-5 py-4 space-y-4">
+      <div style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 16 }}>
         {/* What's wrong */}
         <div>
-          <p className="text-sm font-medium text-text-primary mb-1">What's wrong</p>
-          <p className="text-sm text-text-secondary">{issue.description}</p>
-          <div className="flex items-center gap-4 mt-2 text-xs text-text-tertiary">
+          <p style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-primary)', marginBottom: 4, fontFamily: 'var(--font-sans)' }}>What's wrong</p>
+          <p style={{ fontSize: 13, color: 'var(--text-secondary)', fontFamily: 'var(--font-sans)' }}>{issue.description}</p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginTop: 8, fontSize: 11, color: 'var(--text-tertiary)', fontFamily: 'var(--font-sans)' }}>
             <span>{issue.affected_pct.toFixed(1)}% of rows affected</span>
             <span>{issue.affected_count.toLocaleString()} rows</span>
           </div>
@@ -472,52 +502,52 @@ function ManualGuidancePanel({ issue, applyingMethod, error, onApply }: ManualGu
         {guidance ? (
           <>
             {/* Why it matters */}
-            <div className="p-3 rounded-lg bg-warning-50 border border-warning/20">
-              <p className="text-xs font-medium text-warning uppercase tracking-wide mb-1.5">
+            <div style={{ padding: 12, borderRadius: 'var(--radius-md)', background: 'var(--warn-dim)', border: '1px solid var(--warn)' }}>
+              <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--warn)', fontWeight: 400, marginBottom: 6 }}>
                 Why it matters for ML
               </p>
-              <p className="text-sm text-text-secondary leading-relaxed">{guidance.why}</p>
+              <p style={{ fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.6, fontFamily: 'var(--font-sans)' }}>{guidance.why}</p>
             </div>
 
             {/* Fix options */}
             <div>
-              <p className="text-sm font-medium text-text-primary mb-2">
+              <p style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-primary)', marginBottom: 8, fontFamily: 'var(--font-sans)' }}>
                 Choose how to fix it
               </p>
-              <div className="space-y-3">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                 {guidance.options.map((opt) => (
                   <div
                     key={opt.method}
-                    className={cn(
-                      'p-4 rounded-lg border',
-                      opt.recommended
-                        ? 'border-brand/40 bg-brand-50'
-                        : 'border-border bg-surface-secondary',
-                    )}
+                    style={{
+                      padding: 16,
+                      borderRadius: 'var(--radius-md)',
+                      border: opt.recommended ? '1px solid var(--border-accent)' : '1px solid var(--border)',
+                      background: opt.recommended ? 'var(--blue-tint)' : 'var(--bg-2)',
+                    }}
                   >
                     {opt.recommended && (
-                      <div className="flex items-center gap-1.5 mb-2">
-                        <span className="text-xs font-semibold text-brand uppercase tracking-wide">
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+                        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--accent)', fontWeight: 600 }}>
                           Recommended
                         </span>
                       </div>
                     )}
-                    <div className="flex items-start gap-3">
-                      <div className="flex-1">
-                        <p className="text-sm font-semibold text-text-primary">{opt.label}</p>
-                        <p className="text-sm text-text-secondary mt-1 leading-relaxed">
+                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+                      <div style={{ flex: 1 }}>
+                        <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', fontFamily: 'var(--font-sans)' }}>{opt.label}</p>
+                        <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 4, lineHeight: 1.6, fontFamily: 'var(--font-sans)' }}>
                           {opt.description}
                         </p>
                         {opt.caution && (
-                          <p className="text-xs text-warning mt-2 flex items-center gap-1">
-                            <AlertTriangle className="w-3 h-3 flex-shrink-0" />
+                          <p style={{ fontSize: 11, color: 'var(--warn)', marginTop: 8, display: 'flex', alignItems: 'center', gap: 4, fontFamily: 'var(--font-sans)' }}>
+                            <AlertTriangle style={{ width: 12, height: 12, flexShrink: 0 }} />
                             {opt.caution}
                           </p>
                         )}
                       </div>
                       <Button
                         size="sm"
-                        className="flex-shrink-0 mt-0.5"
+                        style={{ flexShrink: 0, marginTop: 2 }}
                         loading={applyingMethod === opt.method}
                         disabled={applyingMethod != null && applyingMethod !== opt.method}
                         onClick={() => onApply(issue.id, opt.method)}
@@ -531,15 +561,15 @@ function ManualGuidancePanel({ issue, applyingMethod, error, onApply }: ManualGu
             </div>
           </>
         ) : (
-          <div className="p-3 rounded-lg bg-surface-secondary border border-border text-sm text-text-secondary">
+          <div style={{ padding: 12, borderRadius: 'var(--radius-md)', background: 'var(--bg-2)', border: '1px solid var(--border)', fontSize: 13, color: 'var(--text-secondary)', fontFamily: 'var(--font-sans)' }}>
             This issue requires manual intervention outside of Datrix — review your data collection
             process or modelling approach to address it.
           </div>
         )}
 
         {error && (
-          <div className="flex items-center gap-2 p-3 rounded-lg bg-danger-50 border border-danger/20 text-sm text-danger">
-            <AlertCircle className="w-4 h-4 flex-shrink-0" />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: 12, borderRadius: 'var(--radius-md)', background: 'var(--bad-dim)', border: '1px solid var(--bad)', fontSize: 13, color: 'var(--bad)', fontFamily: 'var(--font-sans)' }}>
+            <AlertCircle style={{ width: 16, height: 16, flexShrink: 0 }} />
             {error}
           </div>
         )}

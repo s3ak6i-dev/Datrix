@@ -1,13 +1,12 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   BarChart3, Plus, Trash2, ChevronRight, ChevronDown,
   CheckCircle2, Loader2, XCircle, Trophy, ArrowRight,
-  Download, Zap, Brain, Database, Clock, TrendingUp,
+  Download, Zap, Brain, Database, Clock,
 } from 'lucide-react'
 import { api } from '@/lib/api'
 import { Button } from '@/components/ui/Button'
-import { cn } from '@/lib/utils'
 import { formatRelativeTime } from '@/lib/utils'
 import type {
   BenchmarkJob, BenchmarkCandidateConfig, BenchmarkCandidateResult,
@@ -60,27 +59,63 @@ function fmtMs(ms: number) {
 }
 function mkId() { return Math.random().toString(36).slice(2, 10) }
 
+// ── Shared styles ─────────────────────────────────────────────────────
+
+const cardStyle: React.CSSProperties = {
+  padding: '20px',
+  background: 'var(--bg-card)',
+  border: '1px solid var(--border)',
+  borderRadius: 'var(--radius-card)',
+}
+
+const inputStyle: React.CSSProperties = {
+  background: 'var(--bg-inset)',
+  border: '1px solid var(--border)',
+  borderRadius: 'var(--radius-btn)',
+  padding: '8px 12px',
+  color: 'var(--text-primary)',
+  fontSize: '14px',
+  outline: 'none',
+  fontFamily: 'var(--font-sans)',
+  width: '100%',
+}
+
+const inputSmStyle: React.CSSProperties = {
+  ...inputStyle,
+  fontSize: '12px',
+  padding: '6px 8px',
+}
+
+const monoLabel: React.CSSProperties = {
+  fontFamily: 'var(--font-mono)',
+  fontSize: '10px',
+  letterSpacing: '0.12em',
+  textTransform: 'uppercase',
+  color: 'var(--text-tertiary)',
+  fontWeight: 400,
+}
+
 // ── Sub-components ────────────────────────────────────────────────────
 
 function StatusBadge({ status }: { status: string }) {
   if (status === 'complete') return (
-    <span className="flex items-center gap-1 text-xs font-medium text-success bg-success-50 border border-success/20 px-2 py-0.5 rounded-full">
-      <CheckCircle2 className="w-3 h-3" /> Complete
+    <span style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: '0.1em', background: 'var(--green-dim)', color: 'var(--green)', border: '1px solid rgba(52,211,153,.22)', borderRadius: 'var(--radius-pill)', padding: '3px 10px', flexShrink: 0 }}>
+      <CheckCircle2 style={{ width: '12px', height: '12px' }} /> Complete
     </span>
   )
   if (status === 'running') return (
-    <span className="flex items-center gap-1 text-xs font-medium text-brand bg-brand-50 border border-brand/20 px-2 py-0.5 rounded-full">
-      <Loader2 className="w-3 h-3 animate-spin" /> Running
+    <span style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: '0.1em', background: 'var(--blue-tint)', color: 'var(--accent)', border: '1px solid var(--border-accent)', borderRadius: 'var(--radius-pill)', padding: '3px 10px', flexShrink: 0 }}>
+      <Loader2 style={{ width: '12px', height: '12px', animation: 'spin 1s linear infinite' }} /> Running
     </span>
   )
   if (status === 'failed') return (
-    <span className="flex items-center gap-1 text-xs font-medium text-danger bg-danger-50 border border-danger/20 px-2 py-0.5 rounded-full">
-      <XCircle className="w-3 h-3" /> Failed
+    <span style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: '0.1em', background: 'var(--bad-dim)', color: 'var(--bad)', border: '1px solid rgba(239,68,68,.22)', borderRadius: 'var(--radius-pill)', padding: '3px 10px', flexShrink: 0 }}>
+      <XCircle style={{ width: '12px', height: '12px' }} /> Failed
     </span>
   )
   return (
-    <span className="flex items-center gap-1 text-xs font-medium text-text-tertiary bg-surface-tertiary border border-border px-2 py-0.5 rounded-full">
-      <Clock className="w-3 h-3" /> Pending
+    <span style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: '0.1em', background: 'var(--bg-3)', color: 'var(--text-secondary)', border: '1px solid var(--border)', borderRadius: 'var(--radius-pill)', padding: '3px 10px', flexShrink: 0 }}>
+      <Clock style={{ width: '12px', height: '12px' }} /> Pending
     </span>
   )
 }
@@ -90,28 +125,33 @@ function StatusBadge({ status }: { status: string }) {
 function ConfusionMatrix({ matrix, classes }: { matrix: number[][], classes: string[] }) {
   const maxVal = Math.max(...matrix.flat(), 1)
   return (
-    <div className="overflow-x-auto">
-      <table className="text-xs border-collapse">
+    <div style={{ overflowX: 'auto' }}>
+      <table style={{ fontSize: '12px', borderCollapse: 'collapse' }}>
         <thead>
           <tr>
-            <th className="p-1.5 text-text-tertiary text-right text-[10px]">Act ↓ / Pred →</th>
+            <th style={{ padding: '6px', color: 'var(--text-tertiary)', textAlign: 'right', fontSize: '10px' }}>Act ↓ / Pred →</th>
             {classes.map(c => (
-              <th key={c} className="p-1.5 text-text-secondary text-center min-w-[48px] font-medium">{c}</th>
+              <th key={c} style={{ padding: '6px', color: 'var(--text-secondary)', textAlign: 'center', minWidth: '48px', fontWeight: 500 }}>{c}</th>
             ))}
           </tr>
         </thead>
         <tbody>
           {matrix.map((row, ri) => (
             <tr key={ri}>
-              <td className="p-1.5 text-text-secondary text-right pr-2 font-medium">{classes[ri] ?? `C${ri}`}</td>
+              <td style={{ padding: '6px', color: 'var(--text-secondary)', textAlign: 'right', paddingRight: '8px', fontWeight: 500 }}>{classes[ri] ?? `C${ri}`}</td>
               {row.map((val, ci) => {
                 const intensity = val / maxVal
                 const isDiag = ri === ci
                 return (
-                  <td key={ci} className="p-1.5 text-center">
+                  <td key={ci} style={{ padding: '6px', textAlign: 'center' }}>
                     <div
-                      className={cn('rounded px-2 py-1 font-mono font-semibold text-xs', isDiag ? 'text-brand' : 'text-danger')}
                       style={{
+                        borderRadius: 'var(--radius-xs)',
+                        padding: '4px 8px',
+                        fontFamily: 'var(--font-mono)',
+                        fontWeight: 600,
+                        fontSize: '12px',
+                        color: isDiag ? 'var(--accent)' : 'var(--bad)',
                         background: isDiag
                           ? `rgba(99,102,241,${0.08 + intensity * 0.25})`
                           : `rgba(239,68,68,${intensity * 0.18})`,
@@ -135,14 +175,14 @@ function ConfusionMatrix({ matrix, classes }: { matrix: number[][], classes: str
 function FeatureImportanceBars({ items }: { items: { feature: string; importance: number }[] }) {
   const max = items[0]?.importance ?? 1
   return (
-    <div className="space-y-2">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
       {items.slice(0, 10).map(item => (
-        <div key={item.feature} className="flex items-center gap-3">
-          <div className="w-28 text-xs text-text-secondary truncate text-right">{item.feature}</div>
-          <div className="flex-1 h-1.5 bg-surface-tertiary rounded-full overflow-hidden">
-            <div className="h-full bg-brand rounded-full" style={{ width: `${(item.importance / max) * 100}%` }} />
+        <div key={item.feature} style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{ width: '112px', fontSize: '12px', color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'right' }}>{item.feature}</div>
+          <div style={{ flex: 1, height: '6px', background: 'var(--bg-3)', borderRadius: '9999px', overflow: 'hidden' }}>
+            <div style={{ height: '100%', background: 'var(--accent)', borderRadius: '9999px', width: `${(item.importance / max) * 100}%` }} />
           </div>
-          <div className="w-10 text-xs text-text-tertiary text-right">{fmtPct(item.importance)}</div>
+          <div style={{ width: '40px', fontSize: '12px', color: 'var(--text-tertiary)', textAlign: 'right' }}>{fmtPct(item.importance)}</div>
         </div>
       ))}
     </div>
@@ -166,15 +206,15 @@ function LearningCurveChart({ data }: { data: { train_size: number; train_score:
 
   return (
     <div>
-      <div className="flex items-center gap-4 mb-1.5">
-        <div className="flex items-center gap-1.5 text-xs text-text-tertiary">
-          <div className="w-3 h-0.5 bg-brand/50" /> Train
+      <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '6px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: 'var(--text-tertiary)' }}>
+          <div style={{ width: '12px', height: '2px', background: 'rgba(99,102,241,0.5)' }} /> Train
         </div>
-        <div className="flex items-center gap-1.5 text-xs text-text-tertiary">
-          <div className="w-3 h-0.5 bg-brand" /> Validation
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: 'var(--text-tertiary)' }}>
+          <div style={{ width: '12px', height: '2px', background: 'rgb(99,102,241)' }} /> Validation
         </div>
       </div>
-      <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-24">
+      <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: '96px' }}>
         {[0.25, 0.5, 0.75].map(t => {
           const y = H - PAD - t * (H - PAD * 2)
           return <line key={t} x1={PAD} y1={y} x2={W - PAD} y2={y} stroke="currentColor" strokeOpacity="0.1" strokeWidth="1" />
@@ -215,7 +255,6 @@ function MetricComparisonChart({ job }: { job: BenchmarkJob }) {
   const barW   = Math.min(18, (groupW - 8) / complete.length)
   const gap    = 3
 
-  // For regression, normalize to 0-1 scale for display
   const maxVals: Record<string, number> = {}
   metrics.forEach(m => {
     maxVals[m] = Math.max(...complete.map(r => Math.abs(r.metrics[m] ?? 0)), 0.001)
@@ -228,23 +267,21 @@ function MetricComparisonChart({ job }: { job: BenchmarkJob }) {
 
   return (
     <div>
-      <div className="flex flex-wrap gap-3 mb-3">
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', marginBottom: '12px' }}>
         {complete.map((r, i) => {
           const cand = candMap[r.candidate_id]
           const isWinner = r.candidate_id === job.winner_candidate_id
           return (
-            <div key={r.candidate_id} className="flex items-center gap-1.5 text-xs text-text-secondary">
-              <div className="w-2.5 h-2.5 rounded-sm flex-shrink-0" style={{ background: colors[i % colors.length] }} />
-              {isWinner && <Trophy className="w-3 h-3 text-yellow-500" />}
-              <span className={isWinner ? 'font-semibold text-text-primary' : ''}>{cand?.label ?? r.candidate_id}</span>
+            <div key={r.candidate_id} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: 'var(--text-secondary)' }}>
+              <div style={{ width: '10px', height: '10px', borderRadius: '2px', flexShrink: 0, background: colors[i % colors.length] }} />
+              {isWinner && <Trophy style={{ width: '12px', height: '12px', color: '#f59e0b' }} />}
+              <span style={{ fontWeight: isWinner ? 600 : 400, color: isWinner ? 'var(--text-primary)' : 'var(--text-secondary)' }}>{cand?.label ?? r.candidate_id}</span>
             </div>
           )
         })}
       </div>
-      <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ height: '160px' }}>
-        {/* Y axis line */}
+      <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: '160px' }}>
         <line x1={PAD_L} y1={PAD_T} x2={PAD_L} y2={H - PAD_B} stroke="currentColor" strokeOpacity="0.15" strokeWidth="1" />
-        {/* Grid lines */}
         {[0.25, 0.5, 0.75, 1.0].map(t => {
           const y = H - PAD_B - t * chartH
           return (
@@ -254,7 +291,6 @@ function MetricComparisonChart({ job }: { job: BenchmarkJob }) {
             </g>
           )
         })}
-        {/* Bars */}
         {metrics.map((metric, mi) => {
           const groupX = PAD_L + mi * groupW + groupW / 2 - (complete.length * (barW + gap)) / 2
           return (
@@ -287,7 +323,6 @@ function MetricComparisonChart({ job }: { job: BenchmarkJob }) {
                 fontSize="9"
                 fill="currentColor"
                 opacity="0.6"
-                className="capitalize"
               >
                 {metric.replace('_', ' ')}
               </text>
@@ -323,39 +358,56 @@ function CandidateRow({
   const primaryLabel = isClf ? 'Accuracy' : 'R²'
 
   return (
-    <div className={cn(
-      'border rounded-xl overflow-hidden transition-all',
-      isWinner ? 'border-yellow-400/50 bg-yellow-50/30' : 'border-border bg-surface-primary',
-    )}>
+    <div style={{
+      border: isWinner ? '1px solid rgba(245,158,11,.5)' : '1px solid var(--border)',
+      borderRadius: 'var(--radius-card)',
+      overflow: 'hidden',
+      background: isWinner ? 'rgba(245,158,11,.04)' : 'var(--bg-card)',
+      transition: 'all 0.15s',
+    }}>
       {/* Header row */}
       <div
-        className={cn(
-          'flex items-center gap-3 px-4 py-3 cursor-pointer select-none',
-          status === 'complete' ? 'hover:bg-surface-secondary' : '',
-        )}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px',
+          padding: '12px 16px',
+          cursor: status === 'complete' ? 'pointer' : 'default',
+        }}
         onClick={() => status === 'complete' && setOpen(v => !v)}
+        onMouseEnter={e => { if (status === 'complete') (e.currentTarget as HTMLElement).style.background = 'var(--bg-2)' }}
+        onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent' }}
       >
         {/* Rank */}
-        <div className={cn(
-          'w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0',
-          isWinner ? 'bg-yellow-400 text-white' : 'bg-surface-tertiary text-text-tertiary',
-        )}>
-          {isWinner ? <Trophy className="w-3 h-3" /> : rank}
+        <div style={{
+          width: '24px',
+          height: '24px',
+          borderRadius: '50%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontSize: '12px',
+          fontWeight: 700,
+          flexShrink: 0,
+          background: isWinner ? '#f59e0b' : 'var(--bg-3)',
+          color: isWinner ? '#fff' : 'var(--text-tertiary)',
+        }}>
+          {isWinner ? <Trophy style={{ width: '12px', height: '12px' }} /> : rank}
         </div>
 
         {/* Label + model info */}
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className={cn('text-sm font-medium', isWinner ? 'text-text-primary' : 'text-text-primary')}>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+            <span style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-primary)' }}>
               {candidate.label}
             </span>
             {isWinner && (
-              <span className="text-xs font-semibold text-yellow-600 bg-yellow-100 border border-yellow-300 px-1.5 py-0.5 rounded-full">
+              <span style={{ fontSize: '12px', fontWeight: 600, color: '#92400e', background: '#fef3c7', border: '1px solid #fcd34d', padding: '2px 6px', borderRadius: 'var(--radius-pill)' }}>
                 Winner
               </span>
             )}
           </div>
-          <div className="text-xs text-text-tertiary mt-0.5 flex gap-2 flex-wrap">
+          <div style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginTop: '2px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
             <span>{MODEL_LABELS[candidate.model_type]}</span>
             <span>·</span>
             <span>{PRESET_LABELS[candidate.preset]}</span>
@@ -365,57 +417,57 @@ function CandidateRow({
 
         {/* Metrics summary */}
         {status === 'complete' && (
-          <div className="flex items-center gap-4 text-right flex-shrink-0">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', textAlign: 'right', flexShrink: 0 }}>
             <div>
-              <div className={cn('text-base font-bold', isWinner ? 'text-brand' : 'text-text-primary')}>{primaryMetric}</div>
-              <div className="text-xs text-text-tertiary">{primaryLabel}</div>
+              <div style={{ fontSize: '16px', fontWeight: 700, color: isWinner ? 'var(--accent)' : 'var(--text-primary)' }}>{primaryMetric}</div>
+              <div style={{ fontSize: '12px', color: 'var(--text-tertiary)' }}>{primaryLabel}</div>
             </div>
             {isClf && metrics.f1 != null && (
-              <div className="hidden sm:block">
-                <div className="text-sm font-semibold text-text-primary">{fmtPct(metrics.f1)}</div>
-                <div className="text-xs text-text-tertiary">F1</div>
+              <div>
+                <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)' }}>{fmtPct(metrics.f1)}</div>
+                <div style={{ fontSize: '12px', color: 'var(--text-tertiary)' }}>F1</div>
               </div>
             )}
             {isClf && metrics.accuracy_std != null && (
-              <div className="hidden md:block">
-                <div className="text-sm text-text-secondary">±{fmtPct(metrics.accuracy_std)}</div>
-                <div className="text-xs text-text-tertiary">Std</div>
+              <div>
+                <div style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>±{fmtPct(metrics.accuracy_std)}</div>
+                <div style={{ fontSize: '12px', color: 'var(--text-tertiary)' }}>Std</div>
               </div>
             )}
             {!isClf && metrics.mae != null && (
-              <div className="hidden sm:block">
-                <div className="text-sm font-semibold text-text-primary">{metrics.mae.toFixed(4)}</div>
-                <div className="text-xs text-text-tertiary">MAE</div>
+              <div>
+                <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)' }}>{metrics.mae.toFixed(4)}</div>
+                <div style={{ fontSize: '12px', color: 'var(--text-tertiary)' }}>MAE</div>
               </div>
             )}
           </div>
         )}
 
         {/* Status */}
-        <div className="flex items-center gap-2 flex-shrink-0">
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
           <StatusBadge status={status} />
           {status === 'complete' && (
             open
-              ? <ChevronDown className="w-3.5 h-3.5 text-text-tertiary" />
-              : <ChevronRight className="w-3.5 h-3.5 text-text-tertiary" />
+              ? <ChevronDown style={{ width: '14px', height: '14px', color: 'var(--text-tertiary)' }} />
+              : <ChevronRight style={{ width: '14px', height: '14px', color: 'var(--text-tertiary)' }} />
           )}
           {status === 'failed' && result?.error_message && (
-            <span className="text-xs text-danger max-w-[160px] truncate hidden sm:block">{result.error_message}</span>
+            <span style={{ fontSize: '12px', color: 'var(--bad)', maxWidth: '160px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{result.error_message}</span>
           )}
         </div>
       </div>
 
       {/* Expanded detail */}
       {open && result && status === 'complete' && (
-        <div className="border-t border-border bg-surface-secondary px-4 py-4 space-y-5">
+        <div style={{ borderTop: '1px solid var(--border)', background: 'var(--bg-2)', padding: '16px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
           {/* All metrics */}
           <div>
-            <p className="text-xs font-semibold text-text-secondary mb-2">All metrics</p>
-            <div className="flex flex-wrap gap-2">
+            <p style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '8px' }}>All metrics</p>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
               {Object.entries(metrics).map(([k, v]) => (
-                <div key={k} className="px-3 py-1.5 bg-surface-primary border border-border rounded-lg text-center min-w-[80px]">
-                  <div className="text-xs text-text-tertiary capitalize">{k.replace(/_/g, ' ')}</div>
-                  <div className="text-sm font-semibold text-text-primary mt-0.5">
+                <div key={k} style={{ padding: '6px 12px', background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 'var(--radius-btn)', textAlign: 'center', minWidth: '80px' }}>
+                  <div style={{ fontSize: '12px', color: 'var(--text-tertiary)', textTransform: 'capitalize' }}>{k.replace(/_/g, ' ')}</div>
+                  <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)', marginTop: '2px' }}>
                     {isClf && !k.includes('std') ? fmtPct(v) : v.toFixed(4)}
                   </div>
                 </div>
@@ -423,28 +475,25 @@ function CandidateRow({
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-5">
-            {/* Confusion matrix */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
             {result.confusion_matrix && result.label_classes.length > 0 && (
               <div>
-                <p className="text-xs font-semibold text-text-secondary mb-2">Confusion Matrix</p>
+                <p style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '8px' }}>Confusion Matrix</p>
                 <ConfusionMatrix matrix={result.confusion_matrix} classes={result.label_classes} />
               </div>
             )}
 
-            {/* Feature importances */}
             {result.feature_importances.length > 0 && (
               <div>
-                <p className="text-xs font-semibold text-text-secondary mb-2">Feature Importance</p>
+                <p style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '8px' }}>Feature Importance</p>
                 <FeatureImportanceBars items={result.feature_importances} />
               </div>
             )}
           </div>
 
-          {/* Learning curve */}
           {result.learning_curve.length >= 2 && (
             <div>
-              <p className="text-xs font-semibold text-text-secondary mb-2">Learning Curve</p>
+              <p style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '8px' }}>Learning Curve</p>
               <LearningCurveChart data={result.learning_curve} />
             </div>
           )}
@@ -470,27 +519,24 @@ function Leaderboard({ job }: { job: BenchmarkJob }) {
   })
 
   const complete  = job.results.filter(r => r.status === 'complete').length
-  const pending   = job.results.filter(r => r.status === 'pending').length
-  const running   = job.results.filter(r => r.status === 'running').length
   const failed    = job.results.filter(r => r.status === 'failed').length
   const total     = job.candidates.length
 
   return (
-    <div className="space-y-4">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
       {/* Progress bar while running */}
       {job.status === 'running' && (
-        <div className="p-4 bg-brand-50 border border-brand/20 rounded-xl space-y-2">
-          <div className="flex items-center justify-between text-xs">
-            <span className="flex items-center gap-1.5 text-brand font-medium">
-              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+        <div style={{ padding: '16px', background: 'var(--blue-tint)', border: '1px solid var(--border-accent)', borderRadius: 'var(--radius-card)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '12px' }}>
+            <span style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--accent)', fontWeight: 500 }}>
+              <Loader2 style={{ width: '14px', height: '14px', animation: 'spin 1s linear infinite' }} />
               Running candidates in parallel…
             </span>
-            <span className="text-text-secondary">{complete} / {total} complete{failed > 0 ? ` · ${failed} failed` : ''}</span>
+            <span style={{ color: 'var(--text-secondary)' }}>{complete} / {total} complete{failed > 0 ? ` · ${failed} failed` : ''}</span>
           </div>
-          <div className="h-1.5 bg-brand/20 rounded-full overflow-hidden">
+          <div style={{ height: '6px', background: 'rgba(99,102,241,.2)', borderRadius: 'var(--radius-pill)', overflow: 'hidden' }}>
             <div
-              className="h-full bg-brand rounded-full transition-all duration-500"
-              style={{ width: `${(complete / total) * 100}%` }}
+              style={{ height: '100%', background: 'var(--accent)', borderRadius: 'var(--radius-pill)', transition: 'width 0.5s', width: `${(complete / total) * 100}%` }}
             />
           </div>
         </div>
@@ -504,13 +550,13 @@ function Leaderboard({ job }: { job: BenchmarkJob }) {
         const primary = isClf ? fmtPct(result.metrics.accuracy ?? 0) : result.metrics.r2?.toFixed(3) ?? '—'
         const label   = isClf ? 'accuracy' : 'R²'
         return (
-          <div className="p-4 bg-yellow-50 border border-yellow-300 rounded-xl flex items-center gap-4">
-            <div className="w-10 h-10 rounded-xl bg-yellow-400 flex items-center justify-center flex-shrink-0">
-              <Trophy className="w-5 h-5 text-white" />
+          <div style={{ padding: '16px', background: '#fef9e7', border: '1px solid #fcd34d', borderRadius: 'var(--radius-card)', display: 'flex', alignItems: 'center', gap: '16px' }}>
+            <div style={{ width: '40px', height: '40px', borderRadius: 'var(--radius-card)', background: '#f59e0b', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <Trophy style={{ width: '20px', height: '20px', color: '#fff' }} />
             </div>
-            <div className="flex-1">
-              <p className="text-sm font-semibold text-text-primary">{winner.label} wins</p>
-              <p className="text-xs text-text-secondary mt-0.5">
+            <div style={{ flex: 1 }}>
+              <p style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)' }}>{winner.label} wins</p>
+              <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '2px' }}>
                 Best {label}: <strong>{primary}</strong>
                 {isClf && result.metrics.f1 != null && ` · F1: ${fmtPct(result.metrics.f1)}`}
                 {` · ${fmtMs(result.training_time_ms)}`}
@@ -519,9 +565,11 @@ function Leaderboard({ job }: { job: BenchmarkJob }) {
             <a
               href={api.benchmark.exportUrl(job.id)}
               download
-              className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border border-border text-text-secondary hover:text-text-primary hover:border-text-secondary transition-colors flex-shrink-0"
+              style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', padding: '6px 12px', borderRadius: 'var(--radius-btn)', border: '1px solid var(--border)', color: 'var(--text-secondary)', textDecoration: 'none', flexShrink: 0, transition: 'all 0.15s' }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = 'var(--text-primary)'; (e.currentTarget as HTMLElement).style.borderColor = 'var(--border-strong)' }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'var(--text-secondary)'; (e.currentTarget as HTMLElement).style.borderColor = 'var(--border)' }}
             >
-              <Download className="w-3.5 h-3.5" />
+              <Download style={{ width: '14px', height: '14px' }} />
               Export CSV
             </a>
           </div>
@@ -530,14 +578,14 @@ function Leaderboard({ job }: { job: BenchmarkJob }) {
 
       {/* Metric comparison chart */}
       {job.status === 'complete' && (
-        <div className="p-4 bg-surface-primary border border-border rounded-xl">
-          <p className="text-xs font-semibold text-text-secondary mb-3">Metric Comparison</p>
+        <div style={{ padding: '16px', background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 'var(--radius-card)' }}>
+          <p style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '12px' }}>Metric Comparison</p>
           <MetricComparisonChart job={job} />
         </div>
       )}
 
       {/* Candidate rows */}
-      <div className="space-y-2">
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
         {sorted.map((cand, idx) => (
           <CandidateRow
             key={cand.id}
@@ -573,36 +621,44 @@ function JobView({ jobId, onBack }: { jobId: string; onBack: () => void }) {
   })
 
   if (isLoading || !job) {
-    return <div className="flex items-center justify-center h-64 text-text-tertiary text-sm"><Loader2 className="w-4 h-4 animate-spin mr-2" />Loading…</div>
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '256px', color: 'var(--text-tertiary)', fontSize: '14px' }}>
+        <Loader2 style={{ width: '16px', height: '16px', animation: 'spin 1s linear infinite', marginRight: '8px' }} />Loading…
+      </div>
+    )
   }
 
   const complete = job.results.filter(r => r.status === 'complete').length
 
   return (
-    <div className="space-y-5">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
       {/* Header */}
-      <div className="flex items-start justify-between gap-3">
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px' }}>
         <div>
           <button
             onClick={onBack}
-            className="flex items-center gap-1 text-xs text-text-tertiary hover:text-text-secondary mb-2 transition-colors"
+            style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', color: 'var(--text-tertiary)', background: 'none', border: 'none', cursor: 'pointer', marginBottom: '8px', transition: 'color 0.15s' }}
+            onMouseEnter={e => ((e.currentTarget as HTMLElement).style.color = 'var(--text-secondary)')}
+            onMouseLeave={e => ((e.currentTarget as HTMLElement).style.color = 'var(--text-tertiary)')}
           >
             ← All benchmarks
           </button>
-          <h1 className="text-xl font-semibold text-text-primary">{job.name}</h1>
-          <div className="flex items-center gap-3 mt-1 text-xs text-text-tertiary flex-wrap">
-            <span>Target: <span className="text-text-secondary font-medium">{job.target_column}</span></span>
+          <h1 style={{ fontSize: '20px', fontWeight: 600, color: 'var(--text-primary)' }}>{job.name}</h1>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '4px', fontSize: '12px', color: 'var(--text-tertiary)', flexWrap: 'wrap' }}>
+            <span>Target: <span style={{ color: 'var(--text-secondary)', fontWeight: 500 }}>{job.target_column}</span></span>
             <span>{PROTOCOL_LABELS[job.eval_protocol]}</span>
             <span>{job.candidates.length} candidates</span>
             <span>{complete}/{job.candidates.length} complete</span>
             <span>{formatRelativeTime(job.created_at)}</span>
           </div>
         </div>
-        <div className="flex items-center gap-2 flex-shrink-0">
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
           <StatusBadge status={job.status} />
           <button
             onClick={() => deleteMut.mutate()}
-            className="text-xs px-3 py-1.5 rounded-lg border border-border text-text-tertiary hover:text-danger hover:border-danger/30 transition-colors"
+            style={{ fontSize: '12px', padding: '6px 12px', borderRadius: 'var(--radius-btn)', border: '1px solid var(--border)', color: 'var(--text-tertiary)', background: 'transparent', cursor: 'pointer', transition: 'all 0.15s' }}
+            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = 'var(--bad)'; (e.currentTarget as HTMLElement).style.borderColor = 'rgba(239,68,68,.3)' }}
+            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'var(--text-tertiary)'; (e.currentTarget as HTMLElement).style.borderColor = 'var(--border)' }}
           >
             Delete
           </button>
@@ -709,71 +765,68 @@ function SetupWizard({ onCreated }: { onCreated: (job: BenchmarkJob) => void }) 
   const step1Valid = !!datasetId && !!targetCol
   const step2Valid = candidates.length > 0
 
-  return (
-    <div className="max-w-3xl mx-auto">
-      <button onClick={() => {}} className="flex items-center gap-1 text-xs text-text-tertiary hover:text-text-secondary mb-5 transition-colors">
-      </button>
+  const stepCircle = (s: number) => ({
+    width: '24px',
+    height: '24px',
+    borderRadius: '50%',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: '12px',
+    fontWeight: 700,
+    background: step === s ? 'var(--accent)' : step > s ? 'var(--green)' : 'var(--bg-3)',
+    color: step === s || step > s ? '#fff' : 'var(--text-tertiary)',
+    transition: 'all 0.2s',
+  } as React.CSSProperties)
 
+  return (
+    <div style={{ maxWidth: '768px', margin: '0 auto' }}>
       {/* Steps indicator */}
-      <div className="flex items-center gap-2 mb-6">
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '24px' }}>
         {[1, 2, 3].map(s => (
-          <div key={s} className="flex items-center gap-2">
-            <div className={cn(
-              'w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-colors',
-              step === s ? 'bg-brand text-white' :
-              step > s   ? 'bg-success text-white' :
-              'bg-surface-tertiary text-text-tertiary',
-            )}>
-              {step > s ? <CheckCircle2 className="w-3.5 h-3.5" /> : s}
+          <div key={s} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div style={stepCircle(s)}>
+              {step > s ? <CheckCircle2 style={{ width: '14px', height: '14px' }} /> : s}
             </div>
-            <span className={cn('text-xs font-medium', step >= s ? 'text-text-primary' : 'text-text-tertiary')}>
+            <span style={{ fontSize: '12px', fontWeight: 500, color: step >= s ? 'var(--text-primary)' : 'var(--text-tertiary)' }}>
               {s === 1 ? 'Data & Protocol' : s === 2 ? 'Candidates' : 'Review'}
             </span>
-            {s < 3 && <ChevronRight className="w-3 h-3 text-text-tertiary" />}
+            {s < 3 && <ChevronRight style={{ width: '12px', height: '12px', color: 'var(--text-tertiary)' }} />}
           </div>
         ))}
       </div>
 
-      {/* ── Step 1 ─────────────────────────────────────────────── */}
+      {/* ── Step 1 ── */}
       {step === 1 && (
-        <div className="space-y-4">
-          <div className="p-5 bg-surface-primary border border-border rounded-xl space-y-4">
-            <h2 className="text-sm font-semibold text-text-primary">Dataset & Target</h2>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div style={{ ...cardStyle, display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <h2 style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)' }}>Dataset & Target</h2>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
               <div>
-                <label className="text-xs font-medium text-text-secondary block mb-1.5">Job name (optional)</label>
-                <input
-                  className="w-full text-sm border border-border rounded-lg px-3 py-2 bg-surface-primary focus:outline-none focus:ring-2 focus:ring-brand/30 text-text-primary"
-                  placeholder="e.g. Churn model comparison"
-                  value={jobName}
-                  onChange={e => setJobName(e.target.value)}
-                />
+                <label style={{ fontSize: '12px', fontWeight: 500, color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>Job name (optional)</label>
+                <input style={inputStyle} placeholder="e.g. Churn model comparison" value={jobName} onChange={e => setJobName(e.target.value)} />
               </div>
               <div>
-                <label className="text-xs font-medium text-text-secondary block mb-1.5">Task type</label>
-                <div className="flex gap-2">
-                  {(['classification', 'regression'] as const).map(t => (
-                    <button
-                      key={t}
-                      onClick={() => setTaskType(t)}
-                      className={cn(
-                        'flex-1 py-2 rounded-lg text-sm font-medium border-2 transition-colors',
-                        taskType === t ? 'border-brand bg-brand-50 text-brand' : 'border-border text-text-secondary hover:border-brand/40 bg-surface-secondary',
-                      )}
-                    >
-                      {t === 'classification' ? 'Classification' : 'Regression'}
-                    </button>
-                  ))}
+                <label style={{ fontSize: '12px', fontWeight: 500, color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>Task type</label>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  {(['classification', 'regression'] as const).map(t => {
+                    const isActive = taskType === t
+                    return (
+                      <button
+                        key={t}
+                        onClick={() => setTaskType(t)}
+                        style={{ flex: 1, padding: '8px', borderRadius: 'var(--radius-btn)', fontSize: '14px', fontWeight: 500, border: isActive ? '2px solid var(--accent)' : '2px solid var(--border)', background: isActive ? 'var(--blue-tint)' : 'var(--bg-2)', color: isActive ? 'var(--accent)' : 'var(--text-secondary)', cursor: 'pointer', transition: 'border-color 0.15s' }}
+                      >
+                        {t === 'classification' ? 'Classification' : 'Regression'}
+                      </button>
+                    )
+                  })}
                 </div>
               </div>
               <div>
-                <label className="text-xs font-medium text-text-secondary block mb-1.5">Source dataset *</label>
-                <select
-                  className="w-full text-sm border border-border rounded-lg px-3 py-2 bg-surface-primary focus:outline-none focus:ring-2 focus:ring-brand/30 text-text-primary"
-                  value={datasetId}
-                  onChange={e => { setDatasetId(e.target.value); setTargetCol('') }}
-                >
+                <label style={{ fontSize: '12px', fontWeight: 500, color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>Source dataset *</label>
+                <select style={inputStyle} value={datasetId} onChange={e => { setDatasetId(e.target.value); setTargetCol('') }}>
                   <option value="">Select dataset…</option>
                   {datasets.filter(d => d.status === 'ready').map(d => (
                     <option key={d.id} value={d.id}>{d.name}</option>
@@ -781,13 +834,8 @@ function SetupWizard({ onCreated }: { onCreated: (job: BenchmarkJob) => void }) 
                 </select>
               </div>
               <div>
-                <label className="text-xs font-medium text-text-secondary block mb-1.5">Target column *</label>
-                <select
-                  className="w-full text-sm border border-border rounded-lg px-3 py-2 bg-surface-primary focus:outline-none focus:ring-2 focus:ring-brand/30 text-text-primary"
-                  value={targetCol}
-                  onChange={e => setTargetCol(e.target.value)}
-                  disabled={!datasetId}
-                >
+                <label style={{ fontSize: '12px', fontWeight: 500, color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>Target column *</label>
+                <select style={inputStyle} value={targetCol} onChange={e => setTargetCol(e.target.value)} disabled={!datasetId}>
                   <option value="">Select column…</option>
                   {columns.map(c => <option key={c} value={c}>{c}</option>)}
                 </select>
@@ -796,109 +844,99 @@ function SetupWizard({ onCreated }: { onCreated: (job: BenchmarkJob) => void }) 
           </div>
 
           {/* Eval protocol */}
-          <div className="p-5 bg-surface-primary border border-border rounded-xl space-y-3">
-            <h2 className="text-sm font-semibold text-text-primary">Evaluation protocol</h2>
-            <div className="grid grid-cols-2 gap-2">
-              {(Object.keys(PROTOCOL_LABELS) as BenchmarkEvalProtocol[]).map(p => (
-                <button
-                  key={p}
-                  onClick={() => setEvalProtocol(p)}
-                  className={cn(
-                    'p-3 rounded-xl text-left border-2 transition-colors',
-                    evalProtocol === p ? 'border-brand bg-brand-50' : 'border-border hover:border-brand/40 bg-surface-secondary',
-                  )}
-                >
-                  <div className={cn('text-xs font-semibold', evalProtocol === p ? 'text-brand' : 'text-text-primary')}>
-                    {PROTOCOL_LABELS[p]}
-                  </div>
-                  <div className="text-xs text-text-tertiary mt-0.5 leading-snug">{PROTOCOL_DESC[p]}</div>
-                </button>
-              ))}
+          <div style={{ ...cardStyle, display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <h2 style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)' }}>Evaluation protocol</h2>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+              {(Object.keys(PROTOCOL_LABELS) as BenchmarkEvalProtocol[]).map(p => {
+                const isActive = evalProtocol === p
+                return (
+                  <button
+                    key={p}
+                    onClick={() => setEvalProtocol(p)}
+                    style={{ padding: '12px', borderRadius: 'var(--radius-card)', textAlign: 'left', border: isActive ? '2px solid var(--accent)' : '2px solid var(--border)', background: isActive ? 'var(--blue-tint)' : 'var(--bg-2)', cursor: 'pointer', transition: 'border-color 0.15s' }}
+                  >
+                    <div style={{ fontSize: '12px', fontWeight: 600, color: isActive ? 'var(--accent)' : 'var(--text-primary)' }}>
+                      {PROTOCOL_LABELS[p]}
+                    </div>
+                    <div style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginTop: '2px', lineHeight: 1.4 }}>{PROTOCOL_DESC[p]}</div>
+                  </button>
+                )
+              })}
             </div>
           </div>
 
           <Button className="w-full" disabled={!step1Valid} onClick={() => setStep(2)}>
-            Next: Configure candidates <ArrowRight className="w-4 h-4" />
+            Next: Configure candidates <ArrowRight style={{ width: '16px', height: '16px' }} />
           </Button>
         </div>
       )}
 
-      {/* ── Step 2 ─────────────────────────────────────────────── */}
+      {/* ── Step 2 ── */}
       {step === 2 && (
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-text-primary">Candidates ({candidates.length})</h2>
-            <div className="flex items-center gap-2">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <h2 style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)' }}>Candidates ({candidates.length})</h2>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <button
                 onClick={addAllModels}
-                className="text-xs px-3 py-1.5 rounded-lg border border-border text-text-secondary hover:border-brand/40 hover:text-brand transition-colors flex items-center gap-1.5"
+                style={{ fontSize: '12px', padding: '6px 12px', borderRadius: 'var(--radius-btn)', border: '1px solid var(--border)', color: 'var(--text-secondary)', background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', transition: 'all 0.15s' }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--border-accent)'; (e.currentTarget as HTMLElement).style.color = 'var(--accent)' }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--border)'; (e.currentTarget as HTMLElement).style.color = 'var(--text-secondary)' }}
               >
-                <Zap className="w-3.5 h-3.5" /> Add all models
+                <Zap style={{ width: '14px', height: '14px' }} /> Add all models
               </button>
               <button
                 onClick={addCandidate}
-                className="text-xs px-3 py-1.5 rounded-lg bg-brand text-white hover:bg-brand/90 transition-colors flex items-center gap-1.5"
+                style={{ fontSize: '12px', padding: '6px 12px', borderRadius: 'var(--radius-btn)', background: 'var(--accent)', color: '#fff', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', transition: 'background 0.15s' }}
+                onMouseEnter={e => ((e.currentTarget as HTMLElement).style.background = 'var(--accent-hover)')}
+                onMouseLeave={e => ((e.currentTarget as HTMLElement).style.background = 'var(--accent)')}
               >
-                <Plus className="w-3.5 h-3.5" /> Add candidate
+                <Plus style={{ width: '14px', height: '14px' }} /> Add candidate
               </button>
             </div>
           </div>
 
-          <div className="space-y-3">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             {candidates.map((cand, idx) => (
-              <div key={cand.id} className="p-4 bg-surface-primary border border-border rounded-xl space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-text-tertiary">Candidate {idx + 1}</span>
-                  <button onClick={() => removeCandidate(cand.id)} className="text-text-tertiary hover:text-danger transition-colors">
-                    <Trash2 className="w-3.5 h-3.5" />
+              <div key={cand.id} style={{ ...cardStyle, display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span style={{ ...monoLabel }}>Candidate {idx + 1}</span>
+                  <button
+                    onClick={() => removeCandidate(cand.id)}
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary)', display: 'flex', transition: 'color 0.15s' }}
+                    onMouseEnter={e => ((e.currentTarget as HTMLElement).style.color = 'var(--bad)')}
+                    onMouseLeave={e => ((e.currentTarget as HTMLElement).style.color = 'var(--text-tertiary)')}
+                  >
+                    <Trash2 style={{ width: '14px', height: '14px' }} />
                   </button>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                   <div>
-                    <label className="text-xs text-text-secondary block mb-1">Model</label>
-                    <select
-                      className="w-full text-xs border border-border rounded-lg px-2 py-1.5 bg-surface-secondary focus:outline-none focus:ring-2 focus:ring-brand/30 text-text-primary"
-                      value={cand.model_type}
-                      onChange={e => updateCandidate(cand.id, { model_type: e.target.value as BenchmarkModelType })}
-                    >
+                    <label style={{ fontSize: '12px', color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Model</label>
+                    <select style={inputSmStyle} value={cand.model_type} onChange={e => updateCandidate(cand.id, { model_type: e.target.value as BenchmarkModelType })}>
                       {ALL_MODELS.map(m => <option key={m} value={m}>{MODEL_LABELS[m]}</option>)}
                     </select>
                   </div>
                   <div>
-                    <label className="text-xs text-text-secondary block mb-1">Preset</label>
-                    <select
-                      className="w-full text-xs border border-border rounded-lg px-2 py-1.5 bg-surface-secondary focus:outline-none focus:ring-2 focus:ring-brand/30 text-text-primary"
-                      value={cand.preset}
-                      onChange={e => updateCandidate(cand.id, { preset: e.target.value as BenchmarkPreset })}
-                    >
+                    <label style={{ fontSize: '12px', color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Preset</label>
+                    <select style={inputSmStyle} value={cand.preset} onChange={e => updateCandidate(cand.id, { preset: e.target.value as BenchmarkPreset })}>
                       {(Object.keys(PRESET_LABELS) as BenchmarkPreset[]).map(p => (
                         <option key={p} value={p}>{PRESET_LABELS[p]} — {PRESET_DESC[p]}</option>
                       ))}
                     </select>
                   </div>
 
-                  {/* Custom label */}
                   <div>
-                    <label className="text-xs text-text-secondary block mb-1">Label (optional)</label>
-                    <input
-                      className="w-full text-xs border border-border rounded-lg px-2 py-1.5 bg-surface-secondary focus:outline-none focus:ring-2 focus:ring-brand/30 text-text-primary"
-                      placeholder="Auto-generated if blank"
-                      value={cand.label}
-                      onChange={e => updateCandidate(cand.id, { label: e.target.value })}
-                    />
+                    <label style={{ fontSize: '12px', color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Label (optional)</label>
+                    <input style={inputSmStyle} placeholder="Auto-generated if blank" value={cand.label} onChange={e => updateCandidate(cand.id, { label: e.target.value })} />
                   </div>
 
-                  {/* Dataset override */}
                   <div>
-                    <label className="text-xs text-text-secondary block mb-1">
-                      <Database className="w-3 h-3 inline mr-1" />Dataset override
+                    <label style={{ fontSize: '12px', color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
+                      <Database style={{ width: '12px', height: '12px', display: 'inline', marginRight: '4px' }} />Dataset override
                     </label>
-                    <select
-                      className="w-full text-xs border border-border rounded-lg px-2 py-1.5 bg-surface-secondary focus:outline-none focus:ring-2 focus:ring-brand/30 text-text-primary"
-                      value={cand.dataset_id ?? ''}
-                      onChange={e => updateCandidate(cand.id, { dataset_id: e.target.value || null, al_session_id: null })}
-                    >
+                    <select style={inputSmStyle} value={cand.dataset_id ?? ''} onChange={e => updateCandidate(cand.id, { dataset_id: e.target.value || null, al_session_id: null })}>
                       <option value="">Same as job dataset</option>
                       {datasets.filter(d => d.status === 'ready').map(d => (
                         <option key={d.id} value={d.id}>{d.name}</option>
@@ -906,17 +944,12 @@ function SetupWizard({ onCreated }: { onCreated: (job: BenchmarkJob) => void }) 
                     </select>
                   </div>
 
-                  {/* AL session override */}
                   {completeSessions.length > 0 && (
-                    <div className="col-span-2">
-                      <label className="text-xs text-text-secondary block mb-1">
-                        <Brain className="w-3 h-3 inline mr-1" />Use AL session labels
+                    <div style={{ gridColumn: '1 / -1' }}>
+                      <label style={{ fontSize: '12px', color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
+                        <Brain style={{ width: '12px', height: '12px', display: 'inline', marginRight: '4px' }} />Use AL session labels
                       </label>
-                      <select
-                        className="w-full text-xs border border-border rounded-lg px-2 py-1.5 bg-surface-secondary focus:outline-none focus:ring-2 focus:ring-brand/30 text-text-primary"
-                        value={cand.al_session_id ?? ''}
-                        onChange={e => updateCandidate(cand.id, { al_session_id: e.target.value || null, dataset_id: null })}
-                      >
+                      <select style={inputSmStyle} value={cand.al_session_id ?? ''} onChange={e => updateCandidate(cand.id, { al_session_id: e.target.value || null, dataset_id: null })}>
                         <option value="">No — use full dataset</option>
                         {completeSessions.map(s => (
                           <option key={s.id} value={s.id}>{s.name || s.id.slice(0, 8)} ({s.labeled_count} labeled)</option>
@@ -929,56 +962,58 @@ function SetupWizard({ onCreated }: { onCreated: (job: BenchmarkJob) => void }) 
             ))}
           </div>
 
-          <div className="flex gap-3">
+          <div style={{ display: 'flex', gap: '12px' }}>
             <button
               onClick={() => setStep(1)}
-              className="px-4 py-2 rounded-xl border border-border text-sm text-text-secondary hover:text-text-primary transition-colors"
+              style={{ padding: '9px 18px', borderRadius: 'var(--radius-card)', border: '1px solid var(--border)', fontSize: '14px', color: 'var(--text-secondary)', background: 'transparent', cursor: 'pointer', transition: 'color 0.15s' }}
+              onMouseEnter={e => ((e.currentTarget as HTMLElement).style.color = 'var(--text-primary)')}
+              onMouseLeave={e => ((e.currentTarget as HTMLElement).style.color = 'var(--text-secondary)')}
             >
               ← Back
             </button>
             <Button className="flex-1" disabled={!step2Valid} onClick={() => setStep(3)}>
-              Next: Review <ArrowRight className="w-4 h-4" />
+              Next: Review <ArrowRight style={{ width: '16px', height: '16px' }} />
             </Button>
           </div>
         </div>
       )}
 
-      {/* ── Step 3 ─────────────────────────────────────────────── */}
+      {/* ── Step 3 ── */}
       {step === 3 && (
-        <div className="space-y-4">
-          <div className="p-5 bg-surface-primary border border-border rounded-xl space-y-4">
-            <h2 className="text-sm font-semibold text-text-primary">Review</h2>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div style={{ ...cardStyle, display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <h2 style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)' }}>Review</h2>
 
-            <div className="grid grid-cols-2 gap-3 text-sm">
-              <div className="p-3 bg-surface-secondary rounded-xl">
-                <p className="text-xs text-text-tertiary">Dataset</p>
-                <p className="font-medium text-text-primary mt-0.5">
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', fontSize: '14px' }}>
+              <div style={{ padding: '12px', background: 'var(--bg-2)', borderRadius: 'var(--radius-card)' }}>
+                <p style={{ fontSize: '12px', color: 'var(--text-tertiary)' }}>Dataset</p>
+                <p style={{ fontWeight: 500, color: 'var(--text-primary)', marginTop: '2px' }}>
                   {datasets.find(d => d.id === datasetId)?.name ?? '—'}
                 </p>
               </div>
-              <div className="p-3 bg-surface-secondary rounded-xl">
-                <p className="text-xs text-text-tertiary">Target column</p>
-                <p className="font-medium text-text-primary mt-0.5">{targetCol}</p>
+              <div style={{ padding: '12px', background: 'var(--bg-2)', borderRadius: 'var(--radius-card)' }}>
+                <p style={{ fontSize: '12px', color: 'var(--text-tertiary)' }}>Target column</p>
+                <p style={{ fontWeight: 500, color: 'var(--text-primary)', marginTop: '2px' }}>{targetCol}</p>
               </div>
-              <div className="p-3 bg-surface-secondary rounded-xl">
-                <p className="text-xs text-text-tertiary">Task type</p>
-                <p className="font-medium text-text-primary mt-0.5 capitalize">{taskType}</p>
+              <div style={{ padding: '12px', background: 'var(--bg-2)', borderRadius: 'var(--radius-card)' }}>
+                <p style={{ fontSize: '12px', color: 'var(--text-tertiary)' }}>Task type</p>
+                <p style={{ fontWeight: 500, color: 'var(--text-primary)', marginTop: '2px', textTransform: 'capitalize' }}>{taskType}</p>
               </div>
-              <div className="p-3 bg-surface-secondary rounded-xl">
-                <p className="text-xs text-text-tertiary">Eval protocol</p>
-                <p className="font-medium text-text-primary mt-0.5">{PROTOCOL_LABELS[evalProtocol]}</p>
+              <div style={{ padding: '12px', background: 'var(--bg-2)', borderRadius: 'var(--radius-card)' }}>
+                <p style={{ fontSize: '12px', color: 'var(--text-tertiary)' }}>Eval protocol</p>
+                <p style={{ fontWeight: 500, color: 'var(--text-primary)', marginTop: '2px' }}>{PROTOCOL_LABELS[evalProtocol]}</p>
               </div>
             </div>
 
             <div>
-              <p className="text-xs font-semibold text-text-secondary mb-2">Candidates ({candidates.length})</p>
-              <div className="space-y-1.5">
+              <p style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '8px' }}>Candidates ({candidates.length})</p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                 {candidates.map((c, i) => (
-                  <div key={c.id} className="flex items-center gap-2 text-xs text-text-secondary">
-                    <span className="w-4 text-text-tertiary">{i + 1}.</span>
-                    <span className="font-medium text-text-primary">{c.label || `${MODEL_LABELS[c.model_type]} (${PRESET_LABELS[c.preset]})`}</span>
-                    {c.al_session_id && <span className="text-brand">· AL labels</span>}
-                    {c.dataset_id && <span className="text-text-tertiary">· custom dataset</span>}
+                  <div key={c.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: 'var(--text-secondary)' }}>
+                    <span style={{ width: '16px', color: 'var(--text-tertiary)' }}>{i + 1}.</span>
+                    <span style={{ fontWeight: 500, color: 'var(--text-primary)' }}>{c.label || `${MODEL_LABELS[c.model_type]} (${PRESET_LABELS[c.preset]})`}</span>
+                    {c.al_session_id && <span style={{ color: 'var(--accent)' }}>· AL labels</span>}
+                    {c.dataset_id && <span style={{ color: 'var(--text-tertiary)' }}>· custom dataset</span>}
                   </div>
                 ))}
               </div>
@@ -986,15 +1021,17 @@ function SetupWizard({ onCreated }: { onCreated: (job: BenchmarkJob) => void }) 
           </div>
 
           {createMut.error && (
-            <div className="p-3 bg-danger-50 border border-danger/20 rounded-xl text-xs text-danger">
+            <div style={{ padding: '12px', background: 'var(--bad-dim)', border: '1px solid rgba(239,68,68,.22)', borderRadius: 'var(--radius-card)', fontSize: '12px', color: 'var(--bad)' }}>
               {(createMut.error as Error).message}
             </div>
           )}
 
-          <div className="flex gap-3">
+          <div style={{ display: 'flex', gap: '12px' }}>
             <button
               onClick={() => setStep(2)}
-              className="px-4 py-2 rounded-xl border border-border text-sm text-text-secondary hover:text-text-primary transition-colors"
+              style={{ padding: '9px 18px', borderRadius: 'var(--radius-card)', border: '1px solid var(--border)', fontSize: '14px', color: 'var(--text-secondary)', background: 'transparent', cursor: 'pointer', transition: 'color 0.15s' }}
+              onMouseEnter={e => ((e.currentTarget as HTMLElement).style.color = 'var(--text-primary)')}
+              onMouseLeave={e => ((e.currentTarget as HTMLElement).style.color = 'var(--text-secondary)')}
             >
               ← Back
             </button>
@@ -1003,9 +1040,9 @@ function SetupWizard({ onCreated }: { onCreated: (job: BenchmarkJob) => void }) 
               loading={createMut.isPending}
               onClick={() => createMut.mutate()}
             >
-              <BarChart3 className="w-4 h-4" />
+              <BarChart3 style={{ width: '16px', height: '16px' }} />
               Run Benchmark
-              <ArrowRight className="w-4 h-4" />
+              <ArrowRight style={{ width: '16px', height: '16px' }} />
             </Button>
           </div>
         </div>
@@ -1030,33 +1067,33 @@ function JobList({
   })
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-3">
-        <div className="w-9 h-9 rounded-xl bg-brand-50 flex items-center justify-center">
-          <BarChart3 className="w-5 h-5 text-brand" />
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <div style={{ width: '36px', height: '36px', borderRadius: 'var(--radius-card)', background: 'var(--blue-tint)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <BarChart3 style={{ width: '20px', height: '20px', color: 'var(--accent)' }} />
         </div>
-        <div className="flex-1">
-          <h1 className="text-xl font-semibold text-text-primary">Benchmark</h1>
-          <p className="text-sm text-text-secondary">Compare multiple ML models side-by-side on the same dataset with a consistent evaluation protocol.</p>
+        <div style={{ flex: 1 }}>
+          <h1 style={{ fontSize: '20px', fontWeight: 600, color: 'var(--text-primary)' }}>Benchmark</h1>
+          <p style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>Compare multiple ML models side-by-side on the same dataset with a consistent evaluation protocol.</p>
         </div>
         <Button onClick={onCreate}>
-          <Plus className="w-4 h-4" />
+          <Plus style={{ width: '16px', height: '16px' }} />
           New Benchmark
         </Button>
       </div>
 
       {jobs.length === 0 ? (
-        <div className="p-12 bg-surface-primary border border-dashed border-border rounded-2xl text-center">
-          <BarChart3 className="w-10 h-10 text-text-tertiary mx-auto mb-3" />
-          <p className="text-sm font-medium text-text-primary mb-1">No benchmarks yet</p>
-          <p className="text-sm text-text-tertiary mb-6">Run a benchmark to compare model performance across algorithms, presets, or datasets.</p>
+        <div style={{ padding: '48px', background: 'var(--bg-card)', border: '1px dashed var(--border)', borderRadius: '16px', textAlign: 'center' }}>
+          <BarChart3 style={{ width: '40px', height: '40px', color: 'var(--text-tertiary)', margin: '0 auto 12px' }} />
+          <p style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-primary)', marginBottom: '4px' }}>No benchmarks yet</p>
+          <p style={{ fontSize: '14px', color: 'var(--text-tertiary)', marginBottom: '24px' }}>Run a benchmark to compare model performance across algorithms, presets, or datasets.</p>
           <Button onClick={onCreate}>
             Create first benchmark
-            <ArrowRight className="w-4 h-4" />
+            <ArrowRight style={{ width: '16px', height: '16px' }} />
           </Button>
         </div>
       ) : (
-        <div className="space-y-3">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           {jobs.map(j => {
             const complete = j.results.filter(r => r.status === 'complete').length
             const winner   = j.candidates.find(c => c.id === j.winner_candidate_id)
@@ -1072,39 +1109,43 @@ function JobList({
               <div
                 key={j.id}
                 onClick={() => onSelect(j.id)}
-                className="p-5 bg-surface-primary border border-border hover:border-brand/30 rounded-xl cursor-pointer transition-colors"
+                style={{ padding: '20px', background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 'var(--radius-card)', cursor: 'pointer', transition: 'border-color 0.15s' }}
+                onMouseEnter={e => ((e.currentTarget as HTMLElement).style.borderColor = 'var(--border-accent)')}
+                onMouseLeave={e => ((e.currentTarget as HTMLElement).style.borderColor = 'var(--border)')}
               >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2.5 flex-wrap">
-                      <span className="font-medium text-text-primary">{j.name}</span>
+                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px' }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                      <span style={{ fontWeight: 500, color: 'var(--text-primary)' }}>{j.name}</span>
                       <StatusBadge status={j.status} />
                     </div>
-                    <div className="text-xs text-text-tertiary mt-1 flex gap-3 flex-wrap">
-                      <span>Target: <span className="text-text-secondary">{j.target_column}</span></span>
+                    <div style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginTop: '4px', display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                      <span>Target: <span style={{ color: 'var(--text-secondary)' }}>{j.target_column}</span></span>
                       <span>{PROTOCOL_LABELS[j.eval_protocol]}</span>
                       <span>{j.candidates.length} candidates</span>
-                      <span className="capitalize">{j.task_type}</span>
+                      <span style={{ textTransform: 'capitalize' }}>{j.task_type}</span>
                       <span>{formatRelativeTime(j.created_at)}</span>
                     </div>
                     {winner && bestMetric && (
-                      <div className="mt-1.5 flex items-center gap-1.5 text-xs">
-                        <Trophy className="w-3 h-3 text-yellow-500" />
-                        <span className="text-text-secondary">{winner.label}</span>
-                        <span className="text-brand font-semibold">{bestMetric}</span>
+                      <div style={{ marginTop: '6px', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px' }}>
+                        <Trophy style={{ width: '12px', height: '12px', color: '#f59e0b' }} />
+                        <span style={{ color: 'var(--text-secondary)' }}>{winner.label}</span>
+                        <span style={{ color: 'var(--accent)', fontWeight: 600 }}>{bestMetric}</span>
                       </div>
                     )}
                   </div>
-                  <div className="flex items-center gap-3 flex-shrink-0">
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0 }}>
                     {j.status === 'running' && (
-                      <div className="text-right">
-                        <p className="text-xs font-semibold text-brand">{complete}/{j.candidates.length}</p>
-                        <p className="text-xs text-text-tertiary">running</p>
+                      <div style={{ textAlign: 'right' }}>
+                        <p style={{ fontSize: '12px', fontWeight: 600, color: 'var(--accent)' }}>{complete}/{j.candidates.length}</p>
+                        <p style={{ fontSize: '12px', color: 'var(--text-tertiary)' }}>running</p>
                       </div>
                     )}
                     <button
                       onClick={e => { e.stopPropagation(); deleteMut.mutate(j.id) }}
-                      className="text-xs text-text-tertiary hover:text-danger transition-colors px-2 py-1"
+                      style={{ fontSize: '12px', color: 'var(--text-tertiary)', background: 'none', border: 'none', cursor: 'pointer', padding: '4px 8px', transition: 'color 0.15s' }}
+                      onMouseEnter={e => ((e.currentTarget as HTMLElement).style.color = 'var(--bad)')}
+                      onMouseLeave={e => ((e.currentTarget as HTMLElement).style.color = 'var(--text-tertiary)')}
                     >
                       Delete
                     </button>
@@ -1113,10 +1154,9 @@ function JobList({
 
                 {/* Progress bar */}
                 {j.status === 'running' && (
-                  <div className="mt-3 h-1 bg-surface-tertiary rounded-full overflow-hidden">
+                  <div style={{ marginTop: '12px', height: '4px', background: 'var(--bg-3)', borderRadius: 'var(--radius-pill)', overflow: 'hidden' }}>
                     <div
-                      className="h-full bg-brand rounded-full transition-all"
-                      style={{ width: `${(complete / j.candidates.length) * 100}%` }}
+                      style={{ height: '100%', background: 'var(--accent)', borderRadius: 'var(--radius-pill)', transition: 'width 0.3s', width: `${(complete / j.candidates.length) * 100}%` }}
                     />
                   </div>
                 )}
@@ -1147,14 +1187,14 @@ export default function BenchmarkPage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 className="w-5 h-5 text-text-tertiary animate-spin" />
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '256px' }}>
+        <Loader2 style={{ width: '20px', height: '20px', color: 'var(--text-tertiary)', animation: 'spin 1s linear infinite' }} />
       </div>
     )
   }
 
   return (
-    <div className="p-6 max-w-5xl mx-auto">
+    <div style={{ padding: '24px', maxWidth: '1100px', margin: '0 auto' }}>
       {view.type === 'list' && (
         <JobList
           jobs={jobs}
@@ -1167,17 +1207,19 @@ export default function BenchmarkPage() {
         <div>
           <button
             onClick={() => setView({ type: 'list' })}
-            className="flex items-center gap-1 text-xs text-text-tertiary hover:text-text-secondary mb-5 transition-colors"
+            style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', color: 'var(--text-tertiary)', background: 'none', border: 'none', cursor: 'pointer', marginBottom: '20px', transition: 'color 0.15s' }}
+            onMouseEnter={e => ((e.currentTarget as HTMLElement).style.color = 'var(--text-secondary)')}
+            onMouseLeave={e => ((e.currentTarget as HTMLElement).style.color = 'var(--text-tertiary)')}
           >
             ← All benchmarks
           </button>
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-9 h-9 rounded-xl bg-brand-50 flex items-center justify-center">
-              <BarChart3 className="w-5 h-5 text-brand" />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
+            <div style={{ width: '36px', height: '36px', borderRadius: 'var(--radius-card)', background: 'var(--blue-tint)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <BarChart3 style={{ width: '20px', height: '20px', color: 'var(--accent)' }} />
             </div>
             <div>
-              <h1 className="text-xl font-semibold text-text-primary">New Benchmark</h1>
-              <p className="text-sm text-text-secondary">Configure candidates and run a side-by-side comparison</p>
+              <h1 style={{ fontSize: '20px', fontWeight: 600, color: 'var(--text-primary)' }}>New Benchmark</h1>
+              <p style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>Configure candidates and run a side-by-side comparison</p>
             </div>
           </div>
           <SetupWizard onCreated={job => setView({ type: 'job', id: job.id })} />
