@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useNavigate, useSearchParams, Navigate } from 'react-router-dom'
 import { Check, Eye, EyeOff, ArrowLeft, ChevronRight, Lock, Mail, Plus, Loader2 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import './AuthPage.css'
@@ -102,8 +102,11 @@ const GitHubIcon = () => (
 // ── Main component ────────────────────────────────────────────────────────────
 
 export default function AuthPage() {
-  const { login, register } = useAuth()
+  const { login, register, user } = useAuth()
   const navigate = useNavigate()
+
+  // Already logged in — skip straight to the app
+  if (user) return <Navigate to="/datasets" replace />
   const [params] = useSearchParams()
 
   const [screen, setScreen]       = useState<Screen>(params.get('mode') === 'register' ? 'signup-account' : 'signin')
@@ -170,7 +173,7 @@ export default function AuthPage() {
     setLoading(true)
     try {
       await login(email, password)
-      navigate('/', { replace: true })
+      navigate('/datasets', { replace: true })
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Invalid credentials')
     } finally {
@@ -420,7 +423,7 @@ export default function AuthPage() {
                       { letter: 'V', label: 'Vantage Labs', sub: '8 members · vantage', bg: 'linear-gradient(135deg,#4fffb0,#2bbd84)' },
                       { letter: 'P', label: 'Polaris Data Co.', sub: '120 members · polaris', bg: 'linear-gradient(135deg,#b18cff,#7b54e0)' },
                     ].map(ws => (
-                      <button key={ws.label} type="button" className="auth-ws-item" onClick={() => navigate('/', { replace: true })}>
+                      <button key={ws.label} type="button" className="auth-ws-item" onClick={() => navigate('/datasets', { replace: true })}>
                         <span className="auth-ws-logo" style={{ background: ws.bg }}>{ws.letter}</span>
                         <span className="auth-ws-meta">
                           <span className="auth-ws-name">{ws.label}</span>
@@ -664,7 +667,7 @@ export default function AuthPage() {
                     ))}
                   </div>
                   <button type="button" className="auth-btn-primary" style={{ marginTop: 20 }}
-                    onClick={() => navigate('/', { replace: true })}>
+                    onClick={() => navigate('/datasets', { replace: true })}>
                     Go to dashboard
                   </button>
                 </div>
