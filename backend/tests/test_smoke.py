@@ -45,6 +45,16 @@ def test_register_invalid_payload(client: TestClient):
     assert r.status_code == 422
 
 
+def test_register_password_too_short(client: TestClient):
+    r = client.post("/auth/register", json={"email": "short@datrix.io", "password": "abc"})
+    assert r.status_code == 422
+
+
+def test_register_password_too_long(client: TestClient):
+    r = client.post("/auth/register", json={"email": "long@datrix.io", "password": "x" * 129})
+    assert r.status_code == 422
+
+
 # ── Auth: login ───────────────────────────────────────────────────────────────
 
 def test_login_success(client: TestClient, tokens: dict):
@@ -168,6 +178,11 @@ def test_pipelines_list(client: TestClient, auth: dict):
     assert isinstance(r.json(), list)
 
 
+def test_pipeline_name_too_long(client: TestClient, auth: dict):
+    r = client.post("/pipelines", headers=auth, json={"name": "x" * 201})
+    assert r.status_code == 422
+
+
 def test_pipeline_create_and_get(client: TestClient, auth: dict):
     r = client.post("/pipelines", headers=auth, json={
         "name": "Smoke Test Pipeline",
@@ -214,6 +229,17 @@ def test_marketplace_assets_search(client: TestClient, auth: dict):
     r = client.get("/marketplace/assets?search=iris", headers=auth)
     assert r.status_code == 200
     assert isinstance(r.json(), list)
+
+
+def test_marketplace_review_bad_rating(client: TestClient, auth: dict):
+    assets = client.get("/marketplace/assets", headers=auth).json()
+    if not assets:
+        return
+    asset_id = assets[0]["id"]
+    r = client.post(f"/marketplace/assets/{asset_id}/reviews", headers=auth, json={
+        "author_name": "Tester", "rating": 10, "comment": "great",
+    })
+    assert r.status_code == 422
 
 
 def test_marketplace_asset_not_found(client: TestClient, auth: dict):

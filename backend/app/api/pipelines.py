@@ -10,7 +10,7 @@ from typing import Optional
 
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import FileResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from app.core.config import DATA_DIR
 from app.models.store import store, Pipeline, PipelineRun
@@ -76,14 +76,14 @@ class RunOut(BaseModel):
 
 
 class CreatePipelineRequest(BaseModel):
-    name: str
-    description: str = ""
+    name: str = Field(..., min_length=1, max_length=200)
+    description: str = Field("", max_length=2000)
     dataset_id: Optional[str] = None
 
 
 class UpdatePipelineRequest(BaseModel):
-    name: Optional[str] = None
-    description: Optional[str] = None
+    name: Optional[str] = Field(None, min_length=1, max_length=200)
+    description: Optional[str] = Field(None, max_length=2000)
     dataset_id: Optional[str] = None
     steps: Optional[list] = None
     node_positions: Optional[dict] = None
@@ -91,7 +91,7 @@ class UpdatePipelineRequest(BaseModel):
 
 class RunRequest(BaseModel):
     dry_run: bool = True
-    output_format: str = "csv"
+    output_format: str = Field("csv", max_length=20)
 
 
 # ── Background execution ──────────────────────────────────────────────

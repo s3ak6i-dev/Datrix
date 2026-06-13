@@ -4,7 +4,7 @@ import uuid
 from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 
 from app.core.auth import (
     create_access_token, create_refresh_token,
@@ -20,15 +20,15 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 # ── Schemas ───────────────────────────────────────────────────────────────────
 
 class RegisterIn(BaseModel):
-    email: EmailStr
-    password: str
+    email: EmailStr = Field(..., max_length=320)
+    password: str = Field(..., min_length=8, max_length=128)
 
 class LoginIn(BaseModel):
-    email: EmailStr
-    password: str
+    email: EmailStr = Field(..., max_length=320)
+    password: str = Field(..., max_length=128)
 
 class RefreshIn(BaseModel):
-    refresh_token: str
+    refresh_token: str = Field(..., max_length=2000)
 
 class TokenOut(BaseModel):
     access_token: str

@@ -11,7 +11,7 @@ import logging
 
 from fastapi import APIRouter, HTTPException, Query, Request
 from fastapi.responses import FileResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from app.core.limiter import limiter
 
 _log = logging.getLogger(__name__)
@@ -26,10 +26,29 @@ from app.services.report_generator import generate_report, REPORTS_DIR
 
 router = APIRouter(prefix="/compliance", tags=["compliance"])
 
+_VALID_ANON_METHODS = {"keep", "suppress", "redact", "mask", "hash", "generalize", "pseudonymize"}
+
 # ── Schemas ───────────────────────────────────────────────────────────
 
+class ColumnConfig(BaseModel):
+    column: str = Field(..., min_length=1, max_length=200)
+    method: str = Field(..., max_length=50)
+    params: dict = {}
+
+    @classmethod
+    def __get_validators__(cls):
+        yield cls._validate
+
+    @classmethod
+    def _validate(cls, v):
+        obj = cls.model_validate(v) if not isinstance(v, cls) else v
+        if obj.method not in _VALID_ANON_METHODS:
+            raise ValueError(f"method must be one of {_VALID_ANON_METHODS}")
+        return obj
+
+
 class PolicyCreate(BaseModel):
-    name: str
+    name: str = Field(..., min_length=1, max_length=200)
     policy_type: str
     parameters: dict = {}
     severity: str = "warning"
@@ -37,22 +56,25 @@ class PolicyCreate(BaseModel):
 
 
 class PolicyPatch(BaseModel):
-    name: Optional[str] = None
+    name: Optional[str] = Field(None, min_length=1, max_length=200)
     parameters: Optional[dict] = None
     severity: Optional[str] = None
     enabled: Optional[bool] = None
 
 
 class AnonymizeRequest(BaseModel):
-    source_dataset_id: str
-    output_name: str
-    column_configs: list  # [{column, method, params}]
+    source_dataset_id: str = Field(..., max_length=100)
+    output_name: str = Field(..., min_length=1, max_length=200)
+    column_configs: list[ColumnConfig] = Field(..., min_length=1)
 
 
 class ReportRequest(BaseModel):
     framework: str = "general"   # gdpr | ccpa | hipaa | general | custom
-    sections: list[str] = ["dataset_inventory", "pii_findings", "policy_status",
-                            "lineage_summary", "audit_excerpt", "recommendations"]
+    sections: list[str] = Field(
+        default=["dataset_inventory", "pii_findings", "policy_status",
+                 "lineage_summary", "audit_excerpt", "recommendations"],
+        max_length=20,
+    )
 
 
 VALID_POLICY_TYPES = {
@@ -297,15 +319,11 @@ def create_anonymize_job(body: AnonymizeRequest):
     ds = store.get_dataset(body.source_dataset_id)
     if not ds:
         raise HTTPException(404, "Source dataset not found")
-    if not body.output_name.strip():
-        raise HTTPException(400, "output_name is required")
-    if not body.column_configs:
-        raise HTTPException(400, "column_configs cannot be empty")
 
     job = AnonymizationJob(
         source_dataset_id=body.source_dataset_id,
         output_name=body.output_name.strip(),
-        column_configs=body.column_configs,
+        column_configs=[c.model_dump() for c in body.column_configs],
         status="pending",
     )
     store.add_anonymization_job(job)

@@ -21,7 +21,7 @@ from pathlib import Path
 from typing import Optional, Any
 
 from fastapi import APIRouter, HTTPException, Query
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from app.models.store import (
     store, MarketplaceAsset, MarketplaceReview, MarketplaceInstall,
@@ -43,32 +43,32 @@ VALID_SORTS      = {"newest","popular","rating","trending"}
 # ── Pydantic schemas ──────────────────────────────────────────────────
 
 class PublishRequest(BaseModel):
-    source_id: str
+    source_id: str = Field(..., max_length=100)
     asset_type: str
-    title: str
-    description: str
-    long_description: str = ""
+    title: str = Field(..., min_length=1, max_length=200)
+    description: str = Field(..., max_length=2000)
+    long_description: str = Field("", max_length=10000)
     category: str = "general"
-    tags: list[str] = []
-    author_name: str = "You"
+    tags: list[str] = Field([], max_length=20)
+    author_name: str = Field("You", max_length=200)
     license: str = "mit"
-    version: str = "1.0.0"
+    version: str = Field("1.0.0", max_length=50)
 
 
 class UpdateRequest(BaseModel):
-    title: Optional[str] = None
-    description: Optional[str] = None
-    long_description: Optional[str] = None
+    title: Optional[str] = Field(None, min_length=1, max_length=200)
+    description: Optional[str] = Field(None, max_length=2000)
+    long_description: Optional[str] = Field(None, max_length=10000)
     category: Optional[str] = None
-    tags: Optional[list[str]] = None
+    tags: Optional[list[str]] = Field(None, max_length=20)
     license: Optional[str] = None
-    version: Optional[str] = None
+    version: Optional[str] = Field(None, max_length=50)
 
 
 class ReviewRequest(BaseModel):
-    author_name: str
-    rating: int
-    comment: str = ""
+    author_name: str = Field(..., min_length=1, max_length=200)
+    rating: int = Field(..., ge=1, le=5)
+    comment: str = Field("", max_length=2000)
 
 
 class AssetOut(BaseModel):
@@ -516,10 +516,6 @@ def install_asset(asset_id: str):
 def submit_review(asset_id: str, body: ReviewRequest):
     if not store.get_marketplace_asset(asset_id):
         raise HTTPException(404, "Asset not found")
-    if not (1 <= body.rating <= 5):
-        raise HTTPException(400, "rating must be 1–5")
-    if not body.author_name.strip():
-        raise HTTPException(400, "author_name is required")
 
     review = MarketplaceReview(
         asset_id=asset_id,

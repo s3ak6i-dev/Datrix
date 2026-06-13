@@ -13,7 +13,7 @@ from pathlib import Path
 from typing import Any, Optional
 
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from app.models.store import store, DEFAULT_SETTINGS
 from app.core.config import DATA_DIR, UPLOADS_DIR
@@ -74,8 +74,8 @@ def _live_stats() -> dict:
 
 class SettingsPatch(BaseModel):
     # General
-    app_name: Optional[str] = None
-    date_format: Optional[str] = None
+    app_name: Optional[str] = Field(None, min_length=1, max_length=100)
+    date_format: Optional[str] = Field(None, max_length=50)
     table_page_size: Optional[int] = None
     # Storage
     max_upload_mb: Optional[int] = None

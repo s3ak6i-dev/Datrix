@@ -17,7 +17,7 @@ from typing import Any, Optional
 from fastapi import APIRouter, Request, HTTPException
 from fastapi.responses import StreamingResponse
 from app.core.limiter import limiter
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from app.models.store import store, BenchmarkJob
 from app.services.benchmark_executor import run_benchmark
@@ -33,21 +33,21 @@ VALID_TASKS     = {"classification", "regression"}
 # ── Pydantic schemas ──────────────────────────────────────────────────
 
 class CandidateIn(BaseModel):
-    label: str = ""
+    label: str = Field("", max_length=200)
     model_type: str = "random_forest"
     preset: str = "default"
     dataset_id: Optional[str] = None
     al_session_id: Optional[str] = None
-    exclude_columns: list[str] = []
+    exclude_columns: list[str] = Field([], max_length=100)
 
 
 class CreateJobRequest(BaseModel):
-    name: str = ""
-    dataset_id: str
-    target_column: str
+    name: str = Field("", max_length=200)
+    dataset_id: str = Field(..., max_length=100)
+    target_column: str = Field(..., min_length=1, max_length=200)
     task_type: str = "classification"
     eval_protocol: str = "kfold_5"
-    candidates: list[CandidateIn]
+    candidates: list[CandidateIn] = Field(..., min_length=1, max_length=20)
 
 
 class CandidateOut(BaseModel):
@@ -135,11 +135,6 @@ def create_job(request: Request, body: CreateJobRequest):
         raise HTTPException(400, f"task_type must be one of {VALID_TASKS}")
     if body.eval_protocol not in VALID_PROTOCOLS:
         raise HTTPException(400, f"eval_protocol must be one of {VALID_PROTOCOLS}")
-    if not body.candidates:
-        raise HTTPException(400, "At least one candidate is required")
-    if len(body.candidates) > 20:
-        raise HTTPException(400, "Maximum 20 candidates per job")
-
     for c in body.candidates:
         if c.model_type not in VALID_MODELS:
             raise HTTPException(400, f"Invalid model_type: {c.model_type}")

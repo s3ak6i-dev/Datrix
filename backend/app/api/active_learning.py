@@ -23,7 +23,7 @@ from typing import Optional, Any
 from fastapi import APIRouter, Request, HTTPException
 from fastapi.responses import FileResponse, StreamingResponse
 from app.core.limiter import limiter
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from app.models.store import store, ALSession, Dataset
 from app.services.active_learning_executor import get_initial_batch, train_and_get_next_batch
@@ -35,18 +35,18 @@ router = APIRouter(prefix="/al", tags=["active-learning"])
 # ── Pydantic schemas ──────────────────────────────────────────────────
 
 class CreateSessionRequest(BaseModel):
-    name: str = ""
-    dataset_id: str
-    target_column: str
+    name: str = Field("", max_length=200)
+    dataset_id: str = Field(..., max_length=100)
+    target_column: str = Field(..., min_length=1, max_length=200)
     task_type: str = "classification"
     model_type: str = "random_forest"
     sampling_strategy: str = "entropy"
     batch_size: int = 20
-    label_classes: list[str] = []
-    exclude_columns: list[str] = []
-    target_accuracy: Optional[float] = None
-    max_rounds: int = 10
-    model_name: str = ""
+    label_classes: list[str] = Field([], max_length=100)
+    exclude_columns: list[str] = Field([], max_length=100)
+    target_accuracy: Optional[float] = Field(None, gt=0.0, le=1.0)
+    max_rounds: int = Field(10, ge=1, le=100)
+    model_name: str = Field("", max_length=200)
 
 
 class SubmitLabelsRequest(BaseModel):
@@ -54,7 +54,7 @@ class SubmitLabelsRequest(BaseModel):
 
 
 class RenameModelRequest(BaseModel):
-    model_name: str
+    model_name: str = Field(..., min_length=1, max_length=200)
 
 
 class SessionOut(BaseModel):

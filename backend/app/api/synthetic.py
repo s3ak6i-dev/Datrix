@@ -10,7 +10,7 @@ from typing import Optional
 
 from fastapi import APIRouter, Request, HTTPException
 from app.core.limiter import limiter
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from pathlib import Path
 
@@ -64,10 +64,10 @@ class ModelOut(BaseModel):
 
 
 class CreateJobRequest(BaseModel):
-    source_dataset_id: str
-    output_name: str = ""
+    source_dataset_id: str = Field(..., max_length=100)
+    output_name: str = Field("", max_length=200)
     method: str = "statistical"
-    row_count: int = 1000
+    row_count: int = Field(1000, ge=1, le=1_000_000)
     column_overrides: Optional[dict] = None
 
 
@@ -80,8 +80,6 @@ def create_job(request: Request, body: CreateJobRequest):
         raise HTTPException(404, "Source dataset not found")
     if body.method not in ("statistical", "ctgan", "tvae"):
         raise HTTPException(400, "method must be one of: statistical, ctgan, tvae")
-    if body.row_count < 1 or body.row_count > 1_000_000:
-        raise HTTPException(400, "row_count must be between 1 and 1,000,000")
 
     job = SyntheticJob(
         source_dataset_id=body.source_dataset_id,
