@@ -6,6 +6,7 @@ import {
 } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { TourGuide } from './TourGuide'
+import { ErrorBoundary } from './ErrorBoundary'
 import './Layout.css'
 
 const TOKENS = {
@@ -81,50 +82,71 @@ export function Layout() {
     return () => window.removeEventListener('datrix:open-tour', handler)
   }, [])
 
+  const sidebarFallback = (
+    <aside className="app-sidebar">
+      <div className="sidebar-logo">
+        <span className="sidebar-brand">Datrix</span>
+      </div>
+      <div style={{ padding: '1rem 0.75rem' }}>
+        <p style={{ fontSize: '0.7rem', color: 'var(--bad)', marginBottom: '0.5rem' }}>
+          Sidebar crashed
+        </p>
+        <button
+          style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+          onClick={() => window.location.reload()}
+        >
+          Reload page
+        </button>
+      </div>
+    </aside>
+  )
+
   return (
     <div className="app-shell">
-      <aside className="app-sidebar">
+      <ErrorBoundary fallback={sidebarFallback}>
+        <aside className="app-sidebar">
 
-        <div className="sidebar-logo">
-          <span className="dot-live" />
-          <span className="sidebar-brand">Datrix</span>
-          <span className="sidebar-beta">beta</span>
-        </div>
+          <div className="sidebar-logo">
+            <span className="dot-live" />
+            <span className="sidebar-brand">Datrix</span>
+            <span className="sidebar-beta">beta</span>
+          </div>
 
-        <div className="side-nav">
-          {primary.map(({ to, icon: Icon, label }) => (
-            <NavLink key={to} to={to} className={({ isActive }) => isActive ? 'active' : ''}>
-              <Icon size={16} />
-              <span>{label}</span>
-            </NavLink>
-          ))}
-          <div className="nav-divider" />
-          {secondary.map(({ to, icon: Icon, label }) => (
-            <NavLink key={to} to={to} className={({ isActive }) => isActive ? 'active' : ''}>
-              <Icon size={16} />
-              <span>{label}</span>
-            </NavLink>
-          ))}
-        </div>
+          <div className="side-nav">
+            {primary.map(({ to, icon: Icon, label }) => (
+              <NavLink key={to} to={to} className={({ isActive }) => isActive ? 'active' : ''}>
+                <Icon size={16} />
+                <span>{label}</span>
+              </NavLink>
+            ))}
+            <div className="nav-divider" />
+            {secondary.map(({ to, icon: Icon, label }) => (
+              <NavLink key={to} to={to} className={({ isActive }) => isActive ? 'active' : ''}>
+                <Icon size={16} />
+                <span>{label}</span>
+              </NavLink>
+            ))}
+          </div>
 
-        <div className="sidebar-footer">
-          <button
-            className="sidebar-btn"
-            onClick={() => setShowTour(true)}
-          >
-            <Compass size={15} />
-            <span>Platform tour</span>
-          </button>
-          <button
-            className="sidebar-btn"
-            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-          >
-            {theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
-            <span>{theme === 'dark' ? 'Light mode' : 'Dark mode'}</span>
-          </button>
-        </div>
+          <div className="sidebar-footer">
+            <button
+              className="sidebar-btn"
+              onClick={() => setShowTour(true)}
+            >
+              <Compass size={15} />
+              <span>Platform tour</span>
+            </button>
+            <button
+              className="sidebar-btn"
+              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+            >
+              {theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
+              <span>{theme === 'dark' ? 'Light mode' : 'Dark mode'}</span>
+            </button>
+          </div>
 
-      </aside>
+        </aside>
+      </ErrorBoundary>
 
       <main className="app-content">
         <Outlet />
