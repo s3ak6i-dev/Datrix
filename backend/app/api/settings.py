@@ -17,6 +17,7 @@ from pydantic import BaseModel, Field
 
 from app.models.store import store, DEFAULT_SETTINGS
 from app.core.config import DATA_DIR, UPLOADS_DIR
+from app.services.storage import get_storage
 
 router = APIRouter(prefix="/settings", tags=["settings"])
 
@@ -29,10 +30,12 @@ def _dir_size(path: Path) -> int:
 
 
 def _live_stats() -> dict:
-    uploads_bytes  = _dir_size(UPLOADS_DIR)
-    models_dir     = DATA_DIR / "al_models"
-    models_bytes   = _dir_size(models_dir)
-    db_bytes       = (DATA_DIR / "db.json").stat().st_size if (DATA_DIR / "db.json").exists() else 0
+    storage      = get_storage()
+    uploads_bytes = storage.size_bytes()
+    upload_file_count = storage.file_count()
+    models_dir   = DATA_DIR / "al_models"
+    models_bytes = _dir_size(models_dir)
+    db_bytes     = (DATA_DIR / "db.json").stat().st_size if (DATA_DIR / "db.json").exists() else 0
     try:
         du = shutil.disk_usage(DATA_DIR)
         disk_total = du.total
@@ -66,7 +69,7 @@ def _live_stats() -> dict:
         "synthetic_job_count":   len(synth_jobs),
         "marketplace_asset_count": len(mp_assets),
         "marketplace_install_count": len(installs),
-        "upload_file_count":     sum(1 for f in UPLOADS_DIR.iterdir() if f.is_file()) if UPLOADS_DIR.exists() else 0,
+        "upload_file_count":     upload_file_count,
     }
 
 
@@ -170,21 +173,26 @@ def reset_settings():
 
 @router.delete("/uploads", status_code=200)
 def clear_uploads():
-    """Delete all files in the uploads directory; mark datasets with missing files as error."""
-    deleted_files = 0
-    freed_bytes   = 0
+    """Delete all files in uploads storage; mark datasets with missing files as error."""
+    storage = get_storage()
+    keys = storage.list_keys()
+    freed_bytes = 0
 
-    if UPLOADS_DIR.exists():
-        for f in list(UPLOADS_DIR.iterdir()):
-            if f.is_file():
-                freed_bytes += f.stat().st_size
-                f.unlink()
-                deleted_files += 1
+    for key in keys:
+        try:
+            local = storage.local_path(key)
+            if local.exists():
+                freed_bytes += local.stat().st_size
+        except Exception:
+            pass
+        storage.delete(key)
+
+    deleted_files = len(keys)
 
     # Mark affected datasets
     affected = 0
     for ds in store.list_datasets():
-        if ds.file_path and not Path(ds.file_path).exists():
+        if ds.file_path and not storage.exists(ds.file_path):
             ds.status = "error"
             ds.error_message = "File deleted during storage clear"
             store.update_dataset(ds)

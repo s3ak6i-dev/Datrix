@@ -27,6 +27,15 @@ class Settings(BaseSettings):
     # ── Storage ───────────────────────────────────────────────────────────────
     UPLOAD_DIR: str = "./data/uploads"
     MAX_UPLOAD_MB: int = 10240
+    STORAGE_BACKEND: str = "local"   # "local" | "s3"
+
+    # ── S3 (only used when STORAGE_BACKEND=s3) ────────────────────────────────
+    AWS_S3_BUCKET: str = ""
+    AWS_REGION: str = "us-east-1"
+    AWS_S3_PREFIX: str = "uploads/"
+    # Credentials: leave blank to fall back to env / instance role / ~/.aws
+    AWS_ACCESS_KEY_ID: str = ""
+    AWS_SECRET_ACCESS_KEY: str = ""
 
     # ── Observability ─────────────────────────────────────────────────────────
     SENTRY_DSN: Optional[str] = None

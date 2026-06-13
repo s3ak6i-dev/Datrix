@@ -12,9 +12,10 @@ from pydantic import BaseModel, Field
 
 import re
 
-from app.core.config import UPLOADS_DIR, ALLOWED_EXTENSIONS, MAX_UPLOAD_BYTES
+from app.core.config import ALLOWED_EXTENSIONS, MAX_UPLOAD_BYTES
 from app.core.limiter import limiter
 from app.models.store import store, Dataset, QualityScan, ColumnProfile
+from app.services.storage import get_storage
 from app.services.ingestion import read_file, infer_schema
 from app.services.quality import run_quality_scan
 from app.services.cleaning import preview_fix, apply_fix, save_df
@@ -209,19 +210,13 @@ async def upload_dataset(request: Request, file: UploadFile = File(...)):
         except UnicodeDecodeError:
             raise HTTPException(400, "CSV file must be UTF-8 encoded")
 
-    save_path = UPLOADS_DIR / safe_name
-    counter = 1
-    stem = Path(safe_name).stem
-    while save_path.exists():
-        save_path = UPLOADS_DIR / f"{stem}_{counter}{suffix}"
-        counter += 1
-
-    save_path.write_bytes(content)
+    storage = get_storage()
+    stored_key, display_name = storage.unique_save(safe_name, content)
 
     ds = Dataset(
-        name=save_path.name,
+        name=display_name,
         size_bytes=len(content),
-        file_path=str(save_path),
+        file_path=stored_key,
         status="pending",
     )
     store.add_dataset(ds)
@@ -246,7 +241,7 @@ def delete_dataset(dataset_id: str):
     if not ds:
         raise HTTPException(404, "Dataset not found")
     try:
-        Path(ds.file_path).unlink(missing_ok=True)
+        get_storage().delete(ds.file_path)
     except Exception:
         pass
     store.delete_dataset(dataset_id)

@@ -28,6 +28,7 @@ from pydantic import BaseModel, Field
 from app.models.store import store, ALSession, Dataset
 from app.services.active_learning_executor import get_initial_batch, train_and_get_next_batch
 from app.core.config import DATA_DIR, UPLOADS_DIR
+from app.services.storage import get_storage
 
 router = APIRouter(prefix="/al", tags=["active-learning"])
 
@@ -351,20 +352,21 @@ def predict_full_dataset(session_id: str):
     if confidences:
         out_df = out_df.with_columns(pl.Series("prediction_confidence_pct", confidences))
 
-    # Save as new CSV
+    # Save as new CSV via storage backend
     src_name = ds.name.replace(".csv", "")
     model_label = s.model_name or s.name or "model"
     out_name = f"{src_name}_predicted_{model_label}.csv"
-    out_path = UPLOADS_DIR / out_name
-    out_df.write_csv(str(out_path))
+    csv_bytes = out_df.write_csv().encode()
+    storage = get_storage()
+    stored_key, display_name = storage.unique_save(out_name, csv_bytes)
 
     new_ds = Dataset(
-        name=out_name,
+        name=display_name,
         row_count=len(out_df),
         column_count=len(out_df.columns),
-        size_bytes=out_path.stat().st_size,
+        size_bytes=len(csv_bytes),
         status="ready",
-        file_path=str(out_path),
+        file_path=stored_key,
         schema=[{"name": c, "dtype": str(t), "nullable": True} for c, t in zip(out_df.columns, out_df.dtypes)],
     )
     store.add_dataset(new_ds)

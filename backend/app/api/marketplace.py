@@ -28,6 +28,7 @@ from app.models.store import (
     Dataset, Pipeline,
 )
 from app.core.config import UPLOADS_DIR, DATA_DIR
+from app.services.storage import get_storage
 from app.services.marketplace_seeder import (
     generate_seeded_dataset, get_seeded_pipeline_steps,
 )
@@ -389,25 +390,28 @@ def install_asset(asset_id: str):
     if a.asset_type == 'dataset':
         import polars as pl
 
+        storage = get_storage()
+
         if a.is_seeded:
             df = generate_seeded_dataset(a.seed_key)
         else:
             src_ds = store.get_dataset(a.source_id)
-            if not src_ds or not Path(src_ds.file_path).exists():
+            if not src_ds or not storage.exists(src_ds.file_path):
                 raise HTTPException(400, "Source dataset no longer available")
-            df = pl.read_csv(src_ds.file_path)
+            df = pl.read_csv(str(storage.local_path(src_ds.file_path)))
 
         safe = "".join(c if c.isalnum() or c in '-_' else '_' for c in a.title)
-        out_path = UPLOADS_DIR / f"{safe}_{uuid.uuid4().hex[:6]}.csv"
-        df.write_csv(str(out_path))
+        filename = f"{safe}_{uuid.uuid4().hex[:6]}.csv"
+        csv_bytes = df.write_csv().encode()
+        stored_key, display_name = storage.unique_save(filename, csv_bytes)
 
         new_ds = Dataset(
-            name=f"{a.title}.csv",
+            name=display_name,
             row_count=len(df),
             column_count=len(df.columns),
-            size_bytes=out_path.stat().st_size,
+            size_bytes=len(csv_bytes),
             status='ready',
-            file_path=str(out_path),
+            file_path=stored_key,
             schema=[{'name': c, 'dtype': str(t), 'nullable': True}
                     for c, t in zip(df.columns, df.dtypes)],
         )
