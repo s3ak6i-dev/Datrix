@@ -29,10 +29,14 @@ class Settings(BaseSettings):
     MAX_UPLOAD_MB: int = 10240
     STORAGE_BACKEND: str = "local"   # "local" | "s3"
 
-    # ── S3 (only used when STORAGE_BACKEND=s3) ────────────────────────────────
+    # ── S3 / R2 / B2 / MinIO (only used when STORAGE_BACKEND=s3) ────────────────
     AWS_S3_BUCKET: str = ""
-    AWS_REGION: str = "us-east-1"
+    AWS_REGION: str = "auto"
     AWS_S3_PREFIX: str = "uploads/"
+    # For Cloudflare R2: https://<account-id>.r2.cloudflarestorage.com
+    # For MinIO:         http://localhost:9000
+    # For real AWS S3:   leave blank
+    AWS_ENDPOINT_URL: str = ""
     # Credentials: leave blank to fall back to env / instance role / ~/.aws
     AWS_ACCESS_KEY_ID: str = ""
     AWS_SECRET_ACCESS_KEY: str = ""

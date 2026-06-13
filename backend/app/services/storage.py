@@ -152,7 +152,15 @@ class S3StorageBackend(StorageBackend):
     an IAM role that has s3:GetObject / s3:PutObject / s3:DeleteObject.
     """
 
-    def __init__(self, bucket: str, region: str, prefix: str = "uploads/") -> None:
+    def __init__(
+        self,
+        bucket: str,
+        region: str,
+        prefix: str = "uploads/",
+        endpoint_url: str = "",
+        access_key_id: str = "",
+        secret_access_key: str = "",
+    ) -> None:
         try:
             import boto3
             from botocore.exceptions import ClientError as _CE
@@ -163,7 +171,13 @@ class S3StorageBackend(StorageBackend):
             )
         self._bucket = bucket
         self._prefix = prefix.rstrip("/") + "/"
-        self._s3 = boto3.client("s3", region_name=region)
+        self._s3 = boto3.client(
+            "s3",
+            region_name=region or "auto",
+            endpoint_url=endpoint_url or None,          # None = real AWS; URL = R2/B2/MinIO
+            aws_access_key_id=access_key_id or None,
+            aws_secret_access_key=secret_access_key or None,
+        )
         self._ClientError = _CE
 
     # ── helpers ──────────────────────────────────────────────────────────────
@@ -268,6 +282,9 @@ def get_storage() -> StorageBackend:
                 bucket=settings.AWS_S3_BUCKET,
                 region=settings.AWS_REGION,
                 prefix=settings.AWS_S3_PREFIX,
+                endpoint_url=settings.AWS_ENDPOINT_URL,
+                access_key_id=settings.AWS_ACCESS_KEY_ID,
+                secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
             )
         else:
             _storage = LocalStorageBackend(UPLOADS_DIR)
