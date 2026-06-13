@@ -8,8 +8,10 @@ from __future__ import annotations
 import threading
 from typing import Optional
 
-from fastapi import APIRouter, Request, HTTPException
+from fastapi import APIRouter, Depends, Request, HTTPException
+from app.core.auth import get_current_user
 from app.core.limiter import limiter
+from app.db import models as M
 from pydantic import BaseModel, Field
 
 from pathlib import Path
@@ -75,13 +77,14 @@ class CreateJobRequest(BaseModel):
 
 @router.post("/jobs", response_model=JobOut, status_code=201)
 @limiter.limit("5/minute")
-def create_job(request: Request, body: CreateJobRequest):
+def create_job(request: Request, body: CreateJobRequest, user: M.UserORM = Depends(get_current_user)):
     if not store.get_dataset(body.source_dataset_id):
         raise HTTPException(404, "Source dataset not found")
     if body.method not in ("statistical", "ctgan", "tvae"):
         raise HTTPException(400, "method must be one of: statistical, ctgan, tvae")
 
     job = SyntheticJob(
+        user_id=user.id,
         source_dataset_id=body.source_dataset_id,
         output_name=body.output_name,
         method=body.method,
@@ -94,8 +97,8 @@ def create_job(request: Request, body: CreateJobRequest):
 
 
 @router.get("/jobs", response_model=list[JobOut])
-def list_jobs():
-    return [JobOut.from_job(j) for j in store.list_synthetic_jobs()]
+def list_jobs(user: M.UserORM = Depends(get_current_user)):
+    return [JobOut.from_job(j) for j in store.list_synthetic_jobs(user_id=user.id)]
 
 
 @router.get("/jobs/{job_id}", response_model=JobOut)

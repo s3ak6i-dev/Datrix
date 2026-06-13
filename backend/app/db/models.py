@@ -28,6 +28,7 @@ def _now() -> str:
 class DatasetORM(Base):
     __tablename__ = "datasets"
     id = Column(String, primary_key=True)
+    user_id = Column(String, nullable=True, index=True)
     name = Column(String, default="")
     row_count = Column(Integer, nullable=True)
     column_count = Column(Integer, nullable=True)
@@ -78,6 +79,7 @@ class CleaningRecordORM(Base):
 class PipelineORM(Base):
     __tablename__ = "pipelines"
     id = Column(String, primary_key=True)
+    user_id = Column(String, nullable=True, index=True)
     name = Column(String, default="")
     description = Column(String, default="")
     dataset_id = Column(String, nullable=True)
@@ -113,6 +115,7 @@ class PipelineRunORM(Base):
 class SyntheticJobORM(Base):
     __tablename__ = "synthetic_jobs"
     id = Column(String, primary_key=True)
+    user_id = Column(String, nullable=True, index=True)
     source_dataset_id = Column(String, nullable=False, index=True)
     output_dataset_id = Column(String, nullable=True)
     output_name = Column(String, default="")
@@ -141,6 +144,7 @@ class TrainedModelORM(Base):
 class ALSessionORM(Base):
     __tablename__ = "al_sessions"
     id = Column(String, primary_key=True)
+    user_id = Column(String, nullable=True, index=True)
     name = Column(String, default="")
     dataset_id = Column(String, nullable=False, index=True)
     target_column = Column(String, default="")
@@ -168,6 +172,7 @@ class ALSessionORM(Base):
 class BenchmarkJobORM(Base):
     __tablename__ = "benchmark_jobs"
     id = Column(String, primary_key=True)
+    user_id = Column(String, nullable=True, index=True)
     name = Column(String, default="")
     dataset_id = Column(String, nullable=False, index=True)
     target_column = Column(String, default="")
@@ -339,7 +344,10 @@ class UserORM(Base):
     __tablename__ = "users"
     id = Column(String, primary_key=True)
     email = Column(String, nullable=False, unique=True, index=True)
-    hashed_password = Column(String, nullable=False)
+    hashed_password = Column(String, nullable=True)   # nullable: OAuth users have no password
+    full_name = Column(String, nullable=True)
+    avatar_url = Column(String, nullable=True)
+    email_verified = Column(Boolean, default=False)
     created_at = Column(String, default=_now)
 
 
@@ -350,4 +358,72 @@ class RefreshTokenORM(Base):
     token_hash = Column(String, nullable=False, unique=True)
     expires_at = Column(String, nullable=False)
     revoked = Column(Boolean, default=False)
+    created_at = Column(String, default=_now)
+
+
+class UserProfileORM(Base):
+    __tablename__ = "user_profiles"
+    user_id = Column(String, primary_key=True)
+    full_name = Column(String, nullable=True)
+    role = Column(String, nullable=True)
+    company = Column(String, nullable=True)
+    use_cases = Column(_JSON, default=list)
+    avatar_url = Column(String, nullable=True)
+    onboarding_completed = Column(Boolean, default=False)
+    created_at = Column(String, default=_now)
+    updated_at = Column(String, default=_now)
+
+
+class PasswordResetTokenORM(Base):
+    __tablename__ = "password_reset_tokens"
+    id = Column(String, primary_key=True)
+    user_id = Column(String, nullable=False, index=True)
+    token_hash = Column(String, nullable=False, unique=True)
+    expires_at = Column(String, nullable=False)
+    used = Column(Boolean, default=False)
+    created_at = Column(String, default=_now)
+
+
+class EmailVerificationTokenORM(Base):
+    __tablename__ = "email_verification_tokens"
+    id = Column(String, primary_key=True)
+    user_id = Column(String, nullable=False, index=True)
+    token_hash = Column(String, nullable=False, unique=True)
+    expires_at = Column(String, nullable=False)
+    used = Column(Boolean, default=False)
+    created_at = Column(String, default=_now)
+
+
+class OAuthAccountORM(Base):
+    """Links a user account to a third-party OAuth provider identity."""
+    __tablename__ = "oauth_accounts"
+    id = Column(String, primary_key=True)
+    user_id = Column(String, nullable=False, index=True)
+    provider = Column(String, nullable=False)           # "google" | "github"
+    provider_user_id = Column(String, nullable=False)   # stable UID from provider
+    email = Column(String, nullable=True)
+    created_at = Column(String, default=_now)
+
+
+# ── Organizations ─────────────────────────────────────────────────────────────
+
+class OrganizationORM(Base):
+    __tablename__ = "organizations"
+    id = Column(String, primary_key=True)
+    name = Column(String, nullable=False)
+    slug = Column(String, nullable=False, unique=True, index=True)
+    owner_id = Column(String, nullable=False, index=True)
+    # SSO configuration (populated when org enables enterprise SSO)
+    sso_domain = Column(String, nullable=True)    # e.g. "company.com"
+    sso_provider = Column(String, nullable=True)  # "google_workspace" | "okta" | "azure_ad" | "saml"
+    sso_config = Column(_JSON, nullable=True)     # provider-specific metadata
+    created_at = Column(String, default=_now)
+
+
+class OrgMemberORM(Base):
+    __tablename__ = "org_members"
+    id = Column(String, primary_key=True)
+    org_id = Column(String, nullable=False, index=True)
+    user_id = Column(String, nullable=False, index=True)
+    role = Column(String, nullable=False, default="member")  # "owner" | "admin" | "member"
     created_at = Column(String, default=_now)

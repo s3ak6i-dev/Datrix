@@ -1,12 +1,15 @@
-import { Outlet } from 'react-router-dom'
-import { NavLink } from 'react-router-dom'
+import { Outlet, NavLink, useNavigate } from 'react-router-dom'
 import {
   Database, GitBranch, Sparkles, Brain, BarChart3, ShieldCheck,
-  ShoppingBag, Settings, HelpCircle, Sun, Moon, Compass,
+  ShoppingBag, Settings, HelpCircle, Sun, Moon, Compass, Home,
+  Users, CreditCard, UserCircle, Bell, X, LogOut, Menu,
+  CheckCircle2, AlertCircle, Info,
 } from 'lucide-react'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { TourGuide } from './TourGuide'
 import { ErrorBoundary } from './ErrorBoundary'
+import { useAuth } from '@/contexts/AuthContext'
+import { useNotifications, AppNotification } from '@/contexts/NotificationContext'
 import './Layout.css'
 
 const TOKENS = {
@@ -57,6 +60,7 @@ function useTheme() {
 }
 
 const primary = [
+  { to: '/home',            icon: Home,        label: 'Home' },
   { to: '/datasets',        icon: Database,    label: 'Datasets' },
   { to: '/pipelines',       icon: GitBranch,   label: 'Pipelines' },
   { to: '/synthetic',       icon: Sparkles,    label: 'Synthetic' },
@@ -66,14 +70,98 @@ const primary = [
 ]
 
 const secondary = [
+  { to: '/orgs',        icon: Users,       label: 'Workspaces' },
   { to: '/marketplace', icon: ShoppingBag, label: 'Marketplace' },
-  { to: '/settings',    icon: Settings,    label: 'Settings' },
+  { to: '/billing',     icon: CreditCard,  label: 'Billing' },
+  { to: '/settings',   icon: Settings,    label: 'Settings' },
   { to: '/docs',        icon: HelpCircle,  label: 'Docs' },
 ]
 
+function NotifIcon({ type }: { type: AppNotification['type'] }) {
+  if (type === 'success') return <CheckCircle2 size={14} style={{ color: 'var(--green)', flexShrink: 0 }} />
+  if (type === 'error') return <AlertCircle size={14} style={{ color: 'var(--bad)', flexShrink: 0 }} />
+  return <Info size={14} style={{ color: 'var(--accent)', flexShrink: 0 }} />
+}
+
+function relTime(ts: number) {
+  const s = Math.floor((Date.now() - ts) / 1000)
+  if (s < 60) return 'just now'
+  if (s < 3600) return `${Math.floor(s / 60)}m ago`
+  if (s < 86400) return `${Math.floor(s / 3600)}h ago`
+  return `${Math.floor(s / 86400)}d ago`
+}
+
+function NotificationBell() {
+  const { notifications, unreadCount, markAllRead, dismiss } = useNotifications()
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
+
+  return (
+    <div ref={ref} style={{ position: 'relative' }}>
+      <button
+        className="sidebar-btn"
+        onClick={() => { setOpen(!open); if (!open) markAllRead() }}
+        style={{ position: 'relative' }}
+      >
+        <Bell size={15} />
+        <span>Notifications</span>
+        {unreadCount > 0 && (
+          <span style={{
+            marginLeft: 'auto', minWidth: 18, height: 18, borderRadius: 9,
+            background: 'var(--bad)', color: '#fff', fontSize: '0.6rem',
+            fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center',
+            padding: '0 4px',
+          }}>
+            {unreadCount > 9 ? '9+' : unreadCount}
+          </span>
+        )}
+      </button>
+
+      {open && (
+        <div className="notif-dropdown">
+          <div className="notif-header">
+            <span>Notifications</span>
+            {notifications.length > 0 && (
+              <button className="notif-clear" onClick={() => { notifications.forEach(n => dismiss(n.id)) }}>
+                Clear all
+              </button>
+            )}
+          </div>
+          {notifications.length === 0 ? (
+            <div className="notif-empty">No notifications yet</div>
+          ) : (
+            notifications.slice(0, 10).map(n => (
+              <div key={n.id} className="notif-item">
+                <NotifIcon type={n.type} />
+                <div className="notif-body">
+                  <div className="notif-title">{n.title}</div>
+                  <div className="notif-text">{n.body}</div>
+                  <div className="notif-time">{relTime(n.ts)}</div>
+                </div>
+                <button className="notif-dismiss" onClick={() => dismiss(n.id)}><X size={11} /></button>
+              </div>
+            ))
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
 export function Layout() {
   const { theme, setTheme } = useTheme()
+  const { user, logout } = useAuth()
+  const navigate = useNavigate()
   const [showTour, setShowTour] = useState(false)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
 
   useEffect(() => {
     if (!localStorage.getItem('datrix-tour-done')) setShowTour(true)
@@ -82,20 +170,61 @@ export function Layout() {
     return () => window.removeEventListener('datrix:open-tour', handler)
   }, [])
 
+  const handleLogout = async () => {
+    await logout()
+    navigate('/login', { replace: true })
+  }
+
   const sidebarFallback = (
     <aside className="app-sidebar">
       <div className="sidebar-logo">
         <span className="sidebar-brand">Datrix</span>
       </div>
-      <div style={{ padding: '1rem 0.75rem' }}>
-        <p style={{ fontSize: '0.7rem', color: 'var(--bad)', marginBottom: '0.5rem' }}>
-          Sidebar crashed
-        </p>
-        <button
-          style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
-          onClick={() => window.location.reload()}
-        >
-          Reload page
+    </aside>
+  )
+
+  const sidebarContent = (
+    <aside className={`app-sidebar${sidebarOpen ? ' mobile-open' : ''}`}>
+      <div className="sidebar-logo">
+        <span className="dot-live" />
+        <span className="sidebar-brand">Datrix</span>
+        <span className="sidebar-beta">beta</span>
+        <button className="sidebar-close-btn" onClick={() => setSidebarOpen(false)}><X size={16} /></button>
+      </div>
+
+      <div className="side-nav">
+        {primary.map(({ to, icon: Icon, label }) => (
+          <NavLink key={to} to={to} className={({ isActive }) => isActive ? 'active' : ''} onClick={() => setSidebarOpen(false)}>
+            <Icon size={16} />
+            <span>{label}</span>
+          </NavLink>
+        ))}
+        <div className="nav-divider" />
+        {secondary.map(({ to, icon: Icon, label }) => (
+          <NavLink key={to} to={to} className={({ isActive }) => isActive ? 'active' : ''} onClick={() => setSidebarOpen(false)}>
+            <Icon size={16} />
+            <span>{label}</span>
+          </NavLink>
+        ))}
+      </div>
+
+      <div className="sidebar-footer">
+        <NavLink to="/profile" className={({ isActive }) => `sidebar-btn profile-link${isActive ? ' active' : ''}`} onClick={() => setSidebarOpen(false)}>
+          <UserCircle size={15} />
+          <span className="sidebar-email">{user?.email ?? 'Profile'}</span>
+        </NavLink>
+        <NotificationBell />
+        <button className="sidebar-btn" onClick={() => setShowTour(true)}>
+          <Compass size={15} />
+          <span>Platform tour</span>
+        </button>
+        <button className="sidebar-btn" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}>
+          {theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
+          <span>{theme === 'dark' ? 'Light mode' : 'Dark mode'}</span>
+        </button>
+        <button className="sidebar-btn danger" onClick={handleLogout}>
+          <LogOut size={15} />
+          <span>Sign out</span>
         </button>
       </div>
     </aside>
@@ -103,52 +232,22 @@ export function Layout() {
 
   return (
     <div className="app-shell">
+      {/* Mobile overlay */}
+      {sidebarOpen && <div className="sidebar-overlay" onClick={() => setSidebarOpen(false)} />}
+
       <ErrorBoundary fallback={sidebarFallback}>
-        <aside className="app-sidebar">
-
-          <div className="sidebar-logo">
-            <span className="dot-live" />
-            <span className="sidebar-brand">Datrix</span>
-            <span className="sidebar-beta">beta</span>
-          </div>
-
-          <div className="side-nav">
-            {primary.map(({ to, icon: Icon, label }) => (
-              <NavLink key={to} to={to} className={({ isActive }) => isActive ? 'active' : ''}>
-                <Icon size={16} />
-                <span>{label}</span>
-              </NavLink>
-            ))}
-            <div className="nav-divider" />
-            {secondary.map(({ to, icon: Icon, label }) => (
-              <NavLink key={to} to={to} className={({ isActive }) => isActive ? 'active' : ''}>
-                <Icon size={16} />
-                <span>{label}</span>
-              </NavLink>
-            ))}
-          </div>
-
-          <div className="sidebar-footer">
-            <button
-              className="sidebar-btn"
-              onClick={() => setShowTour(true)}
-            >
-              <Compass size={15} />
-              <span>Platform tour</span>
-            </button>
-            <button
-              className="sidebar-btn"
-              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-            >
-              {theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
-              <span>{theme === 'dark' ? 'Light mode' : 'Dark mode'}</span>
-            </button>
-          </div>
-
-        </aside>
+        {sidebarContent}
       </ErrorBoundary>
 
       <main className="app-content">
+        {/* Mobile top bar */}
+        <div className="mobile-topbar">
+          <button className="mobile-menu-btn" onClick={() => setSidebarOpen(true)}>
+            <Menu size={20} />
+          </button>
+          <span className="mobile-brand">Datrix</span>
+        </div>
+
         <Outlet />
       </main>
 

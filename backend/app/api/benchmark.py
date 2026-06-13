@@ -14,9 +14,11 @@ import threading
 import uuid
 from typing import Any, Optional
 
-from fastapi import APIRouter, Request, HTTPException
+from fastapi import APIRouter, Depends, Request, HTTPException
 from fastapi.responses import StreamingResponse
+from app.core.auth import get_current_user
 from app.core.limiter import limiter
+from app.db import models as M
 from pydantic import BaseModel, Field
 
 from app.models.store import store, BenchmarkJob
@@ -128,7 +130,7 @@ class JobOut(BaseModel):
 
 @router.post("/jobs", response_model=JobOut, status_code=201)
 @limiter.limit("5/minute")
-def create_job(request: Request, body: CreateJobRequest):
+def create_job(request: Request, body: CreateJobRequest, user: M.UserORM = Depends(get_current_user)):
     if not store.get_dataset(body.dataset_id):
         raise HTTPException(404, "Dataset not found")
     if body.task_type not in VALID_TASKS:
@@ -189,6 +191,7 @@ def create_job(request: Request, body: CreateJobRequest):
     job_name = body.name or f"{ds.name} — {body.target_column} benchmark"
 
     job = BenchmarkJob(
+        user_id=user.id,
         name=job_name,
         dataset_id=body.dataset_id,
         target_column=body.target_column,
@@ -203,8 +206,8 @@ def create_job(request: Request, body: CreateJobRequest):
 
 
 @router.get("/jobs", response_model=list[JobOut])
-def list_jobs():
-    return [JobOut.from_job(j) for j in store.list_benchmark_jobs()]
+def list_jobs(user: M.UserORM = Depends(get_current_user)):
+    return [JobOut.from_job(j) for j in store.list_benchmark_jobs(user_id=user.id)]
 
 
 @router.get("/jobs/{job_id}", response_model=JobOut)

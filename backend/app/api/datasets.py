@@ -7,13 +7,15 @@ from pathlib import Path
 from datetime import datetime, timezone
 from typing import Optional
 
-from fastapi import APIRouter, Request, UploadFile, File, HTTPException
+from fastapi import APIRouter, Depends, Request, UploadFile, File, HTTPException
 from pydantic import BaseModel, Field
 
 import re
 
+from app.core.auth import get_current_user
 from app.core.config import ALLOWED_EXTENSIONS, MAX_UPLOAD_BYTES
 from app.core.limiter import limiter
+from app.db import models as M
 from app.models.store import store, Dataset, QualityScan, ColumnProfile
 from app.services.storage import get_storage
 from app.services.ingestion import read_file, infer_schema
@@ -179,8 +181,8 @@ def _run_scan(dataset_id: str, scan_id: str):
 # ── Routes ────────────────────────────────────────────────────────────
 
 @router.get("", response_model=list[DatasetOut])
-def list_datasets():
-    return [DatasetOut.from_ds(d) for d in store.list_datasets()]
+def list_datasets(user: M.UserORM = Depends(get_current_user)):
+    return [DatasetOut.from_ds(d) for d in store.list_datasets(user_id=user.id)]
 
 
 def _safe_filename(raw: str) -> str:
@@ -192,7 +194,7 @@ def _safe_filename(raw: str) -> str:
 
 @router.post("/upload", response_model=DatasetOut, status_code=201)
 @limiter.limit("10/minute")
-async def upload_dataset(request: Request, file: UploadFile = File(...)):
+async def upload_dataset(request: Request, file: UploadFile = File(...), user: M.UserORM = Depends(get_current_user)):
     original_name = file.filename or "upload"
     safe_name = _safe_filename(original_name)
     suffix = Path(safe_name).suffix.lower()
@@ -215,6 +217,7 @@ async def upload_dataset(request: Request, file: UploadFile = File(...)):
     stored_key, display_name = storage.unique_save(safe_name, content)
 
     ds = Dataset(
+        user_id=user.id,
         name=display_name,
         size_bytes=len(content),
         file_path=stored_key,
@@ -229,17 +232,17 @@ async def upload_dataset(request: Request, file: UploadFile = File(...)):
 
 
 @router.get("/{dataset_id}", response_model=DatasetOut)
-def get_dataset(dataset_id: str):
+def get_dataset(dataset_id: str, user: M.UserORM = Depends(get_current_user)):
     ds = store.get_dataset(dataset_id)
-    if not ds:
+    if not ds or ds.user_id != user.id:
         raise HTTPException(404, "Dataset not found")
     return DatasetOut.from_ds(ds)
 
 
 @router.delete("/{dataset_id}", status_code=204)
-def delete_dataset(dataset_id: str):
+def delete_dataset(dataset_id: str, user: M.UserORM = Depends(get_current_user)):
     ds = store.get_dataset(dataset_id)
-    if not ds:
+    if not ds or ds.user_id != user.id:
         raise HTTPException(404, "Dataset not found")
     try:
         get_storage().delete(ds.file_path)

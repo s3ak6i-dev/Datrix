@@ -41,6 +41,25 @@ class Settings(BaseSettings):
     AWS_ACCESS_KEY_ID: str = ""
     AWS_SECRET_ACCESS_KEY: str = ""
 
+    # ── OAuth providers ───────────────────────────────────────────────────────
+    GOOGLE_CLIENT_ID: str = ""
+    GOOGLE_CLIENT_SECRET: str = ""
+    GITHUB_CLIENT_ID: str = ""
+    GITHUB_CLIENT_SECRET: str = ""
+    # Base URL the backend is reachable at — used to build OAuth redirect_uri
+    APP_URL: str = "http://localhost:8000"
+    # Frontend origin — where to send users after OAuth completes
+    FRONTEND_URL: str = "http://localhost:5173"
+
+    # ── Email / SMTP (leave blank to log emails to console in dev) ───────────
+    SMTP_HOST: str = ""
+    SMTP_PORT: int = 587
+    SMTP_USER: str = ""
+    SMTP_PASSWORD: str = ""
+    SMTP_TLS: bool = True
+    FROM_EMAIL: str = "noreply@datrix.ai"
+    FROM_NAME: str = "Datrix"
+
     # ── Observability ─────────────────────────────────────────────────────────
     SENTRY_DSN: Optional[str] = None
 

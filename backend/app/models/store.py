@@ -26,6 +26,7 @@ def _id() -> str:
 @dataclass
 class Dataset:
     id: str = field(default_factory=_id)
+    user_id: str = ""
     name: str = ""
     row_count: Optional[int] = None
     column_count: Optional[int] = None
@@ -69,6 +70,7 @@ class ColumnProfile:
 @dataclass
 class Pipeline:
     id: str = field(default_factory=_id)
+    user_id: str = ""
     name: str = ""
     description: str = ""
     dataset_id: Optional[str] = None
@@ -102,6 +104,7 @@ class PipelineRun:
 @dataclass
 class ALSession:
     id: str = field(default_factory=_id)
+    user_id: str = ""
     name: str = ""
     dataset_id: str = ""
     target_column: str = ""
@@ -138,6 +141,7 @@ class TrainedModel:
 @dataclass
 class SyntheticJob:
     id: str = field(default_factory=_id)
+    user_id: str = ""
     source_dataset_id: str = ""
     output_dataset_id: Optional[str] = None
     output_name: str = ""
@@ -200,6 +204,7 @@ class MarketplaceInstall:
 @dataclass
 class BenchmarkJob:
     id: str = field(default_factory=_id)
+    user_id: str = ""
     name: str = ""
     dataset_id: str = ""
     target_column: str = ""
@@ -398,9 +403,12 @@ class Store:
             obj = db.query(M.DatasetORM).filter_by(id=id).first()
             return _dc(Dataset, obj) if obj else None
 
-    def list_datasets(self) -> list[Dataset]:
+    def list_datasets(self, user_id: Optional[str] = None) -> list[Dataset]:
         with db_session() as db:
-            rows = db.query(M.DatasetORM).order_by(M.DatasetORM.created_at.desc()).all()
+            q = db.query(M.DatasetORM)
+            if user_id:
+                q = q.filter(M.DatasetORM.user_id == user_id)
+            rows = q.order_by(M.DatasetORM.created_at.desc()).all()
             return [_dc(Dataset, r) for r in rows]
 
     def delete_dataset(self, id: str) -> None:
@@ -494,9 +502,12 @@ class Store:
             obj = db.query(M.PipelineORM).filter_by(id=id).first()
             return _dc(Pipeline, obj) if obj else None
 
-    def list_pipelines(self) -> list[Pipeline]:
+    def list_pipelines(self, user_id: Optional[str] = None) -> list[Pipeline]:
         with db_session() as db:
-            rows = db.query(M.PipelineORM).order_by(M.PipelineORM.created_at.desc()).all()
+            q = db.query(M.PipelineORM)
+            if user_id:
+                q = q.filter(M.PipelineORM.user_id == user_id)
+            rows = q.order_by(M.PipelineORM.created_at.desc()).all()
             return [_dc(Pipeline, r) for r in rows]
 
     def delete_pipeline(self, id: str) -> None:
@@ -556,9 +567,12 @@ class Store:
             obj = db.query(M.ALSessionORM).filter_by(id=id).first()
             return _dc(ALSession, obj) if obj else None
 
-    def list_al_sessions(self) -> list[ALSession]:
+    def list_al_sessions(self, user_id: Optional[str] = None) -> list[ALSession]:
         with db_session() as db:
-            rows = db.query(M.ALSessionORM).order_by(M.ALSessionORM.created_at.desc()).all()
+            q = db.query(M.ALSessionORM)
+            if user_id:
+                q = q.filter(M.ALSessionORM.user_id == user_id)
+            rows = q.order_by(M.ALSessionORM.created_at.desc()).all()
             return [_dc(ALSession, r) for r in rows]
 
     def delete_al_session(self, id: str) -> None:
@@ -620,9 +634,12 @@ class Store:
             obj = db.query(M.SyntheticJobORM).filter_by(id=id).first()
             return _dc(SyntheticJob, obj) if obj else None
 
-    def list_synthetic_jobs(self) -> list[SyntheticJob]:
+    def list_synthetic_jobs(self, user_id: Optional[str] = None) -> list[SyntheticJob]:
         with db_session() as db:
-            rows = db.query(M.SyntheticJobORM).order_by(M.SyntheticJobORM.created_at.desc()).all()
+            q = db.query(M.SyntheticJobORM)
+            if user_id:
+                q = q.filter(M.SyntheticJobORM.user_id == user_id)
+            rows = q.order_by(M.SyntheticJobORM.created_at.desc()).all()
             return [_dc(SyntheticJob, r) for r in rows]
 
     # ── Marketplace ───────────────────────────────────────────────────
@@ -708,9 +725,12 @@ class Store:
             obj = db.query(M.BenchmarkJobORM).filter_by(id=id).first()
             return _dc(BenchmarkJob, obj) if obj else None
 
-    def list_benchmark_jobs(self) -> list[BenchmarkJob]:
+    def list_benchmark_jobs(self, user_id: Optional[str] = None) -> list[BenchmarkJob]:
         with db_session() as db:
-            rows = db.query(M.BenchmarkJobORM).order_by(M.BenchmarkJobORM.created_at.desc()).all()
+            q = db.query(M.BenchmarkJobORM)
+            if user_id:
+                q = q.filter(M.BenchmarkJobORM.user_id == user_id)
+            rows = q.order_by(M.BenchmarkJobORM.created_at.desc()).all()
             return [_dc(BenchmarkJob, r) for r in rows]
 
     def delete_benchmark_job(self, id: str) -> None:

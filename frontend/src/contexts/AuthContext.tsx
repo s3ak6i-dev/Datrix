@@ -16,6 +16,7 @@ interface AuthContextValue {
   isLoading: boolean
   login: (email: string, password: string) => Promise<void>
   register: (email: string, password: string) => Promise<void>
+  loginWithTokens: (tokens: TokenPair) => void
   logout: () => Promise<void>
   accessToken: () => string | null
 }
@@ -124,6 +125,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(payload ? { id: payload.sub, email: payload.email, created_at: new Date().toISOString() } : null)
   }
 
+  const loginWithTokens = useCallback((tokens: TokenPair) => {
+    saveTokens(tokens)
+    const payload = parseJwt(tokens.access_token)
+    setUser(payload ? { id: payload.sub, email: payload.email, created_at: new Date().toISOString() } : null)
+  }, [])
+
   const logout = async () => {
     const rt = localStorage.getItem('datrix_refresh')
     if (rt) {
@@ -137,7 +144,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, register, logout, accessToken }}>
+    <AuthContext.Provider value={{ user, isLoading, login, register, loginWithTokens, logout, accessToken }}>
       {children}
     </AuthContext.Provider>
   )

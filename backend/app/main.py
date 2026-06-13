@@ -29,6 +29,9 @@ _startup_log = logging.getLogger("datrix.startup")
 
 
 from app.api.auth import router as auth_router
+from app.api.oauth import router as oauth_router
+from app.api.orgs import router as orgs_router
+from app.api.profile import router as profile_router
 from app.api.datasets import router as datasets_router
 from app.api.pipelines import router as pipelines_router
 from app.api.synthetic import router as synthetic_router
@@ -37,6 +40,7 @@ from app.api.benchmark import router as benchmark_router
 from app.api.marketplace import router as marketplace_router
 from app.api.settings import router as settings_router
 from app.api.compliance import router as compliance_router
+from app.api.billing import router as billing_router
 from app.services.compliance_checker import ensure_default_policies
 from app.services.marketplace_seeder import initialize_seeds
 
@@ -129,9 +133,12 @@ app.add_middleware(
 
 # Public routes
 app.include_router(auth_router)
+app.include_router(oauth_router)   # OAuth callbacks must be public (no JWT yet)
 
 # Protected routes — require a valid JWT on every request
 _auth = [Depends(get_current_user)]
+app.include_router(orgs_router,       dependencies=_auth)
+app.include_router(profile_router,    dependencies=_auth)
 app.include_router(datasets_router,   dependencies=_auth)
 app.include_router(pipelines_router,  dependencies=_auth)
 app.include_router(synthetic_router,  dependencies=_auth)
@@ -140,6 +147,7 @@ app.include_router(benchmark_router,  dependencies=_auth)
 app.include_router(marketplace_router,dependencies=_auth)
 app.include_router(settings_router,   dependencies=_auth)
 app.include_router(compliance_router, dependencies=_auth)
+app.include_router(billing_router,   dependencies=_auth)
 
 
 @app.middleware("http")

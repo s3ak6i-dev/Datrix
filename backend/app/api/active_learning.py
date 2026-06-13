@@ -20,9 +20,11 @@ import threading
 from pathlib import Path
 from typing import Optional, Any
 
-from fastapi import APIRouter, Request, HTTPException
+from fastapi import APIRouter, Depends, Request, HTTPException
 from fastapi.responses import FileResponse, StreamingResponse
+from app.core.auth import get_current_user
 from app.core.limiter import limiter
+from app.db import models as M
 from pydantic import BaseModel, Field
 
 from app.models.store import store, ALSession, Dataset
@@ -140,7 +142,7 @@ def _clean_row(row_data: dict) -> dict:
 
 @router.post("/sessions", response_model=SessionOut, status_code=201)
 @limiter.limit("5/minute")
-def create_session(request: Request, body: CreateSessionRequest):
+def create_session(request: Request, body: CreateSessionRequest, user: M.UserORM = Depends(get_current_user)):
     ds = store.get_dataset(body.dataset_id)
     if not ds:
         raise HTTPException(404, "Dataset not found")
@@ -168,6 +170,7 @@ def create_session(request: Request, body: CreateSessionRequest):
     model_name = body.model_name or body.name or f"{ds.name}_{body.target_column}_model"
 
     session = ALSession(
+        user_id=user.id,
         name=body.name,
         dataset_id=body.dataset_id,
         target_column=body.target_column,
@@ -188,8 +191,8 @@ def create_session(request: Request, body: CreateSessionRequest):
 
 
 @router.get("/sessions", response_model=list[SessionOut])
-def list_sessions():
-    return [SessionOut.from_session(s) for s in store.list_al_sessions()]
+def list_sessions(user: M.UserORM = Depends(get_current_user)):
+    return [SessionOut.from_session(s) for s in store.list_al_sessions(user_id=user.id)]
 
 
 @router.get("/sessions/{session_id}", response_model=SessionOut)

@@ -8,11 +8,13 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 
+from app.core.auth import get_current_user
 from app.core.config import DATA_DIR
+from app.db import models as M
 from app.models.store import store, Pipeline, PipelineRun
 from app.services.pipeline_executor import run_pipeline, save_output
 from app.services.storage import get_storage
@@ -144,29 +146,29 @@ def _execute_run(run_id: str) -> None:
 # ── Routes ────────────────────────────────────────────────────────────
 
 @router.get("", response_model=list[PipelineOut])
-def list_pipelines():
-    return [PipelineOut.from_pipeline(p) for p in store.list_pipelines()]
+def list_pipelines(user: M.UserORM = Depends(get_current_user)):
+    return [PipelineOut.from_pipeline(p) for p in store.list_pipelines(user_id=user.id)]
 
 
 @router.post("", response_model=PipelineOut, status_code=201)
-def create_pipeline(body: CreatePipelineRequest):
-    p = Pipeline(name=body.name, description=body.description, dataset_id=body.dataset_id)
+def create_pipeline(body: CreatePipelineRequest, user: M.UserORM = Depends(get_current_user)):
+    p = Pipeline(user_id=user.id, name=body.name, description=body.description, dataset_id=body.dataset_id)
     store.add_pipeline(p)
     return PipelineOut.from_pipeline(p)
 
 
 @router.get("/{pipeline_id}", response_model=PipelineOut)
-def get_pipeline(pipeline_id: str):
+def get_pipeline(pipeline_id: str, user: M.UserORM = Depends(get_current_user)):
     p = store.get_pipeline(pipeline_id)
-    if not p:
+    if not p or p.user_id != user.id:
         raise HTTPException(404, "Pipeline not found")
     return PipelineOut.from_pipeline(p)
 
 
 @router.put("/{pipeline_id}", response_model=PipelineOut)
-def update_pipeline(pipeline_id: str, body: UpdatePipelineRequest):
+def update_pipeline(pipeline_id: str, body: UpdatePipelineRequest, user: M.UserORM = Depends(get_current_user)):
     p = store.get_pipeline(pipeline_id)
-    if not p:
+    if not p or p.user_id != user.id:
         raise HTTPException(404, "Pipeline not found")
     if body.name is not None:
         p.name = body.name
@@ -183,16 +185,17 @@ def update_pipeline(pipeline_id: str, body: UpdatePipelineRequest):
 
 
 @router.delete("/{pipeline_id}", status_code=204)
-def delete_pipeline(pipeline_id: str):
-    if not store.get_pipeline(pipeline_id):
+def delete_pipeline(pipeline_id: str, user: M.UserORM = Depends(get_current_user)):
+    p = store.get_pipeline(pipeline_id)
+    if not p or p.user_id != user.id:
         raise HTTPException(404, "Pipeline not found")
     store.delete_pipeline(pipeline_id)
 
 
 @router.post("/{pipeline_id}/run", response_model=RunOut, status_code=201)
-def run_pipeline_endpoint(pipeline_id: str, body: RunRequest):
+def run_pipeline_endpoint(pipeline_id: str, body: RunRequest, user: M.UserORM = Depends(get_current_user)):
     p = store.get_pipeline(pipeline_id)
-    if not p:
+    if not p or p.user_id != user.id:
         raise HTTPException(404, "Pipeline not found")
     if not p.dataset_id:
         raise HTTPException(400, "Pipeline has no source dataset — set one before running")

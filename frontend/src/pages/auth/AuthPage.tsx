@@ -4,6 +4,8 @@ import { Check, Eye, EyeOff, ArrowLeft, ChevronRight, Lock, Mail, Plus, Loader2 
 import { useAuth } from '@/contexts/AuthContext'
 import './AuthPage.css'
 
+const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
+
 // ── Types ────────────────────────────────────────────────────────────────────
 
 type Screen =
@@ -28,6 +30,59 @@ function pwStrength(v: string): number {
 
 const STRENGTH_COPY  = ['', 'Too weak', 'Weak', 'Fair', 'Good', 'Strong']
 const STRENGTH_COLOR = ['', '#ff6b7d', '#ff6b7d', '#ffbd2e', '#63b3ff', '#4fffb0']
+
+// ── Password field ── defined at module level so React never unmounts on re-render
+
+interface PwFieldProps {
+  id: string
+  label: string
+  value: string
+  onChange: (v: string) => void
+  show: boolean
+  onToggle: () => void
+  placeholder: string
+  autoComplete: string
+  showStrength?: boolean
+  extra?: React.ReactNode
+}
+
+function PwField({ id, label, value, onChange, show, onToggle, placeholder, autoComplete, showStrength, extra }: PwFieldProps) {
+  const s = showStrength ? pwStrength(value) : 0
+  return (
+    <div className="auth-field">
+      <label className="auth-label" htmlFor={id}>{label}{extra}</label>
+      <div className="auth-input-wrap">
+        <input
+          id={id}
+          type={show ? 'text' : 'password'}
+          required
+          minLength={8}
+          value={value}
+          onChange={e => onChange(e.target.value)}
+          placeholder={placeholder}
+          autoComplete={autoComplete}
+          className="auth-input"
+          style={{ paddingRight: 46 }}
+        />
+        <button type="button" className="auth-pw-toggle" onClick={onToggle} aria-label="Toggle password">
+          {show ? <EyeOff size={17} /> : <Eye size={17} />}
+        </button>
+      </div>
+      {showStrength && value && (
+        <>
+          <div className="auth-strength">
+            {[1, 2, 3, 4].map(i => (
+              <i key={i} style={{ background: i <= s ? STRENGTH_COLOR[s] : undefined }} />
+            ))}
+          </div>
+          <div className="auth-strength-label" style={{ color: s ? STRENGTH_COLOR[s] : undefined }}>
+            {s ? STRENGTH_COPY[s] : 'Use 8+ chars with letters, numbers & symbols'}
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
 
 // ── OTP Input component ───────────────────────────────────────────────────────
 
@@ -110,6 +165,7 @@ export default function AuthPage() {
   const [params] = useSearchParams()
 
   const [screen, setScreen]       = useState<Screen>(params.get('mode') === 'register' ? 'signup-account' : 'signin')
+  const [oauthError]              = useState(params.get('oauthError') ?? '')
   const [animKey, setAnimKey]     = useState(0)
   const [, setHistory]            = useState<Screen[]>([])
 
@@ -130,6 +186,7 @@ export default function AuthPage() {
   const [error, setError]         = useState('')
   const [otpShake, setOtpShake]   = useState(false)
   const [resendSeconds, setResendSeconds] = useState(0)
+  const [workspaces, setWorkspaces] = useState<{id: string; name: string; slug: string; member_count: number}[]>([])
 
 
   // auto-fill slug from company name
@@ -138,6 +195,17 @@ export default function AuthPage() {
       setSlug(company.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 24))
     }
   }, [company, slugTouched])
+
+  // fetch workspaces when workspace picker is shown
+  useEffect(() => {
+    if (screen !== 'workspace') return
+    fetch(`${API_BASE}/orgs`, {
+      headers: { Authorization: `Bearer ${localStorage.getItem('datrix_access') ?? ''}` },
+    })
+      .then(r => r.ok ? r.json() : [])
+      .then(data => setWorkspaces(Array.isArray(data) ? data : []))
+      .catch(() => {})
+  }, [screen])
 
   // resend timer
   useEffect(() => {
@@ -173,7 +241,7 @@ export default function AuthPage() {
     setLoading(true)
     try {
       await login(email, password)
-      navigate('/datasets', { replace: true })
+      navigate('/home', { replace: true })
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Invalid credentials')
     } finally {
@@ -203,6 +271,24 @@ export default function AuthPage() {
     go(next)
   }
 
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoading(true)
+    setError('')
+    try {
+      await fetch(`${API_BASE}/auth/forgot-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      })
+      go('forgot-sent')
+    } catch {
+      setError('Something went wrong. Please try again.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const handleOTP = (val: string, next: Screen) => {
     if (val.length === 6) {
       setLoading(true)
@@ -216,65 +302,14 @@ export default function AuthPage() {
     setTimeout(() => setOtpShake(false), 500)
   }
 
-  const handleSocial = (inSignup: boolean) => {
-    setLoading(true)
-    setTimeout(() => {
-      setLoading(false)
-      go(inSignup ? 'signup-profile' : 'workspace')
-    }, 1100)
+  const handleSocial = (provider: 'google' | 'github') => {
+    window.location.href = `${API_BASE}/auth/oauth/${provider}`
   }
 
   // ── Stepper helpers ───────────────────────────────────────────────────────
 
   const isSignupFlow = SIGNUP_STEPS.includes(screen)
   const stepIdx = SIGNUP_STEPS.indexOf(screen)
-
-  // ── Password field helper ─────────────────────────────────────────────────
-
-  const PwField = ({
-    id, label, value, onChange, show, onToggle, placeholder, autoComplete, showStrength,
-    extra,
-  }: {
-    id: string; label: string; value: string; onChange: (v: string) => void
-    show: boolean; onToggle: () => void; placeholder: string; autoComplete: string
-    showStrength?: boolean; extra?: React.ReactNode
-  }) => {
-    const s = showStrength ? pwStrength(value) : 0
-    return (
-      <div className="auth-field">
-        <label className="auth-label" htmlFor={id}>{label}{extra}</label>
-        <div className="auth-input-wrap">
-          <input
-            id={id}
-            type={show ? 'text' : 'password'}
-            required
-            minLength={8}
-            value={value}
-            onChange={e => onChange(e.target.value)}
-            placeholder={placeholder}
-            autoComplete={autoComplete}
-            className="auth-input"
-            style={{ paddingRight: 46 }}
-          />
-          <button type="button" className="auth-pw-toggle" onClick={onToggle} aria-label="Toggle password">
-            {show ? <EyeOff size={17} /> : <Eye size={17} />}
-          </button>
-        </div>
-        {showStrength && value && (
-          <>
-            <div className="auth-strength">
-              {[1, 2, 3, 4].map(i => (
-                <i key={i} style={{ background: i <= s ? STRENGTH_COLOR[s] : undefined }} />
-              ))}
-            </div>
-            <div className="auth-strength-label" style={{ color: s ? STRENGTH_COLOR[s] : undefined }}>
-              {s ? STRENGTH_COPY[s] : 'Use 8+ chars with letters, numbers & symbols'}
-            </div>
-          </>
-        )}
-      </div>
-    )
-  }
 
   // ── Render ────────────────────────────────────────────────────────────────
 
@@ -322,10 +357,10 @@ export default function AuthPage() {
                   <p className="auth-subtitle">Welcome back. Access your data infrastructure.</p>
 
                   <div className="auth-social">
-                    <button type="button" className="auth-btn-social" onClick={() => handleSocial(false)}>
+                    <button type="button" className="auth-btn-social" onClick={() => handleSocial('google')}>
                       <GoogleIcon /> Continue with Google
                     </button>
-                    <button type="button" className="auth-btn-social" onClick={() => handleSocial(false)}>
+                    <button type="button" className="auth-btn-social" onClick={() => handleSocial('github')}>
                       <GitHubIcon /> Continue with GitHub
                     </button>
                   </div>
@@ -344,6 +379,7 @@ export default function AuthPage() {
                     extra={<button type="button" className="auth-label-btn" onClick={() => go('forgot')}>Forgot?</button>}
                   />
 
+                  {oauthError && <p className="auth-field-error">{oauthError}</p>}
                   {error && <p className="auth-field-error">{error}</p>}
 
                   <button type="submit" disabled={loading} className="auth-btn-primary">
@@ -364,19 +400,41 @@ export default function AuthPage() {
 
               {/* ══ SSO ══════════════════════════════════════════════════════ */}
               {screen === 'sso' && (
-                <form onSubmit={fakeSubmit('workspace')}>
+                <form onSubmit={async e => {
+                  e.preventDefault()
+                  setError('')
+                  setLoading(true)
+                  const input = (e.currentTarget.querySelector('#sso-email') as HTMLInputElement).value
+                  const domain = input.includes('@') ? input.split('@')[1] : input
+                  try {
+                    const res = await fetch(`${API_BASE}/orgs/sso/lookup?domain=${encodeURIComponent(domain)}`, {
+                      headers: { Authorization: `Bearer ${localStorage.getItem('datrix_access') ?? ''}` },
+                    })
+                    const data = await res.json()
+                    if (data.configured) {
+                      setError(`SSO is configured via ${data.provider} for ${data.org_name}. Contact your IT admin for a login link.`)
+                    } else {
+                      setError(`No SSO is configured for "${domain}". Ask your admin to set it up in Organization Settings.`)
+                    }
+                  } catch {
+                    setError('Could not check SSO configuration. Try again.')
+                  } finally {
+                    setLoading(false)
+                  }
+                }}>
                   <button type="button" className="auth-back" onClick={goBack}>
                     <ArrowLeft size={14} /> Back
                   </button>
                   <h1 className="auth-title">Single sign-on</h1>
-                  <p className="auth-subtitle">Enter your work email or company domain and we'll route you to your identity provider.</p>
+                  <p className="auth-subtitle">Enter your work email or company domain and we'll check if SSO is configured.</p>
                   <div className="auth-field">
                     <label className="auth-label" htmlFor="sso-email">Work email or domain</label>
-                    <input id="sso-email" type="text" required placeholder="you@company.com" className="auth-input" />
+                    <input id="sso-email" type="text" required placeholder="you@company.com or company.com" className="auth-input" />
                   </div>
+                  {error && <p className="auth-field-error">{error}</p>}
                   <button type="submit" disabled={loading} className="auth-btn-primary">
                     {loading ? <Loader2 size={16} className="animate-spin" /> : null}
-                    {loading ? 'Connecting…' : 'Continue with SSO'}
+                    {loading ? 'Checking…' : 'Continue with SSO'}
                   </button>
                   <p className="auth-alt-link">
                     <button type="button" className="auth-link" onClick={() => go('signin')}>Use password instead</button>
@@ -416,23 +474,34 @@ export default function AuthPage() {
               {screen === 'workspace' && (
                 <div>
                   <h1 className="auth-title">Choose a workspace</h1>
-                  <p className="auth-subtitle">You're a member of a few Datrix workspaces. Pick one to continue.</p>
-                  <div className="auth-ws-list">
-                    {[
-                      { letter: 'N', label: 'Northwind AI', sub: '42 members · acme-ai', bg: 'linear-gradient(135deg,#63b3ff,#3a7fd0)' },
-                      { letter: 'V', label: 'Vantage Labs', sub: '8 members · vantage', bg: 'linear-gradient(135deg,#4fffb0,#2bbd84)' },
-                      { letter: 'P', label: 'Polaris Data Co.', sub: '120 members · polaris', bg: 'linear-gradient(135deg,#b18cff,#7b54e0)' },
-                    ].map(ws => (
-                      <button key={ws.label} type="button" className="auth-ws-item" onClick={() => navigate('/datasets', { replace: true })}>
-                        <span className="auth-ws-logo" style={{ background: ws.bg }}>{ws.letter}</span>
-                        <span className="auth-ws-meta">
-                          <span className="auth-ws-name">{ws.label}</span>
-                          <span className="auth-ws-sub">{ws.sub}</span>
-                        </span>
-                        <span className="auth-ws-arrow"><ChevronRight size={16} /></span>
-                      </button>
-                    ))}
-                  </div>
+                  <p className="auth-subtitle">
+                    {workspaces.length > 0
+                      ? "You're a member of these Datrix workspaces."
+                      : "You haven't joined any workspaces yet."}
+                  </p>
+                  {workspaces.length > 0 && (
+                    <div className="auth-ws-list">
+                      {workspaces.map(ws => {
+                        const GRADS = [
+                          'linear-gradient(135deg,#63b3ff,#3a7fd0)',
+                          'linear-gradient(135deg,#4fffb0,#2bbd84)',
+                          'linear-gradient(135deg,#b18cff,#7b54e0)',
+                          'linear-gradient(135deg,#fbbf24,#d97706)',
+                        ]
+                        const bg = GRADS[ws.name.charCodeAt(0) % GRADS.length]
+                        return (
+                          <button key={ws.id} type="button" className="auth-ws-item" onClick={() => navigate('/home', { replace: true })}>
+                            <span className="auth-ws-logo" style={{ background: bg }}>{ws.name[0].toUpperCase()}</span>
+                            <span className="auth-ws-meta">
+                              <span className="auth-ws-name">{ws.name}</span>
+                              <span className="auth-ws-sub">{ws.member_count} member{ws.member_count !== 1 ? 's' : ''} · {ws.slug}</span>
+                            </span>
+                            <span className="auth-ws-arrow"><ChevronRight size={16} /></span>
+                          </button>
+                        )
+                      })}
+                    </div>
+                  )}
                   <button type="button" className="auth-ws-new" onClick={() => go('signup-company')}>
                     <Plus size={15} /> Create a new workspace
                   </button>
@@ -441,7 +510,7 @@ export default function AuthPage() {
 
               {/* ══ FORGOT PASSWORD ══════════════════════════════════════════ */}
               {screen === 'forgot' && (
-                <form onSubmit={fakeSubmit('forgot-sent')}>
+                <form onSubmit={handleForgotPassword}>
                   <button type="button" className="auth-back" onClick={() => go('signin')}>
                     <ArrowLeft size={14} /> Back to sign in
                   </button>
@@ -524,10 +593,10 @@ export default function AuthPage() {
                   <p className="auth-subtitle">Start your 14-day trial. No credit card required.</p>
 
                   <div className="auth-social">
-                    <button type="button" className="auth-btn-social" onClick={() => handleSocial(true)}>
+                    <button type="button" className="auth-btn-social" onClick={() => handleSocial('google')}>
                       <GoogleIcon /> Sign up with Google
                     </button>
-                    <button type="button" className="auth-btn-social" onClick={() => handleSocial(true)}>
+                    <button type="button" className="auth-btn-social" onClick={() => handleSocial('github')}>
                       <GitHubIcon /> Sign up with GitHub
                     </button>
                   </div>
@@ -613,7 +682,26 @@ export default function AuthPage() {
 
               {/* ══ SIGN UP · COMPANY ════════════════════════════════════════ */}
               {screen === 'signup-company' && (
-                <form onSubmit={e => { e.preventDefault(); go('success') }}>
+                <form onSubmit={async e => {
+                  e.preventDefault()
+                  setError('')
+                  setLoading(true)
+                  try {
+                    await fetch(`${API_BASE}/orgs`, {
+                      method: 'POST',
+                      headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: `Bearer ${localStorage.getItem('datrix_access') ?? ''}`,
+                      },
+                      body: JSON.stringify({ name: company, slug }),
+                    })
+                  } catch {
+                    // Non-fatal: org creation failing shouldn't block onboarding
+                  } finally {
+                    setLoading(false)
+                    go('success')
+                  }
+                }}>
                   <h1 className="auth-title">Set up your workspace</h1>
                   <p className="auth-subtitle">Your team will live here. You can change this later.</p>
                   <div className="auth-field">
@@ -667,7 +755,7 @@ export default function AuthPage() {
                     ))}
                   </div>
                   <button type="button" className="auth-btn-primary" style={{ marginTop: 20 }}
-                    onClick={() => navigate('/datasets', { replace: true })}>
+                    onClick={() => navigate('/home', { replace: true })}>
                     Go to dashboard
                   </button>
                 </div>

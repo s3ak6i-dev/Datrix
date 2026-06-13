@@ -1,5 +1,29 @@
 /* App-level overrides beyond the design system tokens in index.css */
 
+/* ── Global mobile responsive ── */
+@media (max-width: 768px) {
+  /* Pages that use a standard padding pattern */
+  .home-page,
+  .profile-page,
+  .orgs-page,
+  .billing-page {
+    padding: 1.25rem 1rem;
+  }
+
+  /* Stat row wraps on small screens */
+  .home-stats { flex-wrap: wrap; }
+  .home-stat { min-width: calc(50% - 0.5rem); }
+
+  /* Two-col becomes one on mobile */
+  .home-two-col { grid-template-columns: 1fr; }
+
+  /* Quick actions fit 2 per row */
+  .home-actions { grid-template-columns: 1fr 1fr; }
+
+  /* Billing plan cards stack */
+  .billing-plans { grid-template-columns: 1fr; }
+}
+
 /* Label utility (legacy, still referenced in some forms) */
 .label {
   display: block;

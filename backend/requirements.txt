@@ -16,6 +16,7 @@ psycopg2-binary==2.9.10
 python-jose[cryptography]==3.3.0
 passlib[bcrypt]==1.7.4
 pydantic[email]>=2.0
+httpx>=0.27
 
 # ── Data processing ────────────────────────────────────────────────────────────
 polars==1.41.2
