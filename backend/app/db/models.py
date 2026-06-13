@@ -1,10 +1,22 @@
 """SQLAlchemy ORM models — fields mirror the dataclasses in store.py exactly."""
 from datetime import datetime, timezone
 
-from sqlalchemy import Boolean, Column, Float, Integer, String, Text
+from sqlalchemy import Boolean, Column, Float, Integer, String, Text, JSON
+from sqlalchemy import types as sa_types
 from sqlalchemy.dialects.postgresql import JSONB
 
 from app.db.base import Base
+
+
+class _JSON(sa_types.TypeDecorator):
+    """Uses JSONB on PostgreSQL, JSON on everything else (SQLite for tests)."""
+    impl = JSON
+    cache_ok = True
+
+    def load_dialect_impl(self, dialect):
+        if dialect.name == "postgresql":
+            return dialect.type_descriptor(JSONB())
+        return dialect.type_descriptor(JSON())
 
 
 def _now() -> str:
@@ -21,7 +33,7 @@ class DatasetORM(Base):
     column_count = Column(Integer, nullable=True)
     size_bytes = Column(Integer, nullable=True)
     status = Column(String, default="pending")
-    schema = Column(JSONB, nullable=True)          # Optional[list]
+    schema = Column(_JSON, nullable=True)          # Optional[list]
     file_path = Column(String, default="")
     created_at = Column(String, default=_now)
     updated_at = Column(String, default=_now)
@@ -35,8 +47,8 @@ class QualityScanORM(Base):
     id = Column(String, primary_key=True)
     dataset_id = Column(String, nullable=False, index=True)
     status = Column(String, default="queued")
-    score = Column(JSONB, nullable=True)           # Optional[dict]
-    issues = Column(JSONB, default=list)
+    score = Column(_JSON, nullable=True)           # Optional[dict]
+    issues = Column(_JSON, default=list)
     scan_duration_ms = Column(Integer, nullable=True)
     started_at = Column(String, nullable=True)
     completed_at = Column(String, nullable=True)
@@ -47,7 +59,7 @@ class ColumnProfileSetORM(Base):
     """One row per dataset — stores all column profiles as a JSONB array."""
     __tablename__ = "column_profiles"
     dataset_id = Column(String, primary_key=True)
-    profiles = Column(JSONB, default=list)
+    profiles = Column(_JSON, default=list)
 
 
 class CleaningRecordORM(Base):
@@ -69,9 +81,9 @@ class PipelineORM(Base):
     name = Column(String, default="")
     description = Column(String, default="")
     dataset_id = Column(String, nullable=True)
-    steps = Column(JSONB, default=list)
+    steps = Column(_JSON, default=list)
     status = Column(String, default="draft")
-    node_positions = Column(JSONB, nullable=True)  # Optional[dict]
+    node_positions = Column(_JSON, nullable=True)  # Optional[dict]
     created_at = Column(String, default=_now)
     updated_at = Column(String, default=_now)
 
@@ -83,7 +95,7 @@ class PipelineRunORM(Base):
     dataset_id = Column(String, nullable=False)
     status = Column(String, default="pending")
     is_dry_run = Column(Boolean, default=True)
-    step_results = Column(JSONB, default=list)
+    step_results = Column(_JSON, default=list)
     output_path = Column(String, nullable=True)
     output_format = Column(String, default="csv")
     rows_in = Column(Integer, nullable=True)
@@ -91,7 +103,7 @@ class PipelineRunORM(Base):
     cols_in = Column(Integer, nullable=True)
     cols_out = Column(Integer, nullable=True)
     error_message = Column(Text, nullable=True)
-    output_preview = Column(JSONB, nullable=True)
+    output_preview = Column(_JSON, nullable=True)
     created_at = Column(String, default=_now)
     completed_at = Column(String, nullable=True)
 
@@ -106,7 +118,7 @@ class SyntheticJobORM(Base):
     output_name = Column(String, default="")
     method = Column(String, default="statistical")
     row_count = Column(Integer, default=1000)
-    column_overrides = Column(JSONB, nullable=True)
+    column_overrides = Column(_JSON, nullable=True)
     status = Column(String, default="pending")
     error_message = Column(Text, nullable=True)
     created_at = Column(String, default=_now)
@@ -136,17 +148,17 @@ class ALSessionORM(Base):
     model_type = Column(String, default="random_forest")
     sampling_strategy = Column(String, default="entropy")
     batch_size = Column(Integer, default=20)
-    label_classes = Column(JSONB, default=list)
-    exclude_columns = Column(JSONB, default=list)
+    label_classes = Column(_JSON, default=list)
+    exclude_columns = Column(_JSON, default=list)
     target_accuracy = Column(Float, nullable=True)
     max_rounds = Column(Integer, default=10)
     model_name = Column(String, default="")
     status = Column(String, default="annotating")
     current_round = Column(Integer, default=1)
-    labels = Column(JSONB, default=dict)
-    next_batch = Column(JSONB, default=list)
+    labels = Column(_JSON, default=dict)
+    next_batch = Column(_JSON, default=list)
     model_path = Column(Text, nullable=True)
-    rounds = Column(JSONB, default=list)
+    rounds = Column(_JSON, default=list)
     created_at = Column(String, default=_now)
     updated_at = Column(String, default=_now)
 
@@ -161,9 +173,9 @@ class BenchmarkJobORM(Base):
     target_column = Column(String, default="")
     task_type = Column(String, default="classification")
     eval_protocol = Column(String, default="kfold_5")
-    candidates = Column(JSONB, default=list)
+    candidates = Column(_JSON, default=list)
     status = Column(String, default="pending")
-    results = Column(JSONB, default=list)
+    results = Column(_JSON, default=list)
     winner_candidate_id = Column(String, nullable=True)
     error_message = Column(Text, nullable=True)
     created_at = Column(String, default=_now)
@@ -180,7 +192,7 @@ class MarketplaceAssetORM(Base):
     long_description = Column(Text, default="")
     asset_type = Column(String, default="dataset")
     category = Column(String, default="general")
-    tags = Column(JSONB, default=list)
+    tags = Column(_JSON, default=list)
     author_name = Column(String, default="Community")
     license = Column(String, default="mit")
     version = Column(String, default="1.0.0")
@@ -192,7 +204,7 @@ class MarketplaceAssetORM(Base):
     rating_avg = Column(Float, default=0.0)
     rating_count = Column(Integer, default=0)
     source_id = Column(String, default="")
-    preview = Column(JSONB, default=dict)
+    preview = Column(_JSON, default=dict)
     file_size = Column(Integer, default=0)
     created_at = Column(String, default=_now)
     updated_at = Column(String, default=_now)
@@ -228,7 +240,7 @@ class ComplianceScanORM(Base):
     status = Column(String, default="pending")
     scanned_at = Column(String, nullable=True)
     duration_ms = Column(Integer, nullable=True)
-    findings = Column(JSONB, default=list)
+    findings = Column(_JSON, default=list)
     overall_risk = Column(String, default="unscanned")
     pii_column_count = Column(Integer, default=0)
     critical_count = Column(Integer, default=0)
@@ -245,7 +257,7 @@ class CompliancePolicyORM(Base):
     id = Column(String, primary_key=True)
     name = Column(String, default="")
     policy_type = Column(String, default="")
-    parameters = Column(JSONB, default=dict)
+    parameters = Column(_JSON, default=dict)
     severity = Column(String, default="warning")
     enabled = Column(Boolean, default=True)
     created_at = Column(String, default=_now)
@@ -277,7 +289,7 @@ class AuditEventORM(Base):
     entity_id = Column(String, default="")
     entity_name = Column(String, default="")
     # "metadata" conflicts with SQLAlchemy internals; stored as "event_metadata" column
-    event_metadata = Column("metadata", JSONB, default=dict)
+    event_metadata = Column("metadata", _JSON, default=dict)
     duration_ms = Column(Integer, nullable=True)
     created_at = Column(String, default=_now, index=True)
 
@@ -288,7 +300,7 @@ class AnonymizationJobORM(Base):
     source_dataset_id = Column(String, nullable=False, index=True)
     output_dataset_id = Column(String, nullable=True)
     output_name = Column(String, default="")
-    column_configs = Column(JSONB, default=list)
+    column_configs = Column(_JSON, default=list)
     status = Column(String, default="pending")
     rows_processed = Column(Integer, default=0)
     row_count = Column(Integer, default=0)
@@ -302,7 +314,7 @@ class ComplianceReportORM(Base):
     __tablename__ = "compliance_reports"
     id = Column(String, primary_key=True)
     framework = Column(String, default="")
-    sections = Column(JSONB, default=list)
+    sections = Column(_JSON, default=list)
     status = Column(String, default="pending")
     entity_count = Column(Integer, default=0)
     findings_count = Column(Integer, default=0)
@@ -318,7 +330,7 @@ class ComplianceReportORM(Base):
 class AppSettingsORM(Base):
     __tablename__ = "app_settings"
     id = Column(Integer, primary_key=True, default=1)
-    data = Column(JSONB, default=dict)
+    data = Column(_JSON, default=dict)
 
 
 # ── Auth ──────────────────────────────────────────────────────────────────────

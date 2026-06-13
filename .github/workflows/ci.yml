@@ -23,7 +23,9 @@ jobs:
           cache: pip
 
       - name: Install dependencies
-        run: pip install -r requirements.txt
+        run: |
+          pip install -r requirements.txt
+          pip install -r requirements-test.txt
 
       - name: Ruff lint
         run: |
@@ -35,6 +37,14 @@ jobs:
           pip install pyright
           pyright app/ --pythonversion 3.12
         continue-on-error: true
+
+      - name: Smoke tests
+        run: pytest
+        env:
+          # SQLite override — tests must not require a real Postgres instance
+          DATABASE_URL: "sqlite:///./tests/test_datrix.db"
+          SECRET_KEY: "ci-test-secret-key-not-for-production-use-only"
+          ENVIRONMENT: "test"
 
   frontend:
     name: Frontend — type-check + build

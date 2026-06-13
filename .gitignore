@@ -63,3 +63,4 @@ logs/
 *.pt
 *.pth
 *.onnx
+backend/tests/test_datrix.db

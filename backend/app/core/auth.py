@@ -1,5 +1,6 @@
 """JWT utilities and FastAPI auth dependency."""
 import hashlib
+import secrets
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 
@@ -28,7 +29,11 @@ def verify_password(plain: str, hashed: str) -> bool:
 # ── Token helpers ─────────────────────────────────────────────────────────────
 
 def _create_token(data: dict, expires_delta: timedelta) -> str:
-    payload = {**data, "exp": datetime.now(timezone.utc) + expires_delta}
+    payload = {
+        **data,
+        "exp": datetime.now(timezone.utc) + expires_delta,
+        "jti": secrets.token_hex(16),  # unique ID prevents hash collision on same-second issuance
+    }
     return jwt.encode(payload, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
 
 

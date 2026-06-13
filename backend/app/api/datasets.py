@@ -2,7 +2,6 @@
 Dataset API — upload, list, get, delete, trigger scan.
 All heavy work (ingestion, quality scan) runs in a background thread.
 """
-from __future__ import annotations
 import threading
 from pathlib import Path
 from datetime import datetime, timezone
