@@ -44,6 +44,8 @@ A self-hosted, local-first AI data infrastructure platform — a single workspac
   - [Docker (single command)](#docker-single-command)
   - [Production with HTTPS](#production-with-https)
 - [Environment Variables](#environment-variables)
+- [Object Storage](#object-storage)
+- [Backups](#backups)
 - [Database & Migrations](#database--migrations)
 - [API Reference](#api-reference)
 - [CI / CD](#ci--cd)
@@ -374,8 +376,8 @@ Global defaults for every module, live storage stats, and a danger zone.
 Browser
   │
   ▼
-Nginx (80/443)
-  ├── /api/*  ──► FastAPI (Uvicorn workers)
+Nginx (80/443)  ← multi-stage Docker image: Vite build → nginx:alpine
+  ├── /api/*  ──► FastAPI (Gunicorn + Uvicorn workers)
   │                  ├── Auth middleware (JWT verification)
   │                  ├── Rate limiter (slowapi — 200 req/min default)
   │                  ├── API routers (one per module)
@@ -383,9 +385,10 @@ Nginx (80/443)
   │                  │     ├── Background threads (ML jobs)
   │                  │     └── Polars / scikit-learn / CTGAN
   │                  ├── SQLAlchemy ORM ──► PostgreSQL (Neon)
-  │                  └── Local filesystem (uploads, models, outputs)
+  │                  └── StorageBackend ──► Local disk  (STORAGE_BACKEND=local)
+  │                                    └── Cloudflare R2 / AWS S3 (STORAGE_BACKEND=s3)
   │
-  └── /*      ──► Static SPA (React, pre-built by Vite)
+  └── /*      ──► Static SPA (React, pre-built by Vite, baked into nginx image)
                     └── TanStack Query (polls async job endpoints)
 ```
 
@@ -448,6 +451,9 @@ Datrix/
 │   │   │   ├── audit_logger.py     # Append-only event log
 │   │   │   └── marketplace_seeder.py  # 15 sample assets on first startup
 │   │   └── main.py                 # App factory, middleware, startup hooks
+│   ├── services/               # Business logic + background ML executors
+│   │   ├── storage.py              # StorageBackend ABC — LocalStorageBackend + S3StorageBackend
+│   │   └── ...
 │   ├── alembic/                    # Migration scripts
 │   │   └── env.py                  # Async-compatible Alembic env
 │   ├── data/                       # Runtime data (gitignored)
@@ -518,9 +524,13 @@ Datrix/
 │   └── package.json
 │
 ├── nginx/
-│   └── nginx.conf                  # HTTP→HTTPS redirect + TLS + SPA + API proxy
-├── docker-compose.yml              # Local Docker stack (HTTP)
-├── docker-compose.production.yml   # Production stack (HTTPS + Certbot)
+│   ├── Dockerfile                  # Multi-stage: node build → nginx:alpine (production only)
+│   └── nginx.conf                  # HTTP→HTTPS redirect + TLS + gzip + SPA + API proxy
+├── scripts/
+│   ├── setup-ssl.sh                # One-time Let's Encrypt certificate issuance
+│   └── backup.sh                   # Docker volume backup with dated archives + auto-pruning
+├── docker-compose.yml              # Local Docker stack (HTTP, VITE_API_URL=direct)
+├── docker-compose.production.yml   # Production stack (HTTPS + Certbot, nginx multi-stage build)
 ├── .github/
 │   └── workflows/
 │       ├── ci.yml                  # Lint + type-check + build on push/PR
@@ -625,11 +635,11 @@ docker compose down      # stop
 
 ### Production with HTTPS
 
-The production stack uses Certbot for automatic Let's Encrypt TLS certificates with auto-renewal.
+The production stack uses Certbot for automatic Let's Encrypt TLS certificates with auto-renewal. The frontend is compiled into the nginx image at build time — no separate frontend container in production.
 
-**1. Provision a VPS** (Ubuntu 22.04 recommended) and point your domain's A record at it.
+**1. Provision a VPS** (Ubuntu 22.04 recommended) and point your domain's DNS A record at its public IP.
 
-**2. Install Docker + Docker Compose**
+**2. Install Docker**
 
 ```bash
 curl -fsSL https://get.docker.com | sh
@@ -641,38 +651,36 @@ curl -fsSL https://get.docker.com | sh
 git clone https://github.com/s3ak6i-dev/Datrix.git
 cd Datrix
 cp backend/.env.example backend/.env
-# Edit backend/.env: set DATABASE_URL and SECRET_KEY
+# Edit backend/.env — set DATABASE_URL, SECRET_KEY, and ALLOWED_ORIGINS
 ```
 
-**4. Set your domain in nginx.conf**
+**4. Issue the TLS certificate** (one-time setup)
 
-```bash
-sed -i 's/YOUR_DOMAIN/yourdomain.com/g' nginx/nginx.conf
-```
-
-**5. Initial certificate issue** (HTTP-only first, then switch to HTTPS)
-
-```bash
-# Bring up HTTP-only first so Certbot can complete the ACME challenge
-docker compose up -d
-
-# Issue certificate
-docker run --rm -v "$(pwd)/certbot/certs:/etc/letsencrypt" \
-  -v "$(pwd)/certbot/www:/var/www/certbot" \
-  certbot/certbot certonly --webroot \
-  -w /var/www/certbot -d yourdomain.com --email you@email.com --agree-tos
-
-docker compose down
-```
-
-**6. Start the production stack**
+`scripts/setup-ssl.sh` handles the `YOUR_DOMAIN` substitution in `nginx/nginx.conf`, spins up a temporary nginx for the ACME HTTP challenge, runs Certbot, then cleans up:
 
 ```bash
 export DOMAIN=yourdomain.com
-docker compose -f docker-compose.production.yml up -d
+export EMAIL=you@email.com
+bash scripts/setup-ssl.sh
 ```
 
+**5. Start the production stack**
+
+```bash
+# DOMAIN is used as a build arg to bake VITE_API_URL into the React JS bundle
+DOMAIN=yourdomain.com docker compose -f docker-compose.production.yml up -d --build
+```
+
+The `--build` flag compiles the frontend on first run (or after any code change). On subsequent restarts without code changes you can omit it.
+
 Certbot renews certificates automatically every 12 hours (checks; only renews when within 30 days of expiry).
+
+**6. Ongoing deploys**
+
+```bash
+git pull
+DOMAIN=yourdomain.com docker compose -f docker-compose.production.yml up -d --build
+```
 
 ---
 
@@ -698,6 +706,17 @@ ALLOWED_ORIGINS=https://yourdomain.com      # Comma-separated CORS origins
 UPLOAD_DIR=./data/uploads                   # Where uploaded files are stored
 MAX_UPLOAD_MB=10240                         # Max upload size in MB (default: 10 GB)
 
+# ── Object Storage ───────────────────────────────────────────────────────────
+STORAGE_BACKEND=local               # local | s3  (default: local — zero setup)
+# When STORAGE_BACKEND=s3, fill in the block below.
+# Works with Cloudflare R2, AWS S3, Backblaze B2, MinIO, or any S3-compatible API.
+AWS_S3_BUCKET=datrix-uploads        # Bucket name
+AWS_REGION=auto                     # "auto" for Cloudflare R2; us-east-1 for AWS
+AWS_S3_PREFIX=uploads/              # Key prefix inside the bucket
+AWS_ENDPOINT_URL=https://<account-id>.r2.cloudflarestorage.com  # Blank = real AWS S3
+AWS_ACCESS_KEY_ID=xxx               # R2/S3 access key ID
+AWS_SECRET_ACCESS_KEY=xxx           # R2/S3 secret access key
+
 # ── Observability (optional) ─────────────────────────────────────────────────
 SENTRY_DSN=https://xxx@sentry.io/yyy        # Sentry error tracking (optional)
 ```
@@ -707,6 +726,82 @@ Frontend environment (`frontend/.env`):
 ```bash
 VITE_API_URL=http://localhost:8000          # Backend API base URL (no trailing slash)
 ```
+
+---
+
+## Object Storage
+
+By default Datrix writes uploaded files to `data/uploads/` on the local filesystem (`STORAGE_BACKEND=local`). Switching to `STORAGE_BACKEND=s3` routes all file I/O through a `StorageBackend` abstraction that supports any S3-compatible provider — no application code changes required.
+
+### Supported providers
+
+| Provider | `AWS_ENDPOINT_URL` | `AWS_REGION` | Notes |
+|---|---|---|---|
+| **Cloudflare R2** | `https://<account-id>.r2.cloudflarestorage.com` | `auto` | Zero egress fees; 10 GB free tier |
+| **AWS S3** | *(leave blank)* | e.g. `us-east-1` | Standard AWS credentials |
+| **Backblaze B2** | `https://s3.<region>.backblazeb2.com` | e.g. `us-west-004` | Cheap storage |
+| **MinIO (self-hosted)** | `http://localhost:9000` | any string | Good for local testing |
+
+### Cloudflare R2 quick-start
+
+1. Create a free account at [dash.cloudflare.com](https://dash.cloudflare.com) and navigate to **R2 Object Storage**
+2. Create a bucket named `datrix-uploads`
+3. Go to **R2 → Manage R2 API Tokens → Create token** — select **Object Read & Write** permissions
+4. Copy the **Access Key ID** and **Secret Access Key** (shown once — save them now)
+5. Add to `backend/.env`:
+
+```bash
+STORAGE_BACKEND=s3
+AWS_S3_BUCKET=datrix-uploads
+AWS_REGION=auto
+AWS_S3_PREFIX=uploads/
+AWS_ENDPOINT_URL=https://<your-account-id>.r2.cloudflarestorage.com
+AWS_ACCESS_KEY_ID=<from step 4>
+AWS_SECRET_ACCESS_KEY=<from step 4>
+```
+
+### How it works
+
+`backend/app/services/storage.py` exports a `get_storage()` singleton that returns either `LocalStorageBackend` or `S3StorageBackend` depending on `STORAGE_BACKEND`. All file paths stored in the database are storage keys:
+
+- **Local** → absolute path string: `/app/data/uploads/report.csv`
+- **S3** → URI string: `s3://datrix-uploads/uploads/report_a1b2c3d4.csv`
+
+When ML services need to read a file (Polars, pandas), they call `storage.local_path(key)` which is transparent for local storage and downloads to a temp file for S3.
+
+---
+
+## Backups
+
+`scripts/backup.sh` creates a dated `.tar.gz` of the `backend_data` Docker volume and automatically prunes archives older than 7 days.
+
+```bash
+# Basic usage (saves to ./backups/)
+bash scripts/backup.sh
+
+# Custom output directory
+bash scripts/backup.sh /mnt/backups
+
+# Retain 30 days instead of 7
+KEEP_DAYS=30 bash scripts/backup.sh
+```
+
+**Cron example** — daily at 2 AM, logged:
+
+```bash
+0 2 * * * cd /opt/datrix && bash scripts/backup.sh >> /var/log/datrix-backup.log 2>&1
+```
+
+**Restore** a backup:
+
+```bash
+docker run --rm \
+  -v datrix_backend_data:/data \
+  -v $(pwd)/backups:/backup:ro \
+  alpine tar xzf /backup/datrix_volume_20240101_020000.tar.gz -C /data
+```
+
+> The script auto-detects the Docker Compose project name from `$COMPOSE_PROJECT` (default: `datrix`). If your stack is named differently, set `COMPOSE_PROJECT=myproject bash scripts/backup.sh`.
 
 ---
 
@@ -814,7 +909,7 @@ docker compose -f docker-compose.production.yml up -d
 | **CORS** | Configurable `ALLOWED_ORIGINS` — defaults to localhost only |
 | **HTTP headers** | Nginx sets HSTS, X-Frame-Options, X-Content-Type-Options, Referrer-Policy, CSP, Permissions-Policy |
 | **TLS** | TLSv1.2/1.3 only, ECDHE ciphers, HSTS preload (`max-age=63072000`) |
-| **Input validation** | Pydantic models validate all request bodies; file type and size checked on upload |
+| **Input validation** | Pydantic v2 `Field` constraints (`min_length`, `max_length`, `ge`, `le`) on every request model; file type and size enforced on upload |
 | **SQL injection** | SQLAlchemy ORM with parameterized queries throughout — no raw SQL |
 | **Error tracking** | Sentry SDK — optional; configure `SENTRY_DSN` in `.env` |
 
@@ -872,13 +967,14 @@ All components reference CSS custom properties exclusively — no hardcoded hex 
 | **1.1 Auth** | JWT backend + frontend (register, login, refresh, logout, ProtectedRoute) | ✅ Complete |
 | **1.2 Database** | SQLAlchemy 2.0 ORM, 22 tables on Neon Postgres, Alembic migrations | ✅ Complete |
 | **1.3 Env Config** | pydantic-settings, `.env`, `VITE_API_URL` | ✅ Complete |
+| **1.4 File Storage** | `StorageBackend` ABC — `LocalStorageBackend` + `S3StorageBackend`; Cloudflare R2 live | ✅ Complete |
 | **2.1–2.5 Stability** | Error boundaries, rate limiting, thread safety, upload validation, JSON logging | ✅ Complete |
-| **3.1 Docker** | Backend + frontend Dockerfiles, docker-compose, Nginx + HTTPS config | ✅ Complete |
+| **2.6 API Hardening** | Pydantic `Field` constraints on all request models; `ColumnConfig` typed anonymization | ✅ Complete |
+| **3.1 Docker** | Multi-stage nginx image (frontend baked in); backend healthcheck; `setup-ssl.sh` | ✅ Complete |
+| **3.3 Backups** | `scripts/backup.sh` — Docker volume backup with dated archives + auto-pruning | ✅ Complete |
 | **4.4 CI/CD** | GitHub Actions (lint + type-check + build on PR; Docker publish on tag) | ✅ Complete |
-| **1.4 File Storage** | S3/R2 abstraction layer for uploads and model files | ⬜ Pending |
-| **1.5 HTTPS** | Nginx TLS config complete — requires Certbot run at deploy time | 🔧 Deploy-time |
-| **3.2 Gunicorn** | Multi-worker Gunicorn config for production throughput | ⬜ Pending |
-| **3.3 Backups** | Automated Neon DB snapshots + `data/` volume backup scripts | ⬜ Pending |
+| **1.5 HTTPS** | Nginx TLS config complete — requires `setup-ssl.sh` run at deploy time | 🔧 Deploy-time |
+| **3.2 Gunicorn** | Gunicorn configured with 3 workers + 120s timeout; tuning by CPU count pending | ✅ Complete |
 | **3.4 Metrics** | Prometheus `/metrics` endpoint + Grafana dashboard | ⬜ Pending |
 
 ---
@@ -907,7 +1003,22 @@ All components reference CSS custom properties exclusively — no hardcoded hex 
 > If you see `"alembic_version" does not exist`, the database is brand new. The startup code falls back to `create_all` automatically. If it still fails, check that `DATABASE_URL` points to a reachable Postgres instance and that the user has `CREATE TABLE` privileges.
 
 **`CORS policy` error in the browser**
-> Your `ALLOWED_ORIGINS` in `backend/.env` must include the exact origin the frontend is running on (e.g., `http://localhost:5173`). For production set it to `https://yourdomain.com`.
+> Your `ALLOWED_ORIGINS` in `backend/.env` must include the exact origin the frontend is running on (e.g., `http://localhost:5173`). For production set it to `https://yourdomain.com`. When running via Docker compose the frontend is on port 80 — the `docker-compose.yml` overrides `ALLOWED_ORIGINS` automatically for this case.
+
+**Backend container stuck in `starting` / healthcheck always failing**
+> `curl` is required for the `HEALTHCHECK` instruction in `backend/Dockerfile`. It is installed as part of the `apt-get` step. If you have an older cached layer, rebuild with `docker compose build --no-cache backend`.
+
+**`VITE_API_URL` in the compiled JS is always `http://localhost:8000` regardless of docker-compose args**
+> The `ARG VITE_API_URL` declaration in `frontend/Dockerfile` must appear before the `RUN npm run build` step. If you pulled an older version of the repo, rebuild with `docker compose build --no-cache frontend`.
+
+**Production nginx serves a blank page / no static files**
+> Earlier versions used a shared `frontend_static` Docker volume that was never populated. The current `nginx/Dockerfile` bakes the frontend into the nginx image directly via a multi-stage build — rebuild with `docker compose -f docker-compose.production.yml build --no-cache nginx`.
+
+**`scripts/setup-ssl.sh` fails with "DOMAIN env var is required"**
+> Export the variable before running: `export DOMAIN=yourdomain.com && export EMAIL=you@email.com && bash scripts/setup-ssl.sh`.
+
+**`scripts/backup.sh` fails with "volume not found"**
+> The Docker Compose project name prefixes volume names. Default is `datrix` (giving `datrix_backend_data`). If you started the stack from a differently-named directory, override: `COMPOSE_PROJECT=myname bash scripts/backup.sh`.
 
 ---
 
