@@ -1,9 +1,14 @@
 version: "3.9"
 # Production compose — HTTPS via Let's Encrypt.
-# Usage:
-#   1. Set DOMAIN in your shell: export DOMAIN=your.domain.com
-#   2. Run scripts/setup-ssl.sh once to issue certificates
-#   3. docker compose -f docker-compose.production.yml up -d
+#
+# Pre-flight:
+#   1. Set DOMAIN: export DOMAIN=your.domain.com
+#   2. Run scripts/setup-ssl.sh once to issue the certificate
+#   3. docker compose -f docker-compose.production.yml up -d --build
+#
+# The nginx service is built from nginx/Dockerfile which does a multi-stage
+# build: compiles the React frontend, then copies the dist into nginx:alpine.
+# No shared volume needed — static files are baked into the image.
 
 services:
   backend:
@@ -19,28 +24,27 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
-
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-      args:
-        - VITE_API_URL=https://${DOMAIN}/api
-    restart: unless-stopped
+      start_period: 60s
 
   nginx:
-    image: nginx:alpine
+    build:
+      context: .
+      dockerfile: nginx/Dockerfile
+      args:
+        # VITE_API_URL is baked into the compiled JS at build time.
+        # Must match your domain — set DOMAIN in your shell before building.
+        - VITE_API_URL=https://${DOMAIN}/api
     ports:
       - "80:80"
       - "443:443"
     volumes:
+      # nginx.conf is mounted so you can tweak it without rebuilding the image
       - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
-      - frontend_static:/usr/share/nginx/html:ro
       - certbot_certs:/etc/letsencrypt:ro
       - certbot_www:/var/www/certbot:ro
     depends_on:
-      - backend
-      - frontend
+      backend:
+        condition: service_healthy
     restart: unless-stopped
 
   certbot:
@@ -53,6 +57,5 @@ services:
 
 volumes:
   backend_data:
-  frontend_static:
   certbot_certs:
   certbot_www:

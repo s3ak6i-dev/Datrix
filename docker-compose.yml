@@ -1,4 +1,6 @@
 version: "3.9"
+# Development compose — HTTP only, ports exposed for local debugging.
+# Usage: docker compose up --build
 
 services:
   backend:
@@ -6,6 +8,9 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     env_file: ./backend/.env
+    environment:
+      # Override ALLOWED_ORIGINS for Docker: frontend is on port 80, not Vite's 5173
+      - ALLOWED_ORIGINS=http://localhost,http://127.0.0.1
     volumes:
       - backend_data:/app/data
     ports:
@@ -16,17 +21,21 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
+      start_period: 60s
 
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
       args:
+        # Direct URL — the frontend JS calls the backend on port 8000 directly.
+        # (No nginx proxy needed in dev; port 8000 is exposed above.)
         - VITE_API_URL=http://localhost:8000
     ports:
       - "80:80"
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     restart: unless-stopped
 
 volumes:
