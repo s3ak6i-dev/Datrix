@@ -13,23 +13,13 @@ if sys.platform == "win32":
 
 from fastapi import Depends, FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from app.core.limiter import limiter
-
-_req_log = logging.getLogger("datrix.request")
-
 from app.core.config import settings
 from app.core.auth import get_current_user
 from app.core.logging_setup import configure_logging
 from app.db.engine import create_tables
-
-configure_logging()
-
-_startup_log = logging.getLogger("datrix.startup")
-
-
 from app.api.auth import router as auth_router
 from app.api.oauth import router as oauth_router
 from app.api.orgs import router as orgs_router
@@ -47,6 +37,11 @@ from app.api.changes import router as changes_router
 from app.api.join import router as join_router
 from app.services.compliance_checker import ensure_default_policies
 from app.services.marketplace_seeder import initialize_seeds
+
+configure_logging()
+
+_req_log = logging.getLogger("datrix.request")
+_startup_log = logging.getLogger("datrix.startup")
 
 
 def _auto_approve_pending() -> None:

@@ -77,10 +77,10 @@ If you didn't request this, you can safely ignore this email.
 def send_password_reset(to: str, token: str) -> bool:
     url = f"{settings.FRONTEND_URL}/reset-password?token={token}"
     html = _wrap(
-        f'<p style="color:#f0f4ff;font-size:16px;margin:0 0 12px">Reset your password</p>'
-        f'<p style="color:#7a8aaa;font-size:14px;margin:0 0 8px">'
-        f'Someone requested a password reset for your Datrix account. '
-        f'This link expires in 1 hour.</p>'
+        '<p style="color:#f0f4ff;font-size:16px;margin:0 0 12px">Reset your password</p>'
+        '<p style="color:#7a8aaa;font-size:14px;margin:0 0 8px">'
+        'Someone requested a password reset for your Datrix account. '
+        'This link expires in 1 hour.</p>'
         + _btn(url, "Reset Password")
         + f'<p style="color:#3d4d6a;font-size:12px">Or copy this link:<br>'
         f'<span style="color:#63b3ff">{url}</span></p>'
@@ -92,10 +92,10 @@ def send_password_reset(to: str, token: str) -> bool:
 def send_verification(to: str, token: str) -> bool:
     url = f"{settings.FRONTEND_URL}/verify-email?token={token}"
     html = _wrap(
-        f'<p style="color:#f0f4ff;font-size:16px;margin:0 0 12px">Verify your email</p>'
-        f'<p style="color:#7a8aaa;font-size:14px;margin:0 0 8px">'
-        f'Welcome to Datrix! Click below to verify your email address. '
-        f'This link expires in 24 hours.</p>'
+        '<p style="color:#f0f4ff;font-size:16px;margin:0 0 12px">Verify your email</p>'
+        '<p style="color:#7a8aaa;font-size:14px;margin:0 0 8px">'
+        'Welcome to Datrix! Click below to verify your email address. '
+        'This link expires in 24 hours.</p>'
         + _btn(url, "Verify Email")
         + f'<p style="color:#3d4d6a;font-size:12px">Or copy this link:<br>'
         f'<span style="color:#63b3ff">{url}</span></p>'

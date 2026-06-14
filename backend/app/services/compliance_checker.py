@@ -3,7 +3,7 @@ Compliance checker — evaluates all enabled policies against all relevant entit
 Returns a list of PolicyViolation objects and persists them to the store.
 """
 from __future__ import annotations
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone
 from app.models.store import store, PolicyViolation, CompliancePolicy
 from app.services.audit_logger import log as audit_log
 

@@ -90,7 +90,7 @@ export function DatasetChangesPanel({ open, onClose, dataset, scans }: Props) {
               Run a quality scan to start tracking changes.
             </p>
           ) : (
-            <ol style={{ position: 'relative', borderLeft: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: 24, marginLeft: 8, paddingLeft: 0, listStyle: 'none', margin: 0, paddingLeft: 0 }}>
+            <ol style={{ position: 'relative', borderLeft: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: 24, marginLeft: 8, paddingLeft: 0, listStyle: 'none', margin: 0 }}>
               {events.map((event, i) => (
                 <li key={i} style={{ marginLeft: 20 }}>
                   {event.type === 'scan' ? (

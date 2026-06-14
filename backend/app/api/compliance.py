@@ -13,9 +13,6 @@ from fastapi import APIRouter, HTTPException, Query, Request
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 from app.core.limiter import limiter
-
-_log = logging.getLogger(__name__)
-
 from app.models.store import store, CompliancePolicy, AnonymizationJob
 from app.services.audit_logger import log as audit_log
 from app.services.compliance_checker import evaluate_all_policies, compute_risk_score
@@ -23,6 +20,8 @@ from app.services.lineage_tracker import build_full_graph, build_dataset_graph
 from app.services.pii_scanner import scan_dataset
 from app.services.anonymizer import run_anonymization_job
 from app.services.report_generator import generate_report, REPORTS_DIR
+
+_log = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/compliance", tags=["compliance"])
 
@@ -383,7 +382,8 @@ def get_audit_log(
 
 @router.get("/audit/export")
 def export_audit_log():
-    import csv, io
+    import csv
+    import io
     from fastapi.responses import StreamingResponse
     events = store.list_audit_events(limit=10000)
     buf = io.StringIO()

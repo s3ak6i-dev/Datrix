@@ -5,9 +5,7 @@ Produces JSON + HTML reports for GDPR, CCPA, HIPAA, General Summary, and Custom.
 from __future__ import annotations
 
 import json
-import uuid
 from datetime import datetime, timezone
-from pathlib import Path
 
 from app.models.store import store, ComplianceReport
 from app.core.config import DATA_DIR

@@ -8,7 +8,6 @@ All changes are logged and reversible.
 """
 from __future__ import annotations
 from pathlib import Path
-from typing import Optional
 
 import polars as pl
 import numpy as np

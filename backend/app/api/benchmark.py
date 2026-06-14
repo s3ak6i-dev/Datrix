@@ -12,7 +12,7 @@ import csv
 import io
 import threading
 import uuid
-from typing import Any, Optional
+from typing import Optional
 
 from fastapi import APIRouter, Depends, Request, HTTPException
 from fastapi.responses import StreamingResponse

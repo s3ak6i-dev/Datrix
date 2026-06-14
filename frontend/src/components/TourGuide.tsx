@@ -21,6 +21,7 @@ interface StepDef {
   flow: FlowItem[]
   caps: CapItem[]
   note?: string
+  route?: string
 }
 
 // ── Step definitions ────────────────────────────────────────────────────────

@@ -169,7 +169,7 @@ def _run_scan(dataset_id: str, scan_id: str):
         ds.latest_score = result["score"]["overall"]
         store.update_dataset(ds)
 
-    except Exception as e:
+    except Exception:
         if scan:
             scan.status = "failed"
             store.update_scan(scan)

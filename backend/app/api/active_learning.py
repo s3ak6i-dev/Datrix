@@ -29,7 +29,6 @@ from pydantic import BaseModel, Field
 
 from app.models.store import store, ALSession, Dataset
 from app.services.active_learning_executor import get_initial_batch, train_and_get_next_batch
-from app.core.config import DATA_DIR, UPLOADS_DIR
 from app.services.storage import get_storage
 
 router = APIRouter(prefix="/al", tags=["active-learning"])
@@ -310,7 +309,6 @@ def export_model(session_id: str):
 @router.post("/sessions/{session_id}/predict", response_model=PredictOut)
 def predict_full_dataset(session_id: str):
     import polars as pl
-    from datetime import datetime, timezone
 
     s = store.get_al_session(session_id)
     if not s:

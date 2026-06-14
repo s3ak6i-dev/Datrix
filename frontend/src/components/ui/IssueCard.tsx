@@ -3,12 +3,6 @@ import { AlertCircle, AlertTriangle, Info, Wrench, CheckCircle2 } from 'lucide-r
 import { SeverityBadge } from './Badge'
 import type { QualityIssue } from '@/types'
 
-const severityIconColor: Record<string, string> = {
-  critical: 'var(--bad)',
-  warning: 'var(--warn)',
-  info: 'var(--accent)',
-}
-
 const icons = {
   critical: <AlertCircle style={{ width: '16px', height: '16px', color: 'var(--bad)', flexShrink: 0 }} />,
   warning: <AlertTriangle style={{ width: '16px', height: '16px', color: 'var(--warn)', flexShrink: 0 }} />,

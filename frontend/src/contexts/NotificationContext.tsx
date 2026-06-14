@@ -38,7 +38,7 @@ async function fetchJobs(token: string): Promise<Job[]> {
   const results = await Promise.allSettled([
     fetch(`${BASE}/synthetic/jobs`, { headers }).then(r => r.ok ? r.json() : []),
     fetch(`${BASE}/benchmark/jobs`, { headers }).then(r => r.ok ? r.json() : []),
-    fetch(`${BASE}/active-learning/sessions`, { headers }).then(r => r.ok ? r.json() : []),
+    fetch(`${BASE}/al/sessions`, { headers }).then(r => r.ok ? r.json() : []),
   ])
   return results.flatMap(r => r.status === 'fulfilled' ? r.value : [])
 }

@@ -7,42 +7,35 @@ from __future__ import annotations
 
 import random
 import traceback
-from pathlib import Path
 from typing import Optional
 
 import joblib
 import numpy as np
 import polars as pl
-
-from app.core.config import DATA_DIR
-from app.models.store import store, ALSession
-from app.services.storage import get_storage
-
-MODELS_DIR = DATA_DIR / "al_models"
-MODELS_DIR.mkdir(parents=True, exist_ok=True)
-
-
-# ── Sklearn imports ───────────────────────────────────────────────────
-
 from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import StandardScaler, OneHotEncoder, LabelEncoder
 from sklearn.impute import SimpleImputer
 from sklearn.pipeline import Pipeline as SKPipeline
 from sklearn.model_selection import StratifiedKFold, cross_validate
-from sklearn.metrics import (
-    accuracy_score, precision_score, recall_score, f1_score,
-    confusion_matrix, mean_absolute_error, mean_squared_error, r2_score,
-)
+from sklearn.metrics import confusion_matrix
 from sklearn.linear_model import LogisticRegression, Ridge
-from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor, GradientBoostingClassifier
+from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 from sklearn.svm import SVC, SVR
 from sklearn.neural_network import MLPClassifier, MLPRegressor
 from sklearn.tree import DecisionTreeClassifier
+
+from app.core.config import DATA_DIR
+from app.models.store import store, ALSession
+from app.services.storage import get_storage
+
 try:
     from xgboost import XGBClassifier, XGBRegressor
     _HAS_XGB = True
 except ImportError:
     _HAS_XGB = False
+
+MODELS_DIR = DATA_DIR / "al_models"
+MODELS_DIR.mkdir(parents=True, exist_ok=True)
 
 
 # ── Model factory ─────────────────────────────────────────────────────
@@ -343,13 +336,12 @@ def _generate_explanation(
             elif delta < -0.02:
                 lines.append(f"\n**Round change:** Accuracy dipped by {delta*100:.1f}% — this can happen when new labels reveal harder patterns. It should recover.")
             else:
-                lines.append(f"\n**Round change:** Performance stayed roughly the same — the model may be converging.")
+                lines.append("\n**Round change:** Performance stayed roughly the same — the model may be converging.")
 
         # Confusion matrix insight
         if confusion and len(label_classes) == 2:
             cm = confusion
-            tn, fp, fn, tp = cm[0][0], cm[0][1], cm[1][0], cm[1][1]
-            total = tn + fp + fn + tp
+            _tn, fp, fn, _tp = cm[0][0], cm[0][1], cm[1][0], cm[1][1]
             if fn > fp * 1.5:
                 lines.append(f"\n**Confusion insight:** The model misses {fn} true positives (false negatives) — it's being too conservative. Label more positive examples.")
             elif fp > fn * 1.5:
@@ -409,15 +401,15 @@ def _generate_explanation(
         if acc < 0.7 and labeled_count < 100:
             lines.append(f"\n**Recommendation:** With only {labeled_count} labeled examples and {acc*100:.0f}% accuracy, label at least 2–3 more rounds to stabilize the model.")
         elif acc >= 0.85:
-            lines.append(f"\n**Recommendation:** The model is performing well. Consider stopping or running 1–2 more rounds to confirm stability.")
+            lines.append("\n**Recommendation:** The model is performing well. Consider stopping or running 1–2 more rounds to confirm stability.")
         else:
-            lines.append(f"\n**Recommendation:** Continuing to label will help — focus on examples the model is uncertain about (already selected for you).")
+            lines.append("\n**Recommendation:** Continuing to label will help — focus on examples the model is uncertain about (already selected for you).")
     else:
         r2 = metrics.get("r2", 0)
         if r2 < 0.7:
             lines.append(f"\n**Recommendation:** R² of {r2:.2f} suggests more labels will meaningfully improve the model.")
         else:
-            lines.append(f"\n**Recommendation:** The regression model is solid. Continue if you need higher precision.")
+            lines.append("\n**Recommendation:** The regression model is solid. Continue if you need higher precision.")
 
     return "\n".join(lines)
 

@@ -18,7 +18,7 @@ from __future__ import annotations
 import shutil
 import uuid
 from pathlib import Path
-from typing import Optional, Any
+from typing import Optional
 
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, Field
@@ -27,7 +27,7 @@ from app.models.store import (
     store, MarketplaceAsset, MarketplaceReview, MarketplaceInstall,
     Dataset, Pipeline,
 )
-from app.core.config import UPLOADS_DIR, DATA_DIR
+from app.core.config import DATA_DIR
 from app.services.storage import get_storage
 from app.services.marketplace_seeder import (
     generate_seeded_dataset, get_seeded_pipeline_steps,

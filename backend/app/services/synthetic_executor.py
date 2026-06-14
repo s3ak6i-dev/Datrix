@@ -15,12 +15,11 @@ from __future__ import annotations
 import random
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Optional
 
 import polars as pl
 
 from app.core.config import DATA_DIR
-from app.models.store import store, Dataset, SyntheticJob, TrainedModel
+from app.models.store import store, Dataset, TrainedModel
 from app.services.ingestion import infer_schema
 from app.services.storage import get_storage
 

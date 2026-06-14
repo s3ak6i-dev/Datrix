@@ -10,13 +10,13 @@ from __future__ import annotations
 
 import shutil
 from pathlib import Path
-from typing import Any, Optional
+from typing import Optional
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
-from app.models.store import store, DEFAULT_SETTINGS
-from app.core.config import DATA_DIR, UPLOADS_DIR
+from app.models.store import store
+from app.core.config import DATA_DIR
 from app.services.storage import get_storage
 
 router = APIRouter(prefix="/settings", tags=["settings"])

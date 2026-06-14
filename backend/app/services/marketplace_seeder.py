@@ -5,7 +5,6 @@ Seeds are written to the store once at startup if they don't exist yet.
 """
 from __future__ import annotations
 
-import uuid
 from typing import Callable
 
 import numpy as np

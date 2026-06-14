@@ -59,7 +59,7 @@ def build_full_graph() -> dict:
             add_edge(p.dataset_id, p.id, "source of")
 
     # Pipeline runs — may produce output datasets
-    for r in store.pipeline_runs.values():
+    for r in store.list_all_pipeline_runs():
         run_id = f"prun_{r.id}"
         add_node({
             "id": run_id, "type": "pipeline_run", "label": f"Run ({r.status})",

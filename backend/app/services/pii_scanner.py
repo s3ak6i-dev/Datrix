@@ -8,7 +8,6 @@ from __future__ import annotations
 
 import re
 import time
-from pathlib import Path
 from typing import Optional
 
 import polars as pl
@@ -144,7 +143,6 @@ def _scan_column(col_name: str, values: list[str]) -> Optional[dict]:
 
     # Pass 2 — value sampling
     value_result = None
-    best_match_count = 0
     for regex, category, severity, confidence in _COMPILED_PATTERNS:
         matches = sum(1 for v in values if v and regex.search(v))
         if matches > 0:
@@ -152,7 +150,6 @@ def _scan_column(col_name: str, values: list[str]) -> Optional[dict]:
             if match_ratio >= 0.05:
                 if value_result is None or _SEVERITY_ORDER.get(severity, 0) > _SEVERITY_ORDER.get(value_result[1], 0):
                     value_result = (category, severity, confidence * min(match_ratio * 2, 1.0))
-                    best_match_count = matches
 
     if name_result is None and value_result is None:
         return None
