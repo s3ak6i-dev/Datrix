@@ -5,6 +5,12 @@ import './ProfilePage.css'
 
 const BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
 
+const PALETTE = [
+  '#ef4444', '#f97316', '#f59e0b', '#22c55e',
+  '#10b981', '#06b6d4', '#3b82f6', '#6366f1',
+  '#8b5cf6', '#ec4899', '#64748b', '#14b8a6',
+]
+
 const ROLES = [
   'Data Engineer', 'ML Engineer', 'Data Scientist', 'Data Analyst',
   'Product Manager', 'Researcher', 'Developer', 'Other',
@@ -25,6 +31,7 @@ interface Profile {
   company: string | null
   use_cases: string[]
   avatar_url: string | null
+  color: string | null
 }
 
 interface UserInfo {
@@ -53,6 +60,7 @@ export default function ProfilePage() {
   const [role, setRole] = useState('')
   const [avatarUrl, setAvatarUrl] = useState('')
   const [useCases, setUseCases] = useState<string[]>([])
+  const [color, setColor] = useState(PALETTE[6])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
@@ -77,6 +85,7 @@ export default function ProfilePage() {
       setRole(profile.role ?? '')
       setAvatarUrl(profile.avatar_url ?? '')
       setUseCases(profile.use_cases ?? [])
+      setColor(profile.color ?? PALETTE[6])
     }).finally(() => setLoading(false))
   }, [accessToken])
 
@@ -91,6 +100,7 @@ export default function ProfilePage() {
         company: company.trim() || null,
         avatar_url: avatarUrl.trim() || null,
         use_cases: useCases,
+        color,
       })
       setSaved(true)
       setTimeout(() => setSaved(false), 3000)
@@ -220,6 +230,33 @@ export default function ProfilePage() {
               {uc.label}
             </button>
           ))}
+        </div>
+      </div>
+
+      {/* Workspace color */}
+      <div className="profile-section">
+        <p className="profile-section-title">Workspace identity</p>
+        <p className="profile-section-desc">This color shows next to your name in shared workspaces so teammates can identify your changes at a glance.</p>
+        <div className="profile-palette">
+          {PALETTE.map(c => (
+            <button
+              key={c}
+              type="button"
+              className={`profile-swatch${color === c ? ' sel' : ''}`}
+              style={{ background: c, borderColor: color === c ? 'var(--text-primary)' : 'transparent' }}
+              onClick={() => setColor(c)}
+              title={c}
+            >
+              {color === c && <Check size={11} color="#fff" strokeWidth={3} />}
+            </button>
+          ))}
+        </div>
+        <div className="profile-color-preview">
+          <div className="profile-color-dot" style={{ background: color }} />
+          <span style={{ fontWeight: 600, fontSize: '0.83rem', color: 'var(--text-primary)' }}>
+            {fullName || userInfo?.email?.split('@')[0] || 'You'}
+          </span>
+          <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>· just now</span>
         </div>
       </div>
 

@@ -27,6 +27,7 @@ class ProfileOut(BaseModel):
     company: Optional[str]
     use_cases: list[str]
     avatar_url: Optional[str]
+    color: Optional[str]
     onboarding_completed: bool
 
 
@@ -43,6 +44,7 @@ class UpdateProfileIn(BaseModel):
     company: Optional[str] = Field(None, max_length=120)
     use_cases: Optional[list[str]] = None
     avatar_url: Optional[str] = Field(None, max_length=500)
+    color: Optional[str] = Field(None, max_length=7)  # hex color
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -71,6 +73,7 @@ def _out(p: M.UserProfileORM) -> ProfileOut:
         company=p.company,
         use_cases=p.use_cases or [],
         avatar_url=p.avatar_url,
+        color=getattr(p, "color", None),
         onboarding_completed=bool(p.onboarding_completed),
     )
 
@@ -98,6 +101,8 @@ def update_profile(body: UpdateProfileIn, user: M.UserORM = Depends(get_current_
             profile.use_cases = body.use_cases
         if body.avatar_url is not None:
             profile.avatar_url = body.avatar_url
+        if body.color is not None:
+            profile.color = body.color
         profile.updated_at = _now()
         return _out(profile)
 

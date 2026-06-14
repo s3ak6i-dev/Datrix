@@ -94,18 +94,18 @@
 .orgs-card-name { font-size: 0.82rem; font-weight: 600; color: var(--text-primary); }
 .orgs-card-slug { font-size: 0.68rem; color: var(--text-tertiary); font-family: var(--font-mono); }
 
-.orgs-owner-badge {
+.orgs-role-badge {
   font-size: 0.6rem;
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   padding: 2px 6px;
   border-radius: 6px;
-  background: var(--blue-tint);
-  color: var(--accent);
-  border: 1px solid var(--border-accent);
   flex-shrink: 0;
 }
+.orgs-role-badge.owner { background: var(--blue-tint); color: var(--accent); border: 1px solid var(--border-accent); }
+.orgs-role-badge.reviewer { background: var(--green-dim); color: var(--green); border: 1px solid var(--green); }
+.orgs-role-badge.member { background: var(--bg-3); color: var(--text-secondary); border: 1px solid var(--border); }
 
 .orgs-empty {
   background: var(--bg-card);
@@ -157,6 +157,16 @@
 .orgs-copy-btn:hover { color: var(--accent); }
 
 .orgs-members-section { padding: 1.25rem; }
+.orgs-link-section { padding: 1.25rem; border-bottom: 1px solid var(--border); }
+
+.orgs-section-header { margin-bottom: 0.85rem; }
+
+.orgs-section-label-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 0.2rem;
+}
 
 .orgs-section-label {
   font-size: 0.72rem;
@@ -164,8 +174,110 @@
   text-transform: uppercase;
   letter-spacing: 0.07em;
   color: var(--text-secondary);
-  margin: 0 0 0.9rem;
 }
+
+.orgs-section-desc {
+  font-size: 0.73rem;
+  color: var(--text-tertiary);
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* Invite link box */
+.orgs-link-box {
+  background: var(--bg-inset);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.6rem 0.8rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.orgs-link-url {
+  font-size: 0.72rem;
+  color: var(--accent);
+  font-family: var(--font-mono);
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.orgs-link-actions { display: flex; gap: 0.35rem; flex-shrink: 0; }
+
+.orgs-link-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.3rem 0.65rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  font-size: 0.72rem;
+  cursor: pointer;
+  transition: all 0.12s;
+}
+.orgs-link-btn:hover { border-color: var(--border-strong); color: var(--text-primary); }
+.orgs-link-btn.danger:hover { border-color: var(--bad); color: var(--bad); background: var(--bad-dim); }
+.orgs-link-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.orgs-gen-link-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.45rem 0.9rem;
+  background: var(--bg-inset);
+  border: 1px dashed var(--border-strong);
+  border-radius: 8px;
+  color: var(--accent);
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: all 0.12s;
+}
+.orgs-gen-link-btn:hover { background: var(--blue-tint); border-color: var(--accent); }
+.orgs-gen-link-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Invite row */
+.orgs-invite-block { margin-bottom: 1rem; }
+
+.orgs-invite-row {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.orgs-role-select {
+  background: var(--bg-inset);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-size: 0.78rem;
+  padding: 0.45rem 0.6rem;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+/* Member role badge */
+.orgs-member-role-row {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-top: 1px;
+}
+
+.orgs-member-role-badge {
+  font-size: 0.62rem;
+  font-weight: 600;
+  text-transform: capitalize;
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+.orgs-member-role-badge.owner { color: var(--accent); background: var(--blue-tint); }
+.orgs-member-role-badge.reviewer { color: var(--green); background: var(--green-dim); }
+.orgs-member-role-badge.member { color: var(--text-tertiary); }
 
 .orgs-invite-row {
   display: flex;

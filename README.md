@@ -177,12 +177,55 @@ Shared catalogue of datasets, pipelines, ML models, and benchmark configs — en
 
 ### 👥 Workspaces
 
-Collaborate with teammates on shared datasets and pipelines.
+Collaborate with teammates on shared datasets and pipelines with a full role-based approval system.
 
-- Create workspaces (organizations) with a unique slug
-- Invite members by email
-- Owner / member role system
-- Managed at `/orgs` in the sidebar
+**Membership**
+- Create workspaces with a unique slug; invite members by **email** or a shareable **invite link** (7-day expiry, one-click disable)
+- Joining via link presents a color-picker so the new member picks their identity color before they land
+- Three roles: **Owner** · **Reviewer** · **Member**
+
+**Member identity**
+- Every member picks a color from a 12-color palette (stored on their profile)
+- Color appears on change-request cards, the home activity feed, and the notification bell — so you can tell at a glance who submitted what
+
+---
+
+### ✅ Change Requests & Approval Workflows
+
+A lightweight governance layer that prevents unreviewed changes from reaching shared data.
+
+**Submitting**
+- Any workspace member can open a change request from the `/changes` page
+- Fields: title, description, action type (dataset upload, delete, pipeline run, config change, or custom), and **impact level** (Low / Medium / High / Critical)
+- Low-impact requests **auto-approve after 24 hours** if no reviewer acts first
+
+**Review — Kanban board (owners + reviewers)**
+- Owners and reviewers see a **4-column Kanban** (one per impact level) for all pending requests
+- Members see a flat list of their own submissions
+- A red badge on the **Changes** sidebar link shows the current pending count for reviewers and owners
+
+**Role permissions**
+
+| Action | Owner | Reviewer | Member |
+|---|---|---|---|
+| Submit request | ✅ | ✅ | ✅ |
+| Approve / reject Low + Medium | ✅ | ✅ | — |
+| Approve / reject High + Critical | ✅ | — | — |
+| Roll back any approval | ✅ | Own approvals only | — |
+| Resubmit rejected / rolled-back | ✅ | ✅ | Own only |
+
+**Approval & rejection comments**
+- Both approve and reject actions include an **optional comment** field
+- The comment is shown on the card and included in the submitter's notification
+
+**Rollback**
+- Approved and auto-approved CRs can be rolled back with a reason
+- The submitter is notified immediately and can edit and resubmit
+- Status trail: `pending → approved → rolled_back → pending` (full history preserved)
+
+**Notifications**
+- Clicking a workspace notification jumps directly to the specific card (`/changes?org=X&cr=Y`) and highlights it with a pulse animation
+- Notification bell has two sections: **Workspace** (CR events) and **Jobs** (async background jobs)
 
 ---
 
@@ -213,7 +256,7 @@ Datrix ships a complete authentication and identity system:
 | **Per-user data isolation** | Every dataset, pipeline, and job is scoped to the owning user |
 | **Profile page** | Edit name, role, company, use cases, avatar URL; change password |
 | **Onboarding wizard** | 3-step wizard on first login — name, role, use cases |
-| **Notifications** | In-app bell polls job status every 15s, fires alerts on completion/failure |
+| **Notifications** | In-app bell with two sections — **Workspace** (change request events with member color dots) and **Jobs** (async job completion/failure). Polls every 15s; state persisted to `localStorage` so seen CRs don't re-notify on refresh. Clicking a workspace notification navigates to the exact CR card. |
 | **Mobile responsive** | Sidebar collapses to a hamburger menu on screens ≤ 768px |
 
 ### Email (dev mode vs production)
@@ -317,7 +360,9 @@ Datrix/
 │   │   │   │                       #         forgot-password, reset-password, verify-email
 │   │   │   ├── oauth.py            # /auth/oauth — Google + GitHub OAuth 2.0
 │   │   │   ├── profile.py          # /profile/me — onboarding, update, change-password
-│   │   │   ├── orgs.py             # /orgs — workspaces + member management
+│   │   │   ├── orgs.py             # /orgs — workspaces, members, invite links
+│   │   │   ├── changes.py          # /changes — CR CRUD, approve, reject, rollback, resubmit
+│   │   │   ├── join.py             # /join/{token} — public invite-link register (no auth)
 │   │   │   ├── billing.py          # /billing/plan — usage vs. limits
 │   │   │   ├── datasets.py         # /datasets
 │   │   │   ├── pipelines.py        # /pipelines
@@ -384,8 +429,15 @@ Datrix/
 │   │   │   │   ├── ProfilePage.tsx # Edit name, role, avatar, use cases, password
 │   │   │   │   └── ProfilePage.css
 │   │   │   ├── orgs/
-│   │   │   │   ├── OrgsPage.tsx    # Workspace list, create, members, invite
+│   │   │   │   ├── OrgsPage.tsx    # Workspace list, create, members, invite link
 │   │   │   │   └── OrgsPage.css
+│   │   │   ├── changes/
+│   │   │   │   ├── ChangesBoard.tsx # CR Kanban (owner/reviewer) + list (member),
+│   │   │   │   │                    # submit/approve/reject/rollback/resubmit modals
+│   │   │   │   └── ChangesBoard.css
+│   │   │   ├── join/
+│   │   │   │   ├── JoinPage.tsx    # Public invite-link landing (color picker + register)
+│   │   │   │   └── JoinPage.css
 │   │   │   ├── billing/
 │   │   │   │   ├── BillingPage.tsx # Plan comparison + real usage bars
 │   │   │   │   └── BillingPage.css
@@ -594,7 +646,7 @@ Cron example (daily at 2 AM):
 
 ## Database & Migrations
 
-28 SQLAlchemy ORM tables. Migrations run automatically at startup (3 attempts with 5-second backoff, falls back to `create_all`).
+30 SQLAlchemy ORM tables. Migrations run automatically at startup (3 attempts with 5-second backoff, falls back to `create_all`).
 
 ```bash
 cd backend
@@ -625,7 +677,9 @@ Interactive docs available while the backend is running:
 | Auth | `/auth` | `POST /register`, `POST /login`, `POST /refresh`, `POST /logout`, `POST /forgot-password`, `POST /reset-password`, `POST /verify-email`, `POST /resend-verification` |
 | OAuth | `/auth/oauth` | `GET /google`, `GET /google/callback`, `GET /github`, `GET /github/callback` |
 | Profile | `/profile` | `GET /me`, `PUT /me`, `POST /me/complete-onboarding`, `POST /me/change-password` |
-| Organizations | `/orgs` | CRUD, `GET /{id}/members`, `POST /{id}/members`, `DELETE /{id}/members/{uid}`, `GET /sso/lookup` |
+| Organizations | `/orgs` | CRUD, `GET /{id}/members`, `POST /{id}/members`, `DELETE /{id}/members/{uid}`, `GET /{id}/invite-link`, `POST /{id}/invite-link`, `DELETE /{id}/invite-link`, `GET /sso/lookup` |
+| Change Requests | `/changes` | `GET ?org_id&status`, `POST`, `GET /{id}`, `PATCH /{id}` (approve/reject/rollback/resubmit), `DELETE /{id}` |
+| Join (public) | `/join` | `GET /{token}` (org info), `POST /{token}` (register + join, issues full token pair) |
 | Billing | `/billing` | `GET /plan` |
 | Datasets | `/datasets` | CRUD, `POST /upload`, `POST /{id}/scan`, `POST /{id}/fixes`, `GET /{id}/columns` |
 | Pipelines | `/pipelines` | CRUD, `POST /{id}/steps`, `POST /{id}/run`, `POST /{id}/dry-run` |
@@ -722,7 +776,12 @@ Tints       --blue-tint, --green-dim, --warn-dim, --bad-dim
 | **Onboarding** | 3-step wizard (name → role → use cases) + `user_profiles` table | ✅ Complete |
 | **Home dashboard** | Personalized greeting, stats, quick actions, recent activity | ✅ Complete |
 | **Profile page** | Edit name/role/company/avatar/use-cases, change password | ✅ Complete |
-| **Workspaces** | Organizations, member invites, owner/member roles | ✅ Complete |
+| **Workspaces** | Organizations, member invites, owner/reviewer/member roles | ✅ Complete |
+| **Invite links** | Shareable `/join/{token}` URLs (7-day expiry, disableable) with color picker on join | ✅ Complete |
+| **Member identity** | Per-member color — shown on CR cards, notification bell, home activity feed | ✅ Complete |
+| **Change Requests** | Submit → Kanban review → approve (with comment) / reject (with comment) / auto-approve (24h for Low) | ✅ Complete |
+| **CR Rollback** | Owners/reviewers can roll back approved CRs with a reason; submitter can resubmit | ✅ Complete |
+| **Workspace notifications** | CR events (new request, approved, rejected, rolled back) with member color dots and direct-link-to-card | ✅ Complete |
 | **Billing** | Plan comparison + real usage stats (payment integration pending) | ✅ Complete |
 | **Notifications** | In-app bell, job polling, toast on completion/failure | ✅ Complete |
 | **Mobile responsive** | Hamburger sidebar, responsive grid layouts | ✅ Complete |

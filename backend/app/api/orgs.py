@@ -1,8 +1,9 @@
 """Organization / workspace management API."""
 from __future__ import annotations
 
+import secrets
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -47,7 +48,15 @@ class MemberOut(BaseModel):
 
 class InviteIn(BaseModel):
     email: str = Field(..., max_length=320)
-    role: str = Field("member", pattern=r"^(admin|member)$")
+    role: str = Field("member", pattern=r"^(reviewer|member)$")
+
+
+class InviteLinkOut(BaseModel):
+    id: str
+    token: str
+    expires_at: str
+    disabled: bool
+    created_at: str
 
 
 class SSOLookupOut(BaseModel):
@@ -196,6 +205,74 @@ def remove_member(org_id: str, target_user_id: str, user: M.UserORM = Depends(ge
         if m.role == "owner":
             raise HTTPException(400, "Cannot remove the organization owner")
         db.delete(m)
+
+
+# ── Invite links ─────────────────────────────────────────────────────────────
+
+@router.get("/{org_id}/invite-link", response_model=Optional[InviteLinkOut])
+def get_invite_link(org_id: str, user: M.UserORM = Depends(get_current_user)):
+    with db_session() as db:
+        role = _get_member_role(db, org_id, user.id)
+        if role not in ("owner",):
+            raise HTTPException(403, "Only the owner can manage invite links")
+        link = (
+            db.query(M.OrgInviteLinkORM)
+            .filter_by(org_id=org_id, disabled=False)
+            .order_by(M.OrgInviteLinkORM.created_at.desc())
+            .first()
+        )
+        if not link:
+            return None
+        return InviteLinkOut(
+            id=link.id, token=link.token,
+            expires_at=link.expires_at, disabled=link.disabled,
+            created_at=link.created_at,
+        )
+
+
+@router.post("/{org_id}/invite-link", response_model=InviteLinkOut, status_code=201)
+def generate_invite_link(org_id: str, user: M.UserORM = Depends(get_current_user)):
+    with db_session() as db:
+        org = db.query(M.OrganizationORM).filter_by(id=org_id).first()
+        if not org:
+            raise HTTPException(404, "Organization not found")
+        role = _get_member_role(db, org_id, user.id)
+        if role not in ("owner",):
+            raise HTTPException(403, "Only the owner can generate invite links")
+
+        # Disable any existing active links
+        existing = db.query(M.OrgInviteLinkORM).filter_by(org_id=org_id, disabled=False).all()
+        for e in existing:
+            e.disabled = True
+
+        now = datetime.now(timezone.utc)
+        link = M.OrgInviteLinkORM(
+            id=str(uuid.uuid4()),
+            org_id=org_id,
+            token=secrets.token_urlsafe(24),
+            created_by=user.id,
+            expires_at=(now + timedelta(days=7)).isoformat(),
+            disabled=False,
+            created_at=now.isoformat(),
+        )
+        db.add(link)
+        db.flush()
+        return InviteLinkOut(
+            id=link.id, token=link.token,
+            expires_at=link.expires_at, disabled=link.disabled,
+            created_at=link.created_at,
+        )
+
+
+@router.delete("/{org_id}/invite-link", status_code=204)
+def disable_invite_link(org_id: str, user: M.UserORM = Depends(get_current_user)):
+    with db_session() as db:
+        role = _get_member_role(db, org_id, user.id)
+        if role not in ("owner",):
+            raise HTTPException(403, "Only the owner can disable invite links")
+        links = db.query(M.OrgInviteLinkORM).filter_by(org_id=org_id, disabled=False).all()
+        for link in links:
+            link.disabled = True
 
 
 # ── SSO domain lookup (used by the SSO sign-in screen) ───────────────────────

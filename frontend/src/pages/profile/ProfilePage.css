@@ -236,6 +236,52 @@
   margin: 0 0 0.75rem;
 }
 
+.profile-section-desc {
+  font-size: 0.78rem;
+  color: var(--text-tertiary);
+  margin: -0.5rem 0 0.75rem;
+  line-height: 1.5;
+}
+
+.profile-palette {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin-bottom: 0.9rem;
+}
+
+.profile-swatch {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 2.5px solid transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.1s, border-color 0.1s;
+}
+.profile-swatch:hover { transform: scale(1.15); }
+.profile-swatch.sel { transform: scale(1.1); }
+
+.profile-color-preview {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--bg-inset);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.45rem 0.75rem;
+  width: fit-content;
+}
+
+.profile-color-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
 @media (max-width: 600px) {
   .profile-page { padding: 1.25rem 1rem; }
   .profile-role-grid { grid-template-columns: 1fr; }

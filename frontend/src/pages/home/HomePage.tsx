@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   ArrowRight, Check, Database, GitBranch, Zap, FlaskConical,
-  Tag, Shield, BarChart2, Loader2, ChevronRight,
+  Tag, Shield, BarChart2, Loader2, ChevronRight, GitPullRequest,
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import './HomePage.css'
@@ -213,6 +213,17 @@ interface DatasetItem {
   id: string; name: string; status: string; created_at: string; row_count: number | null
 }
 
+interface ActivityItem {
+  id: string
+  org_id: string
+  user_name: string | null
+  user_color: string | null
+  title: string
+  status: string
+  reviewed_at: string | null
+  created_at: string
+}
+
 interface PipelineItem {
   id: string; name: string; status: string; created_at: string
 }
@@ -252,6 +263,7 @@ export default function HomePage() {
   const [datasets, setDatasets] = useState<DatasetItem[]>([])
   const [pipelines, setPipelines] = useState<PipelineItem[]>([])
   const [jobCount, setJobCount] = useState(0)
+  const [activity, setActivity] = useState<ActivityItem[]>([])
   const [loading, setLoading] = useState(true)
 
   // Track home page visit for recently-used navigation
@@ -270,11 +282,22 @@ export default function HomePage() {
       authFetch('/datasets', token).catch(() => []),
       authFetch('/pipelines', token).catch(() => []),
       authFetch('/synthetic/jobs', token).catch(() => []),
-    ]).then(([prof, ds, pl, jobs]) => {
+      authFetch('/orgs', token).catch(() => []),
+    ]).then(async ([prof, ds, pl, jobs, orgs]) => {
       setProfile(prof)
       setDatasets(ds)
       setPipelines(pl)
       setJobCount(Array.isArray(jobs) ? jobs.length : 0)
+
+      // Load recent team activity (approved + rolled_back) from first org
+      if (Array.isArray(orgs) && orgs.length > 0) {
+        const orgId = orgs[0].id
+        const allChanges = await authFetch(`/changes?org_id=${orgId}`, token).catch(() => [])
+        const filtered = Array.isArray(allChanges)
+          ? allChanges.filter((c: ActivityItem) => c.status === 'approved' || c.status === 'auto_approved' || c.status === 'rolled_back')
+          : []
+        setActivity(filtered.slice(0, 6))
+      }
     }).finally(() => setLoading(false))
   }, [accessToken])
 
@@ -370,6 +393,53 @@ export default function HomePage() {
           </button>
         </div>
       </div>
+
+      {/* Team activity feed */}
+      {activity.length > 0 && (
+        <div>
+          <div className="home-section-header">
+            <span className="home-section-title">Team activity</span>
+            <button className="home-see-all" onClick={() => navigate('/changes')}>
+              View board <ChevronRight size={11} style={{ verticalAlign: 'middle' }} />
+            </button>
+          </div>
+          <div className="home-activity-list">
+            {activity.map(item => {
+              const isRolledBack = item.status === 'rolled_back'
+              return (
+                <div
+                  key={item.id}
+                  className="home-activity-item clickable"
+                  onClick={() => navigate(`/changes?org=${item.org_id}&cr=${item.id}`)}
+                >
+                  <div
+                    className="home-activity-dot"
+                    style={{ background: item.user_color ?? '#64748b', opacity: isRolledBack ? 0.5 : 1 }}
+                    title={item.user_name ?? undefined}
+                  >
+                    {(item.user_name ?? '?')[0].toUpperCase()}
+                  </div>
+                  <div className="home-activity-body">
+                    <span className="home-activity-name" style={{ opacity: isRolledBack ? 0.6 : 1 }}>
+                      {item.user_name ?? 'Someone'}
+                    </span>
+                    <span className="home-activity-action" style={{ opacity: isRolledBack ? 0.6 : 1, textDecoration: isRolledBack ? 'line-through' : 'none' }}>
+                      <GitPullRequest size={11} style={{ verticalAlign: 'middle', marginRight: 3 }} />
+                      {item.title}
+                    </span>
+                    {isRolledBack && (
+                      <span className="home-activity-rolled-back">rolled back</span>
+                    )}
+                  </div>
+                  <span className="home-activity-time">
+                    {relTime(item.reviewed_at ?? item.created_at)}
+                  </span>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Recent datasets + pipelines */}
       <div className="home-two-col">

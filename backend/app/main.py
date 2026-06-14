@@ -1,7 +1,9 @@
+import asyncio
 import logging
 import sys
 import time
 from contextlib import asynccontextmanager
+from datetime import datetime, timezone
 
 # ProactorEventLoop (Windows default) has known issues with some async patterns;
 # SelectorEventLoop is more broadly compatible.
@@ -41,8 +43,31 @@ from app.api.marketplace import router as marketplace_router
 from app.api.settings import router as settings_router
 from app.api.compliance import router as compliance_router
 from app.api.billing import router as billing_router
+from app.api.changes import router as changes_router
+from app.api.join import router as join_router
 from app.services.compliance_checker import ensure_default_policies
 from app.services.marketplace_seeder import initialize_seeds
+
+
+def _auto_approve_pending() -> None:
+    """Auto-approve low-impact change requests whose auto_approve_at has passed."""
+    from app.db.session import db_session
+    from app.db import models as M
+
+    now = datetime.now(timezone.utc).isoformat()
+    with db_session() as db:
+        expired = (
+            db.query(M.ChangeRequestORM)
+            .filter(
+                M.ChangeRequestORM.status == "pending",
+                M.ChangeRequestORM.auto_approve_at.isnot(None),
+                M.ChangeRequestORM.auto_approve_at <= now,
+            )
+            .all()
+        )
+        for cr in expired:
+            cr.status = "auto_approved"
+            cr.reviewed_at = now
 
 
 def _reset_stale_jobs() -> None:
@@ -101,6 +126,15 @@ def _run_migrations() -> None:
 _run_migrations()
 
 
+async def _auto_approve_loop() -> None:
+    while True:
+        await asyncio.sleep(300)  # check every 5 minutes
+        try:
+            _auto_approve_pending()
+        except Exception:
+            pass
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     initialize_seeds()
@@ -111,7 +145,9 @@ async def lifespan(app: FastAPI):
         import sentry_sdk
         sentry_sdk.init(dsn=settings.SENTRY_DSN, environment=settings.ENVIRONMENT)
 
+    task = asyncio.create_task(_auto_approve_loop())
     yield
+    task.cancel()
 
 
 app = FastAPI(
@@ -134,6 +170,7 @@ app.add_middleware(
 # Public routes
 app.include_router(auth_router)
 app.include_router(oauth_router)   # OAuth callbacks must be public (no JWT yet)
+app.include_router(join_router)    # Invite-link join flow — no JWT required
 
 # Protected routes — require a valid JWT on every request
 _auth = [Depends(get_current_user)]
@@ -147,7 +184,8 @@ app.include_router(benchmark_router,  dependencies=_auth)
 app.include_router(marketplace_router,dependencies=_auth)
 app.include_router(settings_router,   dependencies=_auth)
 app.include_router(compliance_router, dependencies=_auth)
-app.include_router(billing_router,   dependencies=_auth)
+app.include_router(billing_router,    dependencies=_auth)
+app.include_router(changes_router,    dependencies=_auth)
 
 
 @app.middleware("http")

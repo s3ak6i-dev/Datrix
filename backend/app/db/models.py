@@ -369,6 +369,7 @@ class UserProfileORM(Base):
     company = Column(String, nullable=True)
     use_cases = Column(_JSON, default=list)
     avatar_url = Column(String, nullable=True)
+    color = Column(String, nullable=True)  # hex color for workspace identity, e.g. "#3b82f6"
     onboarding_completed = Column(Boolean, default=False)
     created_at = Column(String, default=_now)
     updated_at = Column(String, default=_now)
@@ -425,5 +426,35 @@ class OrgMemberORM(Base):
     id = Column(String, primary_key=True)
     org_id = Column(String, nullable=False, index=True)
     user_id = Column(String, nullable=False, index=True)
-    role = Column(String, nullable=False, default="member")  # "owner" | "admin" | "member"
+    role = Column(String, nullable=False, default="member")  # "owner" | "reviewer" | "member"
     created_at = Column(String, default=_now)
+
+
+class OrgInviteLinkORM(Base):
+    __tablename__ = "org_invite_links"
+    id = Column(String, primary_key=True)
+    org_id = Column(String, nullable=False, index=True)
+    token = Column(String, nullable=False, unique=True, index=True)
+    created_by = Column(String, nullable=False)
+    expires_at = Column(String, nullable=False)
+    disabled = Column(Boolean, default=False)
+    created_at = Column(String, default=_now)
+
+
+class ChangeRequestORM(Base):
+    __tablename__ = "change_requests"
+    id = Column(String, primary_key=True)
+    org_id = Column(String, nullable=False, index=True)
+    user_id = Column(String, nullable=False, index=True)
+    title = Column(String, nullable=False)
+    description = Column(Text, nullable=True)
+    action_type = Column(String, default="custom")  # "dataset_upload"|"pipeline_create"|"custom"|...
+    impact = Column(String, nullable=False)          # "low"|"medium"|"high"|"critical"
+    status = Column(String, default="pending")       # "pending"|"approved"|"rejected"|"auto_approved"
+    reviewer_id = Column(String, nullable=True)
+    reviewer_comment = Column(Text, nullable=True)
+    auto_approve_at = Column(String, nullable=True)  # ISO datetime — only set for low-impact
+    resubmit_count = Column(Integer, default=0)
+    rollback_comment = Column(Text, nullable=True)
+    created_at = Column(String, default=_now)
+    reviewed_at = Column(String, nullable=True)

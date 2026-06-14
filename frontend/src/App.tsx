@@ -27,6 +27,8 @@ import DocsPage from './pages/docs/DocsPage'
 import ProfilePage from './pages/profile/ProfilePage'
 import OrgsPage from './pages/orgs/OrgsPage'
 import BillingPage from './pages/billing/BillingPage'
+import ChangesBoard from './pages/changes/ChangesBoard'
+import JoinPage from './pages/join/JoinPage'
 
 const qc = new QueryClient({
   defaultOptions: {
@@ -48,6 +50,7 @@ export default function App() {
               <Route path="/forgot-password" element={<ForgotPasswordPage />} />
               <Route path="/reset-password" element={<ResetPasswordPage />} />
               <Route path="/verify-email" element={<VerifyEmailPage />} />
+              <Route path="/join/:token" element={<JoinPage />} />
 
               {/* Protected — every route inside Layout requires auth */}
               <Route
@@ -74,6 +77,7 @@ export default function App() {
                 <Route path="/profile" element={<ProfilePage />} />
                 <Route path="/orgs" element={<OrgsPage />} />
                 <Route path="/billing" element={<BillingPage />} />
+                <Route path="/changes" element={<ChangesBoard />} />
                 <Route path="*" element={<Navigate to="/home" replace />} />
               </Route>
             </Routes>

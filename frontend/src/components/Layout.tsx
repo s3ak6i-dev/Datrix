@@ -3,13 +3,14 @@ import {
   Database, GitBranch, Sparkles, Brain, BarChart3, ShieldCheck,
   ShoppingBag, Settings, HelpCircle, Sun, Moon, Compass, Home,
   Users, CreditCard, UserCircle, Bell, X, LogOut, Menu,
-  CheckCircle2, AlertCircle, Info,
+  CheckCircle2, AlertCircle, Info, GitPullRequest,
 } from 'lucide-react'
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { TourGuide } from './TourGuide'
 import { ErrorBoundary } from './ErrorBoundary'
 import { useAuth } from '@/contexts/AuthContext'
-import { useNotifications, AppNotification } from '@/contexts/NotificationContext'
+import { useNotifications } from '@/contexts/NotificationContext'
+import type { AppNotification } from '@/contexts/NotificationContext'
 import './Layout.css'
 
 const TOKENS = {
@@ -59,6 +60,45 @@ function useTheme() {
   return { theme, setTheme }
 }
 
+const API = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
+
+function usePendingChanges(accessToken: () => string | null) {
+  const [count, setCount] = useState(0)
+
+  const poll = useCallback(async () => {
+    const token = accessToken()
+    if (!token) return
+    try {
+      const orgs: { id: string; role: string }[] = await fetch(`${API}/orgs`, {
+        headers: { Authorization: `Bearer ${token}` },
+      }).then(r => r.ok ? r.json() : [])
+
+      const reviewableOrgs = orgs.filter(o => o.role === 'owner' || o.role === 'reviewer')
+      if (reviewableOrgs.length === 0) { setCount(0); return }
+
+      let total = 0
+      for (const org of reviewableOrgs) {
+        const items: unknown[] = await fetch(
+          `${API}/changes?org_id=${org.id}&status=pending`,
+          { headers: { Authorization: `Bearer ${token}` } },
+        ).then(r => r.ok ? r.json() : [])
+        total += Array.isArray(items) ? items.length : 0
+      }
+      setCount(total)
+    } catch {
+      // silently ignore — badge just stays as-is
+    }
+  }, [accessToken])
+
+  useEffect(() => {
+    poll()
+    const id = setInterval(poll, 30_000) // re-check every 30 s
+    return () => clearInterval(id)
+  }, [poll])
+
+  return count
+}
+
 const primary = [
   { to: '/home',            icon: Home,        label: 'Home' },
   { to: '/datasets',        icon: Database,    label: 'Datasets' },
@@ -70,18 +110,13 @@ const primary = [
 ]
 
 const secondary = [
-  { to: '/orgs',        icon: Users,       label: 'Workspaces' },
-  { to: '/marketplace', icon: ShoppingBag, label: 'Marketplace' },
-  { to: '/billing',     icon: CreditCard,  label: 'Billing' },
-  { to: '/settings',   icon: Settings,    label: 'Settings' },
-  { to: '/docs',        icon: HelpCircle,  label: 'Docs' },
+  { to: '/orgs',        icon: Users,           label: 'Workspaces' },
+  { to: '/changes',     icon: GitPullRequest,  label: 'Changes' },
+  { to: '/marketplace', icon: ShoppingBag,     label: 'Marketplace' },
+  { to: '/billing',     icon: CreditCard,      label: 'Billing' },
+  { to: '/settings',   icon: Settings,         label: 'Settings' },
+  { to: '/docs',        icon: HelpCircle,       label: 'Docs' },
 ]
-
-function NotifIcon({ type }: { type: AppNotification['type'] }) {
-  if (type === 'success') return <CheckCircle2 size={14} style={{ color: 'var(--green)', flexShrink: 0 }} />
-  if (type === 'error') return <AlertCircle size={14} style={{ color: 'var(--bad)', flexShrink: 0 }} />
-  return <Info size={14} style={{ color: 'var(--accent)', flexShrink: 0 }} />
-}
 
 function relTime(ts: number) {
   const s = Math.floor((Date.now() - ts) / 1000)
@@ -91,8 +126,46 @@ function relTime(ts: number) {
   return `${Math.floor(s / 86400)}d ago`
 }
 
+function NotifIcon({ n }: { n: AppNotification }) {
+  // Workspace notifications: show the member's color dot instead of an icon
+  if (n.category === 'workspace' && n.color) {
+    return (
+      <div style={{
+        width: 22, height: 22, borderRadius: '50%', background: n.color,
+        flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
+        fontSize: '0.55rem', fontWeight: 700, color: '#fff',
+      }}>
+        {(n.title.split(' ')[0]?.[0] ?? '?').toUpperCase()}
+      </div>
+    )
+  }
+  if (n.type === 'success') return <CheckCircle2 size={14} style={{ color: 'var(--green)', flexShrink: 0 }} />
+  if (n.type === 'error')   return <AlertCircle  size={14} style={{ color: 'var(--bad)',   flexShrink: 0 }} />
+  return <Info size={14} style={{ color: 'var(--accent)', flexShrink: 0 }} />
+}
+
+function NotifItem({ n, navigate, dismiss }: { n: AppNotification; navigate: (p: string) => void; dismiss: (id: string) => void }) {
+  return (
+    <div
+      className={`notif-item${n.link ? ' clickable' : ''}`}
+      onClick={() => n.link && navigate(n.link)}
+    >
+      <NotifIcon n={n} />
+      <div className="notif-body">
+        <div className="notif-title">{n.title}</div>
+        <div className="notif-text">{n.body}</div>
+        <div className="notif-time">{relTime(n.ts)}</div>
+      </div>
+      <button className="notif-dismiss" onClick={e => { e.stopPropagation(); dismiss(n.id) }}>
+        <X size={11} />
+      </button>
+    </div>
+  )
+}
+
 function NotificationBell() {
   const { notifications, unreadCount, markAllRead, dismiss } = useNotifications()
+  const navigate = useNavigate()
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
 
@@ -104,6 +177,11 @@ function NotificationBell() {
     return () => document.removeEventListener('mousedown', handler)
   }, [])
 
+  const workspaceNotifs = notifications.filter(n => n.category === 'workspace')
+  const allJobNotifs    = notifications.filter(n => !n.category || n.category === 'job')
+
+  const clearAll = () => notifications.forEach(n => dismiss(n.id))
+
   return (
     <div ref={ref} style={{ position: 'relative' }}>
       <button
@@ -114,14 +192,7 @@ function NotificationBell() {
         <Bell size={15} />
         <span>Notifications</span>
         {unreadCount > 0 && (
-          <span style={{
-            marginLeft: 'auto', minWidth: 18, height: 18, borderRadius: 9,
-            background: 'var(--bad)', color: '#fff', fontSize: '0.6rem',
-            fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center',
-            padding: '0 4px',
-          }}>
-            {unreadCount > 9 ? '9+' : unreadCount}
-          </span>
+          <span className="notif-bell-badge">{unreadCount > 9 ? '9+' : unreadCount}</span>
         )}
       </button>
 
@@ -130,25 +201,40 @@ function NotificationBell() {
           <div className="notif-header">
             <span>Notifications</span>
             {notifications.length > 0 && (
-              <button className="notif-clear" onClick={() => { notifications.forEach(n => dismiss(n.id)) }}>
-                Clear all
-              </button>
+              <button className="notif-clear" onClick={clearAll}>Clear all</button>
             )}
           </div>
+
           {notifications.length === 0 ? (
             <div className="notif-empty">No notifications yet</div>
           ) : (
-            notifications.slice(0, 10).map(n => (
-              <div key={n.id} className="notif-item">
-                <NotifIcon type={n.type} />
-                <div className="notif-body">
-                  <div className="notif-title">{n.title}</div>
-                  <div className="notif-text">{n.body}</div>
-                  <div className="notif-time">{relTime(n.ts)}</div>
+            <>
+              {/* ── Workspace section ── */}
+              {workspaceNotifs.length > 0 && (
+                <div className="notif-section">
+                  <div className="notif-section-label">
+                    <GitPullRequest size={11} />
+                    Workspace
+                  </div>
+                  {workspaceNotifs.slice(0, 6).map(n => (
+                    <NotifItem key={n.id} n={n} navigate={navigate} dismiss={dismiss} />
+                  ))}
                 </div>
-                <button className="notif-dismiss" onClick={() => dismiss(n.id)}><X size={11} /></button>
-              </div>
-            ))
+              )}
+
+              {/* ── Jobs section ── */}
+              {allJobNotifs.length > 0 && (
+                <div className="notif-section">
+                  <div className="notif-section-label">
+                    <Info size={11} />
+                    Jobs
+                  </div>
+                  {allJobNotifs.slice(0, 6).map(n => (
+                    <NotifItem key={n.id} n={n} navigate={navigate} dismiss={dismiss} />
+                  ))}
+                </div>
+              )}
+            </>
           )}
         </div>
       )}
@@ -158,8 +244,9 @@ function NotificationBell() {
 
 export function Layout() {
   const { theme, setTheme } = useTheme()
-  const { user, logout } = useAuth()
+  const { user, logout, accessToken } = useAuth()
   const navigate = useNavigate()
+  const pendingChanges = usePendingChanges(accessToken)
   const [showTour, setShowTour] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
@@ -204,6 +291,11 @@ export function Layout() {
           <NavLink key={to} to={to} className={({ isActive }) => isActive ? 'active' : ''} onClick={() => setSidebarOpen(false)}>
             <Icon size={16} />
             <span>{label}</span>
+            {to === '/changes' && pendingChanges > 0 && (
+              <span className="nav-pending-badge">
+                {pendingChanges > 9 ? '9+' : pendingChanges}
+              </span>
+            )}
           </NavLink>
         ))}
       </div>
