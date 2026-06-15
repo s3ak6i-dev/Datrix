@@ -63,17 +63,24 @@ export default function LandingPage() {
     const run = async () => {
       log('Starting script load...')
       await addScript('/three.min.js')
-      log('THREE on window: ' + !!(window as any).THREE)
+      const T = (window as any).THREE
+      log('THREE: ' + !!T)
+      log('THREE.Color: ' + typeof T?.Color)
+      log('THREE.CanvasTexture: ' + typeof T?.CanvasTexture)
+      log('THREE.PointsMaterial: ' + typeof T?.PointsMaterial)
+      log('THREE.PlaneGeometry: ' + typeof T?.PlaneGeometry)
+      log('THREE.WireframeGeometry: ' + typeof T?.WireframeGeometry)
       await addScript('/gsap.min.js')
-      log('gsap on window: ' + !!(window as any).gsap)
       await addScript('/ScrollTrigger.min.js')
-      log('ScrollTrigger on window: ' + !!(window as any).ScrollTrigger)
-      const canvas = document.getElementById('hero-canvas')
-      log('canvas found: ' + !!canvas + (canvas ? ' size:' + (canvas as HTMLCanvasElement).clientWidth + 'x' + (canvas as HTMLCanvasElement).clientHeight : ''))
-      log('WebGL support: ' + !!document.createElement('canvas').getContext('webgl2'))
+
+      window.onerror = (msg, src, line, col, err) => {
+        log('UNCAUGHT ERROR: ' + msg + ' | ' + src + ':' + line + ':' + col)
+        log('Stack: ' + (err?.stack || 'none'))
+        return false
+      }
+
       await addScript('/datrix-landing.js')
-      log('DatrixHero: ' + !!(window as any).DatrixHero)
-      log('renderer active: ' + JSON.stringify((window as any).DatrixHero))
+      log('DatrixHero set: ' + !!(window as any).DatrixHero)
     }
     run().catch(e => log('ERROR: ' + String(e)))
 
