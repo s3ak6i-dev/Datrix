@@ -2,7 +2,8 @@ import { useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 import * as THREE from 'three'
-import { gsap, ScrollTrigger } from 'gsap/all'
+import gsap from 'gsap'
+import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import './LandingPage.css'
 
 export default function LandingPage() {
