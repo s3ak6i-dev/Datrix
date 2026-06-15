@@ -41,28 +41,44 @@ export default function LandingPage() {
     if (mountedRef.current) return
     mountedRef.current = true
 
+    const dbg = document.createElement('div')
+    dbg.id = 'landing-debug'
+    dbg.style.cssText = 'position:fixed;bottom:0;left:0;right:0;background:#000;color:#0f0;font:12px monospace;padding:8px;z-index:99999;white-space:pre-wrap;max-height:200px;overflow:auto;'
+    document.body.appendChild(dbg)
+    const log = (msg: string) => { dbg.textContent += msg + '\n'; console.log('[DBG]', msg) }
+
     const added: HTMLScriptElement[] = []
 
     const addScript = (src: string) =>
       new Promise<void>((resolve) => {
         const s = document.createElement('script')
         s.src = src
-        s.onload = () => resolve()
-        s.onerror = () => { console.warn('Landing script failed:', src); resolve() }
+        s.onload = () => { log('✓ loaded: ' + src); resolve() }
+        s.onerror = () => { log('✗ FAILED: ' + src); resolve() }
         document.body.appendChild(s)
         added.push(s)
         scriptsRef.current = added
       })
 
     const run = async () => {
+      log('Starting script load...')
       await addScript('/three.min.js')
+      log('THREE on window: ' + !!(window as any).THREE)
       await addScript('/gsap.min.js')
+      log('gsap on window: ' + !!(window as any).gsap)
       await addScript('/ScrollTrigger.min.js')
+      log('ScrollTrigger on window: ' + !!(window as any).ScrollTrigger)
+      const canvas = document.getElementById('hero-canvas')
+      log('canvas found: ' + !!canvas + (canvas ? ' size:' + (canvas as HTMLCanvasElement).clientWidth + 'x' + (canvas as HTMLCanvasElement).clientHeight : ''))
+      log('WebGL support: ' + !!document.createElement('canvas').getContext('webgl2'))
       await addScript('/datrix-landing.js')
+      log('DatrixHero: ' + !!(window as any).DatrixHero)
+      log('renderer active: ' + JSON.stringify((window as any).DatrixHero))
     }
-    run().catch(console.error)
+    run().catch(e => log('ERROR: ' + String(e)))
 
     return () => {
+      dbg.remove()
       scriptsRef.current.forEach(s => { try { s.remove() } catch {} })
       try { (window as any).ScrollTrigger?.getAll().forEach((t: any) => t.kill()) } catch {}
       try { (window as any).gsap?.globalTimeline.clear() } catch {}
