@@ -1,22 +1,43 @@
 <div align="center">
 
-<img src="frontend/src/assets/hero.png" alt="Datrix" width="120" />
+<img src="frontend/src/assets/hero.png" alt="Datrix" width="96" />
 
-# Datrix
+<h1>Datrix</h1>
 
-**The intelligence layer beneath every AI system.**
+<p><strong>The intelligence layer beneath every AI system.</strong></p>
 
-A self-hosted, local-first AI data infrastructure platform — a single workspace to prepare, transform, generate, label, benchmark, and govern datasets without writing boilerplate or stitching together a dozen separate tools.
+<p>Upload raw files. Scan, clean, transform, generate, label, benchmark, and govern datasets — all in one workspace, no code required.</p>
 
-[![Python](https://img.shields.io/badge/Python-3.12+-3776AB?style=flat&logo=python&logoColor=white)](https://python.org)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.136-009688?style=flat&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
-[![React](https://img.shields.io/badge/React-18-61DAFB?style=flat&logo=react&logoColor=black)](https://react.dev)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?style=flat&logo=typescript&logoColor=white)](https://typescriptlang.org)
-[![Polars](https://img.shields.io/badge/Polars-1.41-CD792C?style=flat&logo=polars&logoColor=white)](https://pola.rs)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Neon-336791?style=flat&logo=postgresql&logoColor=white)](https://neon.tech)
-[![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?style=flat&logo=docker&logoColor=white)](https://docs.docker.com/compose/)
-[![CI](https://img.shields.io/github/actions/workflow/status/s3ak6i-dev/Datrix/ci.yml?branch=main&label=CI&style=flat)](https://github.com/s3ak6i-dev/Datrix/actions)
-[![License](https://img.shields.io/badge/License-MIT-22c55e?style=flat)](LICENSE)
+<br/>
+
+[**→ Live Demo**](https://datrix-test.vercel.app) &nbsp;·&nbsp; [API Docs](https://datrix-production-011a.up.railway.app/docs) &nbsp;·&nbsp; [Health](https://datrix-production-011a.up.railway.app/health)
+
+<br/>
+
+[![Live](https://img.shields.io/badge/demo-live-22c55e?style=flat-square&logo=vercel&logoColor=white)](https://datrix-test.vercel.app)
+[![CI](https://img.shields.io/github/actions/workflow/status/s3ak6i-dev/Datrix/ci.yml?branch=main&label=CI&style=flat-square&logo=github)](https://github.com/s3ak6i-dev/Datrix/actions)
+[![Python](https://img.shields.io/badge/Python-3.12-3776AB?style=flat-square&logo=python&logoColor=white)](https://python.org)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.136-009688?style=flat-square&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
+[![React](https://img.shields.io/badge/React-18-61DAFB?style=flat-square&logo=react&logoColor=black)](https://react.dev)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://typescriptlang.org)
+[![License](https://img.shields.io/badge/License-MIT-22c55e?style=flat-square)](LICENSE)
+
+</div>
+
+---
+
+<div align="center">
+
+| Module | What it does |
+|---|---|
+| **Datasets** | Upload → auto-scan → 5-dimension quality score → guided cleaning wizard |
+| **Pipelines** | Build reusable transformation sequences, dry-run, export CSV/Parquet/JSON |
+| **Synthetic Data** | Generate statistically faithful data via CTGAN, TVAE, or distribution fitting |
+| **Active Learning** | Label only what the model is uncertain about — 6 sampling strategies |
+| **Benchmark** | Side-by-side model comparison under identical conditions, ranked leaderboard |
+| **Compliance** | PII scanner, lineage DAG, policy engine, anonymization, regulatory reports |
+| **Marketplace** | Share datasets, pipelines, models and configs across your team |
+| **Workspaces** | Role-based approval workflows, invite links, real-time notifications |
 
 </div>
 
