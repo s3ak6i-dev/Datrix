@@ -1,6 +1,8 @@
 import { useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
+import * as THREE from 'three'
+import { gsap, ScrollTrigger } from 'gsap/all'
 import './LandingPage.css'
 
 export default function LandingPage() {
@@ -36,18 +38,21 @@ export default function LandingPage() {
     }
   }, [])
 
-  // Load CDN scripts then datrix-landing.js
+  // Expose libs on window then load datrix-landing.js
   useEffect(() => {
     if (mountedRef.current) return
     mountedRef.current = true
 
+    ;(window as any).THREE = THREE
+    ;(window as any).gsap = gsap
+    ;(window as any).ScrollTrigger = ScrollTrigger
+
     const added: HTMLScriptElement[] = []
 
-    const addScript = (src: string, type = 'text/javascript') =>
+    const addScript = (src: string) =>
       new Promise<void>((resolve) => {
         const s = document.createElement('script')
         s.src = src
-        s.type = type
         s.onload = () => resolve()
         s.onerror = () => { console.warn('Landing script failed:', src); resolve() }
         document.body.appendChild(s)
@@ -55,19 +60,15 @@ export default function LandingPage() {
         scriptsRef.current = added
       })
 
-    const run = async () => {
-      await addScript('https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js')
-      await addScript('https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js')
-      await addScript('https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js')
-      await addScript('/datrix-landing.js')
-    }
-    run().catch(console.error)
+    addScript('/datrix-landing.js').catch(console.error)
 
     return () => {
-      // Remove scripts and kill GSAP on unmount
       scriptsRef.current.forEach(s => { try { s.remove() } catch {} })
       try { (window as any).ScrollTrigger?.getAll().forEach((t: any) => t.kill()) } catch {}
       try { (window as any).gsap?.globalTimeline.clear() } catch {}
+      delete (window as any).THREE
+      delete (window as any).gsap
+      delete (window as any).ScrollTrigger
     }
   }, [])
 
