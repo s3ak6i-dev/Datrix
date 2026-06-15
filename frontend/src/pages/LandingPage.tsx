@@ -1,9 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
-import * as THREE from 'three'
-import gsap from 'gsap'
-import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import './LandingPage.css'
 
 export default function LandingPage() {
@@ -39,14 +36,10 @@ export default function LandingPage() {
     }
   }, [])
 
-  // Expose libs on window then load datrix-landing.js
+  // Load self-hosted UMD builds then datrix-landing.js
   useEffect(() => {
     if (mountedRef.current) return
     mountedRef.current = true
-
-    ;(window as any).THREE = THREE
-    ;(window as any).gsap = gsap
-    ;(window as any).ScrollTrigger = ScrollTrigger
 
     const added: HTMLScriptElement[] = []
 
@@ -61,15 +54,18 @@ export default function LandingPage() {
         scriptsRef.current = added
       })
 
-    addScript('/datrix-landing.js').catch(console.error)
+    const run = async () => {
+      await addScript('/three.min.js')
+      await addScript('/gsap.min.js')
+      await addScript('/ScrollTrigger.min.js')
+      await addScript('/datrix-landing.js')
+    }
+    run().catch(console.error)
 
     return () => {
       scriptsRef.current.forEach(s => { try { s.remove() } catch {} })
       try { (window as any).ScrollTrigger?.getAll().forEach((t: any) => t.kill()) } catch {}
       try { (window as any).gsap?.globalTimeline.clear() } catch {}
-      delete (window as any).THREE
-      delete (window as any).gsap
-      delete (window as any).ScrollTrigger
     }
   }, [])
 
