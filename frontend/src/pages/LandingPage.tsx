@@ -41,51 +41,28 @@ export default function LandingPage() {
     if (mountedRef.current) return
     mountedRef.current = true
 
-    const dbg = document.createElement('div')
-    dbg.id = 'landing-debug'
-    dbg.style.cssText = 'position:fixed;bottom:0;left:0;right:0;background:#000;color:#0f0;font:12px monospace;padding:8px;z-index:99999;white-space:pre-wrap;max-height:200px;overflow:auto;'
-    document.body.appendChild(dbg)
-    const log = (msg: string) => { dbg.textContent += msg + '\n'; console.log('[DBG]', msg) }
-
     const added: HTMLScriptElement[] = []
 
     const addScript = (src: string) =>
       new Promise<void>((resolve) => {
         const s = document.createElement('script')
         s.src = src
-        s.onload = () => { log('✓ loaded: ' + src); resolve() }
-        s.onerror = () => { log('✗ FAILED: ' + src); resolve() }
+        s.onload = () => resolve()
+        s.onerror = () => resolve()
         document.body.appendChild(s)
         added.push(s)
         scriptsRef.current = added
       })
 
     const run = async () => {
-      log('Starting script load...')
       await addScript('/three.min.js')
-      const T = (window as any).THREE
-      log('THREE: ' + !!T)
-      log('THREE.Color: ' + typeof T?.Color)
-      log('THREE.CanvasTexture: ' + typeof T?.CanvasTexture)
-      log('THREE.PointsMaterial: ' + typeof T?.PointsMaterial)
-      log('THREE.PlaneGeometry: ' + typeof T?.PlaneGeometry)
-      log('THREE.WireframeGeometry: ' + typeof T?.WireframeGeometry)
       await addScript('/gsap.min.js')
       await addScript('/ScrollTrigger.min.js')
-
-      window.onerror = (msg, src, line, col, err) => {
-        log('UNCAUGHT ERROR: ' + msg + ' | ' + src + ':' + line + ':' + col)
-        log('Stack: ' + (err?.stack || 'none'))
-        return false
-      }
-
       await addScript('/datrix-landing.js')
-      log('DatrixHero set: ' + !!(window as any).DatrixHero)
     }
-    run().catch(e => log('ERROR: ' + String(e)))
+    run().catch(console.error)
 
     return () => {
-      dbg.remove()
       scriptsRef.current.forEach(s => { try { s.remove() } catch {} })
       try { (window as any).ScrollTrigger?.getAll().forEach((t: any) => t.kill()) } catch {}
       try { (window as any).gsap?.globalTimeline.clear() } catch {}
