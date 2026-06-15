@@ -56,9 +56,9 @@ export default function LandingPage() {
       })
 
     const run = async () => {
-      await addScript('https://unpkg.com/three@0.160.0/build/three.min.js')
-      await addScript('https://unpkg.com/gsap@3.12.5/dist/gsap.min.js')
-      await addScript('https://unpkg.com/gsap@3.12.5/dist/ScrollTrigger.min.js')
+      await addScript('https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js')
+      await addScript('https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js')
+      await addScript('https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js')
       await addScript('/datrix-landing.js')
     }
     run().catch(console.error)
@@ -102,7 +102,6 @@ export default function LandingPage() {
       <div className="hero">
         <canvas id="hero-canvas" data-parallax data-px-speed="0.18" />
         <div className="hero-inner" data-parallax data-px-speed="-0.12">
-          <p className="hero-eyebrow" id="heroEyebrow" data-reveal>AI Data Infrastructure</p>
           <h1 className="hero-title" id="heroTitle" data-reveal>
             Your model is only as good<br />as <strong>your data</strong>
           </h1>
