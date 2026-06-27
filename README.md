@@ -43,8 +43,35 @@
 
 ---
 
+## Try It — Sample Dataset
+
+A ready-to-use demo dataset is included at [`sample_data/customer_churn_demo.csv`](sample_data/customer_churn_demo.csv).
+
+It's a realistic **SaaS customer churn dataset** (315 rows, 10 columns) with intentional quality issues embedded across all five dimensions the Quality Engine checks:
+
+| Issue | Column | Severity | What Datrix catches |
+|---|---|---|---|
+| 8.9% null values | `age` | ⚠️ Warning | Completeness — null rate |
+| 1.9% null values | `nps_score` | ℹ️ Info | Completeness — null rate |
+| 1.9% null labels | `churned` | ⚠️ Warning | Label quality — null labels |
+| 15 duplicate rows | — | ⚠️ Warning | Consistency — exact duplicate rows |
+| Spend outliers (>$3,500) | `monthly_spend` | ℹ️ Info | Accuracy — IQR 3× fence |
+| Mixed case | `region`, `plan_type` | ℹ️ Info | Consistency — format inconsistency |
+| Log-normal skew | `monthly_spend` | ℹ️ Info | Distribution — high skewness |
+| 5:1 class imbalance | `churned` | ⚠️ Warning | Label quality — class imbalance |
+
+**To test it:**
+1. Go to [datrix-test.vercel.app](https://datrix-test.vercel.app) and register a free account
+2. Navigate to **Datasets → Upload**
+3. Upload `sample_data/customer_churn_demo.csv`
+4. The Quality Engine scans automatically — you'll see an overall score and a ranked issue list within seconds
+5. Try the **Cleaning Wizard** to fix nulls and drop duplicates, then re-scan to watch the score improve
+
+---
+
 ## Table of Contents
 
+- [Try It — Sample Dataset](#try-it--sample-dataset)
 - [What is Datrix?](#what-is-datrix)
 - [Modules](#modules)
 - [Auth & Identity](#auth--identity)
