@@ -69,19 +69,46 @@ The CSV has intentional quality issues across all five Quality Engine dimensions
 | Log-normal skew | `monthly_spend` | ℹ️ Info | Distribution — high skewness |
 | 5:1 class imbalance | `churned` | ⚠️ Warning | Label quality — class imbalance |
 
-### Model — quick start
+### Run inference locally (2 minutes)
+
+**Requirements:** Python 3.10+
 
 ```bash
+# 1. Clone the repo (skip if you already have it)
+git clone https://github.com/s3ak6i-dev/Datrix.git
+cd Datrix
+
+# 2. Install the three inference dependencies (no virtual env needed)
 pip install scikit-learn pandas joblib
 
-# Batch predictions on the demo CSV (saves *_predictions.csv)
+# 3. Run batch predictions on the included demo CSV
+#    → saves customer_churn_demo_predictions.csv in sample_data/
 python sample_data/predict.py
 
-# Run on your own CSV
+# 4. Run on your own CSV (must have the same column names)
 python sample_data/predict.py --file path/to/your_data.csv
 
-# Interactive single-customer prediction
+# 5. Predict a single customer interactively (prompts for each field)
 python sample_data/predict.py --single
+```
+
+Expected output from step 3:
+
+```
+Model: RandomForestClassifier
+Trained on: customer_churn_demo.csv  (253 rows)
+Accuracy: 80.6%   ROC-AUC: 0.577   CV-AUC: 0.573 ± 0.052
+
+──────────────────────────────────────────────────
+  Dataset : customer_churn_demo.csv
+  Rows    : 315
+  At-risk : N customers (X.X%)
+──────────────────────────────────────────────────
+
+Top 10 highest-risk customers:
+ customer_id  churn_probability  plan_type  tenure_months  nps_score
+  CUST-XXXX               0.78    starter              3        2.1
+  ...
 ```
 
 Model card:
@@ -95,9 +122,9 @@ Model card:
 | **ROC-AUC** | 0.577 (on messy raw data — by design) |
 | **Top predictors** | tenure\_months, monthly\_spend, nps\_score, age |
 
-> The modest AUC on the raw file is intentional — it demonstrates the data quality → model performance link. Upload to Datrix, fix the issues with the Cleaning Wizard, retrain, and watch the score improve.
+> The modest AUC on the raw file is intentional — it demonstrates the data quality → model performance link. Upload to Datrix, clean the issues with the Cleaning Wizard, retrain, and watch the score improve.
 
-### Testing it in Datrix
+### Test the full platform in Datrix
 
 1. Go to [datrix-test.vercel.app](https://datrix-test.vercel.app) and register
 2. **Datasets → Upload** `customer_churn_demo.csv`
