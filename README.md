@@ -43,11 +43,20 @@
 
 ---
 
-## Try It — Sample Dataset
+## Try It — Sample Dataset & Model
 
-A ready-to-use demo dataset is included at [`sample_data/customer_churn_demo.csv`](sample_data/customer_churn_demo.csv).
+Three files in [`sample_data/`](sample_data/) let you test Datrix end-to-end and run inference immediately:
 
-It's a realistic **SaaS customer churn dataset** (315 rows, 10 columns) with intentional quality issues embedded across all five dimensions the Quality Engine checks:
+| File | Description |
+|---|---|
+| [`customer_churn_demo.csv`](sample_data/customer_churn_demo.csv) | 315-row SaaS churn dataset with embedded quality issues |
+| [`churn_model.joblib`](sample_data/churn_model.joblib) | Pre-trained RandomForest churn predictor (scikit-learn pipeline) |
+| [`churn_model_metadata.json`](sample_data/churn_model_metadata.json) | Model card — features, metrics, class distribution |
+| [`predict.py`](sample_data/predict.py) | Inference script — batch predictions or interactive single-customer mode |
+
+### Dataset — what Datrix detects
+
+The CSV has intentional quality issues across all five Quality Engine dimensions:
 
 | Issue | Column | Severity | What Datrix catches |
 |---|---|---|---|
@@ -60,12 +69,41 @@ It's a realistic **SaaS customer churn dataset** (315 rows, 10 columns) with int
 | Log-normal skew | `monthly_spend` | ℹ️ Info | Distribution — high skewness |
 | 5:1 class imbalance | `churned` | ⚠️ Warning | Label quality — class imbalance |
 
-**To test it:**
-1. Go to [datrix-test.vercel.app](https://datrix-test.vercel.app) and register a free account
-2. Navigate to **Datasets → Upload**
-3. Upload `sample_data/customer_churn_demo.csv`
-4. The Quality Engine scans automatically — you'll see an overall score and a ranked issue list within seconds
-5. Try the **Cleaning Wizard** to fix nulls and drop duplicates, then re-scan to watch the score improve
+### Model — quick start
+
+```bash
+pip install scikit-learn pandas joblib
+
+# Batch predictions on the demo CSV (saves *_predictions.csv)
+python sample_data/predict.py
+
+# Run on your own CSV
+python sample_data/predict.py --file path/to/your_data.csv
+
+# Interactive single-customer prediction
+python sample_data/predict.py --single
+```
+
+Model card:
+
+| | |
+|---|---|
+| **Algorithm** | RandomForestClassifier (200 trees, balanced class weights) |
+| **Target** | `churned` — binary yes/no |
+| **Features** | age, tenure, spend, tickets, last login, NPS, region, plan |
+| **Accuracy** | 80.6% |
+| **ROC-AUC** | 0.577 (on messy raw data — by design) |
+| **Top predictors** | tenure\_months, monthly\_spend, nps\_score, age |
+
+> The modest AUC on the raw file is intentional — it demonstrates the data quality → model performance link. Upload to Datrix, fix the issues with the Cleaning Wizard, retrain, and watch the score improve.
+
+### Testing it in Datrix
+
+1. Go to [datrix-test.vercel.app](https://datrix-test.vercel.app) and register
+2. **Datasets → Upload** `customer_churn_demo.csv`
+3. The Quality Engine scans automatically — ranked issues appear within seconds
+4. Use the **Cleaning Wizard** to fix nulls and drop duplicates, then re-scan to watch the score climb
+5. Head to **Benchmark** to train your own model and compare against the pre-trained one
 
 ---
 

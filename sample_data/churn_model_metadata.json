@@ -1,0 +1,28 @@
+{
+  "model_type": "RandomForestClassifier",
+  "n_estimators": 200,
+  "target_column": "churned",
+  "features": [
+    "age",
+    "tenure_months",
+    "monthly_spend",
+    "support_tickets",
+    "last_login_days",
+    "nps_score",
+    "region",
+    "plan_type"
+  ],
+  "performance": {
+    "accuracy": 0.8065,
+    "roc_auc": 0.5769,
+    "cv_auc_mean": 0.5725,
+    "cv_auc_std": 0.052
+  },
+  "training_rows": 247,
+  "test_rows": 62,
+  "trained_on": "customer_churn_demo.csv",
+  "class_distribution": {
+    "no_churn": 257,
+    "churn": 52
+  }
+}
